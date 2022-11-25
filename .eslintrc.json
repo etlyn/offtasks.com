@@ -1,4 +1,5 @@
 {
   "extends": "next/core-web-vitals",
-  "no-unknown-property": false
+  "no-unused-vars": "off",
+  "@typescript-eslint/no-unused-vars": "warn"
 }
