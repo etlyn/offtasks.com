@@ -90,7 +90,7 @@ const Page = () => {
             onClick={handleSignUp}
           >
             <h1 className="font-light text-sm text-center">
-              Don't have an account?
+              Don not have an account?
             </h1>
             <h1 className="font-bold text-sm ml-2">Sign Up</h1>
           </div>
