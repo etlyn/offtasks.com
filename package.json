@@ -1,6 +1,5 @@
 {
-  "name": "marikone",
-  "version": "0.1.0",
+  "name": "offtasks-web-app",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -10,19 +9,23 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@types/node": "18.11.9",
-    "@types/react": "18.0.25",
-    "@types/react-dom": "18.0.9",
-    "eslint": "8.28.0",
-    "eslint-config-next": "13.0.4",
-    "next": "13.0.4",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "typescript": "4.9.3"
+    "@emotion/react": "^11.5.0",
+    "@emotion/styled": "^11.3.0",
+    "@headlessui/react": "^1.7.3",
+    "@supabase/supabase-js": "^1.25.2",
+    "framer-motion": "^4.1.17",
+    "next": "^12.3.1",
+    "react": "17.0.2",
+    "react-dom": "17.0.2"
   },
   "devDependencies": {
-    "autoprefixer": "^10.4.13",
-    "postcss": "^8.4.19",
-    "tailwindcss": "^3.2.4"
+    "@types/node": "^18.11.7",
+    "@types/react": "^18.0.24",
+    "autoprefixer": "^10.4.12",
+    "eslint": "7.32.0",
+    "eslint-config-next": "12.0.2",
+    "postcss": "^8.4.18",
+    "tailwindcss": "^3.2.1",
+    "typescript": "^4.8.4"
   }
 }
