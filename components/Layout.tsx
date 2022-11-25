@@ -3,12 +3,7 @@ import React from "react";
 import { Footer } from "./Footer";
 import { Header } from "./Header";
 
-type TLayout = {
-  children: React.ReactNode;
-  title: string;
-};
-
-export const Layout = ({ children, title }: TLayout) => {
+export const Layout = ({ children, title }: any) => {
   return (
     <div className=" bg-zinc-900 md:h-screen w-screen md:fixed flex flex-col">
       <Head>
