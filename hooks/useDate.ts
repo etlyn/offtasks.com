@@ -6,38 +6,38 @@ export const useDate = () => {
   const today =
     currentDate.getFullYear() +
     "-" +
-    (currentDate.getMonth() + 1) +
+    (currentDate.getMonth() + 1).toString().padStart(2, "0") +
     "-" +
-    currentDate.getDate();
+    currentDate.getDate().toString().padStart(2, "0");
 
   const tomorrow =
     currentDate.getFullYear() +
     "-" +
-    (currentDate.getMonth() + 1) +
+    (currentDate.getMonth() + 1).toString().padStart(2, "0") +
     "-" +
-    (currentDate.getDate() + 1);
+    (currentDate.getDate() + 1).toString().padStart(2, "0");
 
   const yesterday =
     currentDate.getFullYear() +
     "-" +
-    (currentDate.getMonth() + 1) +
+    (currentDate.getMonth() + 1).toString().padStart(2, "0") +
     "-" +
-    (currentDate.getDate() - 1);
+    (currentDate.getDate() - 1).toString().padStart(2, "0");
 
   const upcoming =
     currentDate.getFullYear() +
     10 +
     "-" +
-    (currentDate.getMonth() + 1) +
+    (currentDate.getMonth() + 1).toString().padStart(2, "0") +
     "-" +
-    currentDate.getDate();
+    currentDate.getDate().toString().padStart(2, "0");
 
   const outdated =
     currentDate.getFullYear() +
     "-" +
-    (currentDate.getMonth() + 1) +
+    (currentDate.getMonth() + 1).toString().padStart(2, "0") +
     "-" +
-    (currentDate.getDate() - 2);
+    (currentDate.getDate() - 2).toString().padStart(2, "0");
 
   return { today, tomorrow, yesterday, upcoming, outdated };
 };
