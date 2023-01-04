@@ -37,7 +37,7 @@ export const useDate = () => {
     "-" +
     (currentDate.getMonth() + 1).toString().padStart(2, "0") +
     "-" +
-    (currentDate.getDate() - 2).toString().padStart(2, "0");
+    (currentDate.getDate() - 14).toString().padStart(2, "0");
 
   return { today, tomorrow, yesterday, upcoming, outdated };
 };
