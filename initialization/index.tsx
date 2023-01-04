@@ -42,25 +42,31 @@ export const Initialization = ({ children }) => {
   const handleData = (data) => {
     if (data != null) {
       // Today tasks
-      const todayTasks = data.filter(
-        (task) =>
-          task.date === today ||
-          (task.date === yesterday && task.isComplete != true) ||
-          (task.date === outdated && task.isComplete != true)
-      );
+      const todayTasks = data
+        .filter(
+          (task) =>
+            task.date === today ||
+            (task.date === yesterday && task.isComplete != true) ||
+            (task.date === outdated && task.isComplete != true)
+        )
+        .sort((a, b) => b.priority - a.priority);
 
       // Tomorrow tasks
-      const tomorrowTasks = data.filter((task) => task.date === tomorrow);
+      const tomorrowTasks = data
+        .filter((task) => task.date === tomorrow)
+        .sort((a, b) => b.priority - a.priority);
 
       // Upcoming tasks
-      const upcomingTasks = data.filter(
-        (task) =>
-          task.isComplete != true &&
-          task.date != today &&
-          task.date != tomorrow &&
-          task.date != outdated &&
-          task.date != yesterday
-      );
+      const upcomingTasks = data
+        .filter(
+          (task) =>
+            task.isComplete != true &&
+            task.date != today &&
+            task.date != tomorrow &&
+            task.date != outdated &&
+            task.date != yesterday
+        )
+        .sort((a, b) => b.priority - a.priority);
 
       // Status counter
       const totalTasks = data.length;

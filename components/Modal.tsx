@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { updateTask, createTask, deleteTask } from "../backend";
 import { useDate } from "../hooks";
 import { CloseIcon, RemoveIcon, SaveIcon } from "../icons";
+import { Slider } from "./Slider";
 
 export const Modal = ({ closeModal, initialRef, task, selectedDate }) => {
   const [content, setContent] = useState("");
+  const [priority, setPriority] = useState(1);
   const [date, setDate] = useState(selectedDate);
 
   const { today, tomorrow, upcoming } = useDate();
@@ -12,8 +14,10 @@ export const Modal = ({ closeModal, initialRef, task, selectedDate }) => {
   useEffect(() => {
     if (task) {
       setContent(task.content);
+      setPriority(task.priority);
     } else {
       setContent("");
+      setPriority(1);
     }
   }, [task]);
 
@@ -24,7 +28,7 @@ export const Modal = ({ closeModal, initialRef, task, selectedDate }) => {
     }
 
     if (task) {
-      await updateTask(task.id, content, task.isComplete, date);
+      await updateTask(task.id, content, task.isComplete, date, priority);
     } else {
       createTask(content, date);
     }
@@ -79,45 +83,42 @@ export const Modal = ({ closeModal, initialRef, task, selectedDate }) => {
             />
           </div>
 
-          <div className="flex mt-6  rounded-2xl  justify-around text-zinc-50 max-h-9 bg-zinc-700">
-            <button
-              onClick={() => setDate(today)}
-              className={`py-2 px-6 flex flex-grow justify-center items-center rounded-l-2xl ${
-                date === today && "bg-zinc-50 rounded-2xl self-center z-10"
-              }`}
-            >
-              <h1 className={`${date === today && "text-zinc-900"}`}>
-                &nbsp; Today &nbsp;
-              </h1>
-            </button>
+          <div className="py-6 flex flex-row justify-between items-center">
+            <div className="flex basis-1/2">
+              <h1 className="text-zinc-50 font-extralight">Priority:</h1>
+            </div>
+            <div className="flex basis-1/2">
+              <Slider
+                label1="Low"
+                label2="Medium"
+                label3="High"
+                onClick1={() => setPriority(1)}
+                onClick2={() => setPriority(2)}
+                onClick3={() => setPriority(3)}
+                isLabel1Active={priority === 1}
+                isLabel2Active={priority === 2}
+                isLabel3Active={priority === 3}
+              />
+            </div>
+          </div>
 
-            <div
-              className={`py-3  w-0.5 ${date === upcoming && "bg-zinc-800"}`}
-            />
-
-            <button
-              onClick={() => setDate(tomorrow)}
-              className={`py-2 px-6 flex flex-grow  justify-center items-center ${
-                date === tomorrow && "bg-zinc-50 rounded-2xl  self-center"
-              }`}
-            >
-              <h1 className={`${date === tomorrow && "text-zinc-900"}`}>
-                Tomorrow
-              </h1>
-            </button>
-
-            <div className={`py-3  w-0.5 ${date === today && "bg-zinc-800"}`} />
-
-            <button
-              onClick={() => setDate(upcoming)}
-              className={`py-2 px-6 flex flex-grow  justify-center items-center rounded-r-2xl ${
-                date === upcoming && "bg-zinc-50 rounded-2xl  self-center"
-              }`}
-            >
-              <h1 className={`${date === upcoming && "text-zinc-900"}`}>
-                Upcoming
-              </h1>
-            </button>
+          <div className="pb-3 flex flex-row justify-between items-center">
+            <div className="flex">
+              <h1 className="text-zinc-50 font-extralight">Date:</h1>
+            </div>
+            <div className="flex basis-1/2">
+              <Slider
+                label1="Today"
+                label2="Tomorrow"
+                label3="Upcoming"
+                onClick1={() => setDate(today)}
+                onClick2={() => setDate(tomorrow)}
+                onClick3={() => setDate(upcoming)}
+                isLabel1Active={date === today}
+                isLabel2Active={date === tomorrow}
+                isLabel3Active={date === upcoming}
+              />
+            </div>
           </div>
 
           <div className="flex flex-row justify-between mt-8 mb-6">

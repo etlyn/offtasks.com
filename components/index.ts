@@ -6,3 +6,4 @@ export * from "./Footer";
 export * from "./SectionHeader";
 export * from "./Section";
 export * from "./Layout";
+export * from "./Slider";

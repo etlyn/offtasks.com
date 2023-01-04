@@ -36,7 +36,13 @@ export const deleteTask = async (taskID) => {
   }
 };
 
-export const updateTask = async (taskID, content, isComplete, date) => {
+export const updateTask = async (
+  taskID,
+  content,
+  isComplete,
+  date,
+  priority
+) => {
   const user = await supabaseClient.auth.user();
 
   const { error } = await supabaseClient
@@ -46,6 +52,7 @@ export const updateTask = async (taskID, content, isComplete, date) => {
       isComplete: isComplete,
       user_id: user.id,
       date: date,
+      priority: priority,
     })
     .eq("id", taskID);
 

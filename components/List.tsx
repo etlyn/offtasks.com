@@ -14,7 +14,7 @@ export const List = ({ task, openHandler, date }: TListProps) => {
   const { today } = useDate();
 
   const updateStatus = () => {
-    updateTask(task.id, task.content, !task.isComplete, today);
+    updateTask(task.id, task.content, !task.isComplete, today, task.priority);
   };
 
   return (
