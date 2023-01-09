@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabaseClient } from "../backend";
+import { useRouter } from "next/router";
 import { LogoXL } from "../icons";
 
 const SignIn = () => {
@@ -8,6 +9,8 @@ const SignIn = () => {
   const [password2, setPassword2] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const router = useRouter();
 
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -50,6 +53,10 @@ const SignIn = () => {
 
   const changeHandlerPassword2 = (event) => {
     setPassword2(event.target.value);
+  };
+
+  const handleLogIn = () => {
+    router.push("/login");
   };
 
   return (
@@ -100,6 +107,16 @@ const SignIn = () => {
           >
             <h1 className="text-zinc-50 text-sm  font-light">Create Account</h1>
           </button>
+
+          <div
+            className="mt-6 flex flex-row w-full text-zinc-50  justify-center"
+            onClick={handleLogIn}
+          >
+            <h1 className="font-light text-sm text-center">
+              Already a Member?
+            </h1>
+            <h1 className="font-bold text-sm ml-2">Log In</h1>
+          </div>
         </div>
       </div>
     </div>
