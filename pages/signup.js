@@ -91,7 +91,7 @@ const SignIn = () => {
           />
 
           <h1 className="text-zinc-50 mt-4 self-start mb-2 font-medium text-sm">
-            Password
+            Repeat Password
           </h1>
           <input
             onChange={changeHandlerPassword2}
