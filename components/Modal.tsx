@@ -30,7 +30,7 @@ export const Modal = ({ closeModal, initialRef, task, selectedDate }) => {
     if (task) {
       await updateTask(task.id, content, task.isComplete, date, priority);
     } else {
-      createTask(content, date);
+      createTask(content, date, priority);
     }
 
     closeHandler();

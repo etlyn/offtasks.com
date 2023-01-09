@@ -61,7 +61,7 @@ export const updateTask = async (
   }
 };
 
-export const createTask = async (content, date) => {
+export const createTask = async (content, date, priority) => {
   const user = await supabaseClient.auth.user();
 
   const { error } = await supabaseClient.from("tasks").insert([
@@ -70,6 +70,7 @@ export const createTask = async (content, date) => {
       isComplete: false,
       user_id: user.id,
       date: date,
+      priority: priority,
     },
   ]);
   if (error) {
