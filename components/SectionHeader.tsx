@@ -1,3 +1,4 @@
+import { useTheme } from "next-themes";
 import React from "react";
 import { AddIcon } from "../icons";
 
@@ -14,9 +15,17 @@ export const SectionHeader = ({
   progressData,
   showCounter,
 }: TSectionHeader) => {
+  const { theme } = useTheme();
+
   return (
-    <div className="container flex flex-row justify-between border-b-zinc-100 border-b border-opacity-50 pb-2 mb-4">
-      <div className="flex flex-row font-medium text-zinc-50">
+    <div
+      className={`${
+        theme === "dark"
+          ? "border-b-zinc-100 text-zinc-50"
+          : "border-b-zinc-900 text-zinc-900"
+      } container flex flex-row justify-between border-b border-opacity-20 pb-2 mb-4`}
+    >
+      <div className="flex flex-row font-medium">
         <h1 className=" flex">{headline}</h1>
         {showCounter ? (
           <h1>

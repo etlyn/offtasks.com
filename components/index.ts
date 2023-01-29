@@ -7,3 +7,4 @@ export * from "./SectionHeader";
 export * from "./Section";
 export * from "./Layout";
 export * from "./Slider";
+export * from "./ThemeSwitch";

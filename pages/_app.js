@@ -5,6 +5,7 @@ import { supabaseClient } from "../backend";
 import { ContextProvider } from "../context";
 import Script from "next/script";
 import Head from "next/head";
+import { ThemeProvider } from "next-themes";
 
 function MyApp({ Component, pageProps }) {
   const router = useRouter();
@@ -73,9 +74,11 @@ function MyApp({ Component, pageProps }) {
         `}
       </Script>
 
-      <ContextProvider>
-        <Component {...pageProps} />
-      </ContextProvider>
+      <ThemeProvider>
+        <ContextProvider>
+          <Component {...pageProps} />
+        </ContextProvider>
+      </ThemeProvider>
     </>
   );
 }
