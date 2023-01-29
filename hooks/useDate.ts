@@ -24,13 +24,7 @@ export const useDate = () => {
     "-" +
     (currentDate.getDate() - 1).toString().padStart(2, "0");
 
-  const upcoming =
-    currentDate.getFullYear() +
-    10 +
-    "-" +
-    (currentDate.getMonth() + 1).toString().padStart(2, "0") +
-    "-" +
-    currentDate.getDate().toString().padStart(2, "0");
+  const upcoming = "2050-01-25";
 
   const outdated =
     currentDate.getFullYear() +

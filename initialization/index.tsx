@@ -46,8 +46,9 @@ export const Initialization = ({ children }) => {
         .filter(
           (task) =>
             task.date === today ||
-            (task.date !== tomorrow && task.isComplete != true) ||
-            (task.date !== upcoming && task.isComplete != true)
+            (task.date != upcoming &&
+              task.date != tomorrow &&
+              task.isComplete != true)
         )
         .sort((a, b) => b.priority - a.priority);
 
