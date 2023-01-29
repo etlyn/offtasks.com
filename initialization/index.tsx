@@ -8,7 +8,7 @@ export const Initialization = ({ children }) => {
   const router = useRouter();
   const user = supabaseClient.auth.user();
   const { setContext } = useContext(AppContext);
-  const { today, yesterday, tomorrow, outdated } = useDate();
+  const { today, yesterday, tomorrow, outdated, upcoming } = useDate();
 
   // Fetch tasks from Supabase
   useEffect(() => {
@@ -46,8 +46,8 @@ export const Initialization = ({ children }) => {
         .filter(
           (task) =>
             task.date === today ||
-            (task.date === yesterday && task.isComplete != true) ||
-            (task.date === outdated && task.isComplete != true)
+            (task.date !== tomorrow && task.isComplete != true) ||
+            (task.date !== upcoming && task.isComplete != true)
         )
         .sort((a, b) => b.priority - a.priority);
 

@@ -24,7 +24,7 @@ export const Section = ({
         />
       </div>
 
-      <div className="container px-6 h-96 overflow-y-scroll scrollbar">
+      <div className="container px-6 h-96 md:h-[500px] overflow-y-scroll scrollbar">
         {data.map((task) => (
           <List
             task={task}
