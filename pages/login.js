@@ -74,7 +74,7 @@ const Page = () => {
             disabled={isLoading}
           />
 
-          <h1 className="text-zinc-50 mt-4 self-end mb-2 font-light text-sm">
+          <h1 className="text-zinc-50 mt-4 self-end mb-2 font-light text-sm cursor-pointer">
             Forgot Password?
           </h1>
 
@@ -86,7 +86,7 @@ const Page = () => {
           </button>
 
           <div
-            className="mt-6 flex flex-row w-full text-zinc-50  justify-center"
+            className="mt-6 flex flex-row w-full text-zinc-50  justify-center cursor-pointer"
             onClick={handleSignUp}
           >
             <h1 className="font-light text-sm text-center">

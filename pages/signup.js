@@ -109,7 +109,7 @@ const SignIn = () => {
           </button>
 
           <div
-            className="mt-6 flex flex-row w-full text-zinc-50  justify-center"
+            className="mt-6 flex flex-row w-full text-zinc-50  justify-center cursor-pointer"
             onClick={handleLogIn}
           >
             <h1 className="font-light text-sm text-center">
