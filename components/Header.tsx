@@ -36,7 +36,11 @@ export const Header = () => {
           {context.completedTasks} of {context.totalTasks}
         </h1>
       </div>
-      <div className="flex justify-center items-center">
+      <div
+        className={`flex justify-center items-center ${
+          theme === "dark" ? "text-zinc-50" : "text-zinc-900"
+        } flex flex-row -mt-1 items-center`}
+      >
         <ThemeSwitch />
         <Account />
       </div>

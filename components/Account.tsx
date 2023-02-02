@@ -1,6 +1,5 @@
 import { Fragment } from "react";
 import { Menu, Transition } from "@headlessui/react";
-import { useRouter } from "next/router";
 import { supabaseClient } from "../backend";
 import { LogoutIcon } from "../icons";
 
@@ -19,7 +18,7 @@ export const Account = () => {
   return (
     <Menu as="div" className="relative inline-block text-left">
       <div>
-        <Menu.Button className="">
+        <Menu.Button>
           <LogoutIcon />
         </Menu.Button>
       </div>
