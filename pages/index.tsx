@@ -53,6 +53,8 @@ const Home = () => {
     if (typeof document !== "undefined") {
       document.addEventListener("keydown", handleKeyboardEvent);
     }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

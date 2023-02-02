@@ -71,7 +71,7 @@ const Page = () => {
             className=" md:py-8 md:px-12 py-6 px-6"
             onClick={handleGuestLogin}
           >
-            <h1 className="font-medium">I'm a Guest</h1>
+            <h1 className="font-medium">I&apos;m a Guest</h1>
           </button>
         </div>
 
