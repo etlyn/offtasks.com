@@ -1,3 +1,4 @@
+import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { updateTask, createTask, deleteTask } from "../backend";
 import { useDate } from "../hooks";
@@ -8,6 +9,8 @@ export const Modal = ({ closeModal, initialRef, task, selectedDate }) => {
   const [content, setContent] = useState("");
   const [priority, setPriority] = useState(1);
   const [date, setDate] = useState(selectedDate);
+
+  const { theme } = useTheme();
 
   const { today, tomorrow, upcoming } = useDate();
 
@@ -60,11 +63,17 @@ export const Modal = ({ closeModal, initialRef, task, selectedDate }) => {
         className="flex justify-center items-center overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none"
         onKeyPress={handleKeyboard}
       >
-        <div className="flex flex-col bg-zinc-800 px-4 md:w-1/3 w-full rounded-md">
+        <div
+          className={`flex flex-col px-4 md:w-1/3 w-full rounded-md ${
+            theme === "dark"
+              ? "bg-zinc-800 text-zinc-50"
+              : "bg-zinc-50 text-zinc-900 border border-zinc-800 border-opacity-10 "
+          }`}
+        >
           <div className="flex justify-between py-4">
-            <h1 className="text-zinc-50 font-medium">Task</h1>
+            <h1 className="font-medium">Task</h1>
             <button
-              className="bg-transparent float-right text-zinc-50"
+              className="bg-transparent float-right "
               onClick={closeHandler}
               onKeyDown={closeHandler}
             >
@@ -76,14 +85,14 @@ export const Modal = ({ closeModal, initialRef, task, selectedDate }) => {
             <textarea
               ref={initialRef}
               placeholder="Add your task here"
-              className="shadow appearance-none border rounded w-full h-24 px-2 py-2 text-zinc-50 font-extralight  bg-transparent flex outline-none focus:outline-none"
+              className="shadow appearance-none border rounded w-full h-24 px-2 py-2 font-extralight  bg-transparent flex outline-none focus:outline-none"
               onChange={(event) => setContent(event.target.value)}
               value={content}
               autoFocus
             />
           </div>
 
-          <div className="py-6 flex flex-row justify-between items-center">
+          {/* <div className="py-6 flex flex-row justify-between items-center">
             <div className="flex basis-1/2">
               <h1 className="text-zinc-50 font-extralight">Priority:</h1>
             </div>
@@ -100,30 +109,28 @@ export const Modal = ({ closeModal, initialRef, task, selectedDate }) => {
                 isLabel3Active={priority === 3}
               />
             </div>
-          </div>
+          </div> */}
 
-          <div className="pb-3 flex flex-row justify-between items-center">
-            <div className="flex">
+          <div className="pb-3 mt-6 flex flex-row">
+            {/* <div className="flex">
               <h1 className="text-zinc-50 font-extralight">Date:</h1>
-            </div>
-            <div className="flex basis-1/2">
-              <Slider
-                label1="Today"
-                label2="Tomorrow"
-                label3="Upcoming"
-                onClick1={() => setDate(today)}
-                onClick2={() => setDate(tomorrow)}
-                onClick3={() => setDate(upcoming)}
-                isLabel1Active={date === today}
-                isLabel2Active={date === tomorrow}
-                isLabel3Active={date === upcoming}
-              />
-            </div>
+            </div> */}
+            <Slider
+              label1="Today"
+              label2="Tomorrow"
+              label3="Upcoming"
+              onClick1={() => setDate(today)}
+              onClick2={() => setDate(tomorrow)}
+              onClick3={() => setDate(upcoming)}
+              isLabel1Active={date === today}
+              isLabel2Active={date === tomorrow}
+              isLabel3Active={date === upcoming}
+            />
           </div>
 
-          <div className="flex flex-row justify-between mt-8 mb-6">
+          <div className="flex flex-row justify-between mt-6 mb-6">
             <button
-              className="text-red-500 px-6 py-3 text-sm bg-transparent rounded-xl border-red-500 border flex flex-row "
+              className="text-red-500 px-6 py-2 text-sm bg-transparent rounded-xl border-red-500 border flex flex-row "
               type="button"
               onClick={() => {
                 deleteHandler(task?.id);
@@ -134,7 +141,7 @@ export const Modal = ({ closeModal, initialRef, task, selectedDate }) => {
             </button>
 
             <button
-              className="text-zinc-50 bg-sky-500 text-sm px-6 py-3 rounded-xl flex flex-row"
+              className="bg-sky-500 text-sm px-6 py-2 rounded-xl flex flex-row"
               type="button"
               onClick={submitHandler}
             >

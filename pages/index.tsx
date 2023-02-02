@@ -3,12 +3,14 @@ import { Modal, Section, Layout } from "../components";
 import { useDate } from "../hooks";
 import { Initialization } from "../initialization";
 import { AppContext } from "../context";
+import { useTheme } from "next-themes";
 
 const Home = () => {
   const initialRef = useRef();
   const [task, setTask] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [date, setDate] = useState(null);
+  const { theme } = useTheme();
 
   const { today, tomorrow, upcoming } = useDate();
   const { context } = useContext(AppContext);
@@ -55,44 +57,45 @@ const Home = () => {
 
   return (
     <Initialization>
-      <Layout title="Tasks">
-        {showModal && (
-          <Modal
-            selectedDate={date}
-            closeModal={closeModal}
-            initialRef={initialRef}
-            task={task}
-          />
-        )}
+      {showModal && (
+        <Modal
+          selectedDate={date}
+          closeModal={closeModal}
+          initialRef={initialRef}
+          task={task}
+        />
+      )}
+      <div
+        className={`w-screen h-screen 
+        ${showModal && "contrast-50 blur-sm"}
+        ${theme === "light" ? "bg-zinc-50 " : "bg-zinc-900 "}`}
+      >
+        <Layout title="Tasks">
+          <div className={`flex flex-col md:flex-row container `}>
+            <Section
+              headline="Today"
+              data={context.todayTasks}
+              currentDate={today}
+              openModal={openModal}
+              showCounter={true}
+            />
 
-        <div
-          className={`flex flex-col md:flex-row container ${
-            showModal && " opacity-10"
-          }`}
-        >
-          <Section
-            headline="Today"
-            data={context.todayTasks}
-            currentDate={today}
-            openModal={openModal}
-            showCounter={true}
-          />
+            <Section
+              headline="Tomorrow"
+              data={context.tomorrowTasks}
+              currentDate={tomorrow}
+              openModal={openModalForTomorrow}
+              showCounter={false}
+            />
 
-          <Section
-            headline="Tomorrow"
-            data={context.tomorrowTasks}
-            currentDate={tomorrow}
-            openModal={openModalForTomorrow}
-            showCounter={false}
-          />
-
-          <Section
-            headline="Upcoming"
-            data={context.upcomingTasks}
-            openModal={openModalForUpcoming}
-          />
-        </div>
-      </Layout>
+            <Section
+              headline="Upcoming"
+              data={context.upcomingTasks}
+              openModal={openModalForUpcoming}
+            />
+          </div>
+        </Layout>
+      </div>
     </Initialization>
   );
 };

@@ -1,18 +1,11 @@
-import { useTheme } from "next-themes";
 import Head from "next/head";
 import React from "react";
 import { Footer } from "./Footer";
 import { Header } from "./Header";
 
 export const Layout = ({ children, title }: any) => {
-  const { theme } = useTheme();
-
   return (
-    <div
-      className={`${
-        theme === "dark" ? "bg-zinc-900" : "bg-slate-50"
-      } md:h-screen w-screen md:fixed flex flex-col`}
-    >
+    <div className={`md:h-screen w-screen md:fixed flex flex-col`}>
       <Head>
         <title>{title}</title>
         <meta charSet="utf-8" />
