@@ -9,16 +9,11 @@ function classNames(...classes) {
 }
 
 export const Account = () => {
-  const router = useRouter();
-
   const logoutHandler = async () => {
     try {
       await supabaseClient.auth.signOut();
-      router.push("/login");
     } catch ({ message }) {
       console.log("Error when logout", message);
-      router.push("/login");
-    } finally {
     }
   };
   return (
