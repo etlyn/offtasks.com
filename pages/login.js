@@ -2,6 +2,7 @@ import { useState } from "react";
 import { supabaseClient } from "../backend";
 import { useRouter } from "next/router";
 import { LogoXL } from "../icons";
+import { v4 as uuidv4 } from "uuid";
 
 const Page = () => {
   const [email, setEmail] = useState("");
@@ -43,10 +44,38 @@ const Page = () => {
     router.push("/signup");
   };
 
+  const handleGuestLogin = async () => {
+    try {
+      const uniqueCredentials = uuidv4();
+      const { error } = await supabaseClient.auth.signUp({
+        email: `${uniqueCredentials}}@example.com`,
+        password: uniqueCredentials,
+      });
+
+      if (error) {
+        setError(error.message);
+        console.log(error);
+      }
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className=" bg-zinc-900 flex flex-1 h-screen items-center">
       <div className="bg-zinc-800 h-3/4 md:w-3/5 w-full container  rounded-lg">
-        <div className="container flex justify-center items-center mt-12">
+        <div className="flex justify-end text-cyan-500 cursor-pointer">
+          <button
+            className=" md:py-8 md:px-12 py-6 px-6"
+            onClick={handleGuestLogin}
+          >
+            <h1 className="font-medium">I'm a Guest</h1>
+          </button>
+        </div>
+
+        <div className="container flex justify-center items-center md:mt-0 mt-6">
           <LogoXL />
         </div>
         <div className="container flex flex-col justify-center items-center mt-12 md:w-2/6 w-3/4">
