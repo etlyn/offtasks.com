@@ -1,15 +1,23 @@
 import "../styles/globals.css";
 import { useRouter } from "next/router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabaseClient } from "../backend";
 import { ContextProvider } from "../context";
 import Script from "next/script";
 import Head from "next/head";
 import { ThemeProvider } from "next-themes";
+import { useTheme } from "next-themes";
 
 function MyApp({ Component, pageProps }) {
   const router = useRouter();
   const user = supabaseClient.auth.user();
+  const [mounted, setMounted] = useState(false);
+  const { theme } = useTheme();
+
+  // Avoid theme Hydration Mismatch:
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const { data: authListener } = supabaseClient.auth.onAuthStateChange(
@@ -74,9 +82,9 @@ function MyApp({ Component, pageProps }) {
         `}
       </Script>
 
-      <ThemeProvider>
+      <ThemeProvider defaultTheme={theme}>
         <ContextProvider>
-          <Component {...pageProps} />
+          {mounted && <Component {...pageProps} />}
         </ContextProvider>
       </ThemeProvider>
     </>
