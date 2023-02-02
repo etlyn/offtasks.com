@@ -31,7 +31,11 @@ export const List = ({ task, openHandler, date }: TListProps) => {
         }`}
         onClick={updateStatus}
       >
-        {task.isComplete ? <MarkedIcon /> : <CheckIcon />}
+        {task.isComplete ? (
+          <MarkedIcon checkColor={`${theme === "dark" ? "black" : "white"}`} />
+        ) : (
+          <CheckIcon />
+        )}
       </button>
 
       <button onClick={() => openHandler(task)} className="flex w-full py-1">
