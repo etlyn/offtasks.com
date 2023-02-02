@@ -27,7 +27,7 @@ export const Header = () => {
         <Logo />
       </button>
       <div
-        className={`${
+        className={`ml-8 ${
           theme === "dark" ? "text-zinc-50" : "text-zinc-900"
         } flex flex-row -mt-1 items-center`}
       >
@@ -36,9 +36,8 @@ export const Header = () => {
           {context.completedTasks} of {context.totalTasks}
         </h1>
       </div>
-      <div className="flex justify-center">
+      <div className="flex justify-center items-center">
         <ThemeSwitch />
-        <div className="mx-2"></div>
         <Account />
       </div>
     </div>

@@ -68,7 +68,7 @@ const Home = () => {
       <div
         className={`w-screen h-screen 
         ${showModal && "contrast-50 blur-sm"}
-        ${theme === "light" ? "bg-zinc-50 " : "bg-zinc-900 "}`}
+        ${theme === "dark" ? "bg-zinc-900 " : "bg-zinc-50 "}`}
       >
         <Layout title="Tasks">
           <div className={`flex flex-col md:flex-row container `}>

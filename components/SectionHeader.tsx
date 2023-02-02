@@ -41,7 +41,7 @@ export const SectionHeader = ({
         onClick={() => onClickAdd(null)}
       >
         <AddIcon />
-        <h2 className="font-extralight">Add Task</h2>
+        <h2 className="font-medium">Add Task</h2>
       </button>
     </div>
   );
