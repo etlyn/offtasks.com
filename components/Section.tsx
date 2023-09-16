@@ -53,7 +53,7 @@ export const Section = ({
         />
       </div>
 
-      <div className="container -ml-8 px-6 h-96 md:h-[500px] overflow-y-scroll scrollbar">
+      <div className="container md:-ml-8 -ml-4 px-6 h-96 md:h-[500px] overflow-y-scroll scrollbar">
         <DragDropContext onDragEnd={onDragEnd}>
           <Droppable droppableId="droppable">
             {(provided) => (
