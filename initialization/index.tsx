@@ -46,7 +46,7 @@ export const Initialization = ({ children }) => {
     if (data != null) {
       // Today tasks
       const todayTasks = data
-        .filter((task) => task.target_group === "today" || task.date === yesterday)
+        .filter((task) => task.target_group === "today" || task.date === today || task.date === yesterday)
         .sort((a, b) => a.priority - b.priority);
 
       // Tomorrow tasks
