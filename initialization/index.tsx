@@ -46,7 +46,7 @@ export const Initialization = ({ children }) => {
     if (data != null) {
       // Today tasks
       const todayTasks = data
-        .filter((task) => task.target_group === "today" || task.date === today || task.date === yesterday)
+        .filter((task) => (task.date === today && task.target_group === "today" &&  task.target_group != "tomorrow") || task.date === yesterday)
         .sort((a, b) => a.priority - b.priority);
 
       // Tomorrow tasks
@@ -56,7 +56,7 @@ export const Initialization = ({ children }) => {
 
       // Upcoming tasks
       const upcomingTasks = data
-        .filter((task) => task.target_group === "upcoming" && task.isComplete === false)
+        .filter((task) => task.isComplete === false && task.target_group != "tomorrow"  && task.target_group != "today")
         .sort((a, b) => a.priority - b.priority);
 
       // Status counter
