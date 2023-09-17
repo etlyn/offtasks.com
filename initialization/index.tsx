@@ -14,10 +14,11 @@ export const Initialization = ({ children }) => {
   useEffect(() => {
     if (!user) {
       router.push("/login");
+    } else {
+      fetchTasks()
+        .then((tasks) => sortData(tasks))
+        .then((res) => setAppState(res));
     }
-    fetchTasks()
-      .then((tasks) => sortData(tasks))
-      .then((res) => setAppState(res));
   }, [user, router]);
 
   // Supabase Realtime Listener

@@ -45,7 +45,6 @@ export const updateTask = async (
   targetGroup,
   date
 ) => {
-  const currentDate = getCurrentDate();
   const user = await supabaseClient.auth.user();
 
   const { error } = await supabaseClient
