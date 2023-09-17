@@ -8,7 +8,7 @@ export const Initialization = ({ children }) => {
   const router = useRouter();
   const user = supabaseClient.auth.user();
   const { setAppState } = useContext(AppState);
-  const {today, yesterday} = useDate()
+  const { today, yesterday } = useDate();
 
   // Fetch tasks
   useEffect(() => {
@@ -46,7 +46,13 @@ export const Initialization = ({ children }) => {
     if (data != null) {
       // Today tasks
       const todayTasks = data
-        .filter((task) => (task.date === today && task.target_group === "today" &&  task.target_group != "tomorrow") || task.date === yesterday)
+        .filter(
+          (task) =>
+            (task.date === today &&
+              task.target_group === "today" &&
+              task.target_group != "tomorrow") ||
+            task.date === yesterday
+        )
         .sort((a, b) => a.priority - b.priority);
 
       // Tomorrow tasks
@@ -56,7 +62,11 @@ export const Initialization = ({ children }) => {
 
       // Upcoming tasks
       const upcomingTasks = data
-        .filter((task) => task.isComplete === false || task.target_group === "upcoming" )
+        .filter(
+          (task) =>
+            (task.date != today && task.isComplete === false) ||
+            task.target_group === "upcoming"
+        )
         .sort((a, b) => a.priority - b.priority);
 
       // Status counter
