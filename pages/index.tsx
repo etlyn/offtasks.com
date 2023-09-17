@@ -2,6 +2,7 @@ import React, { useState, useRef, useContext, useEffect } from "react";
 import { Modal, Section, Layout } from "../components";
 import { AppState } from "../localState";
 import { useTheme } from "next-themes";
+import { updateTask } from "../backend";
 
 const Home = () => {
   const initialRef = useRef();
@@ -11,6 +12,14 @@ const Home = () => {
   const { theme } = useTheme();
 
   const { appState } = useContext(AppState);
+
+  useEffect(()=>{
+    appState?.upcomingTasks.map(((task: any) =>{
+      if(task.isComplete) {
+        updateTask(task.id, task.content, task.isComplete, task.priority, "close")
+      }
+  }))
+  },[appState])
 
   const closeModal = () => {
     setShowModal(false);
