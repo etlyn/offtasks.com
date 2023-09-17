@@ -56,7 +56,7 @@ export const Initialization = ({ children }) => {
 
       // Upcoming tasks
       const upcomingTasks = data
-        .filter((task) => task.isComplete === false && task.target_group != "tomorrow"  && task.target_group != "today")
+        .filter((task) => task.isComplete === false || task.target_group === "upcoming" )
         .sort((a, b) => a.priority - b.priority);
 
       // Status counter
