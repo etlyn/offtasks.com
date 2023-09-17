@@ -21,7 +21,8 @@ export const List = ({ task, openHandler }: TListProps) => {
       task.content,
       !task.isComplete,
       task.priority,
-      task.targetGroup
+      task.targetGroup,
+      task.date
     );
   };
 

@@ -42,7 +42,8 @@ export const updateTask = async (
   content,
   isComplete,
   priority,
-  targetGroup
+  targetGroup,
+  date
 ) => {
   const currentDate = getCurrentDate();
   const user = await supabaseClient.auth.user();
@@ -53,7 +54,7 @@ export const updateTask = async (
       content: content,
       isComplete: isComplete,
       user_id: user.id,
-      date: currentDate,
+      date: date,
       priority: priority,
       target_group: targetGroup,
     })

@@ -28,7 +28,7 @@ export const Section = ({
     );
 
     reorderedItems.map(((task: any, index) =>{
-        updateTask(task.id, task.content, task.isComplete, index, task.targetGroup)
+        updateTask(task.id, task.content, task.isComplete, index, task.targetGroup, task.date)
     }))
   };
 

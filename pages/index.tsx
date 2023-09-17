@@ -16,7 +16,7 @@ const Home = () => {
   useEffect(()=>{
     appState?.upcomingTasks.map(((task: any) =>{
       if(task.isComplete) {
-        updateTask(task.id, task.content, task.isComplete, task.priority, "close")
+        updateTask(task.id, task.content, task.isComplete, task.priority, "close", task.date)
       }
   }))
   },[appState])
