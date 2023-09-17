@@ -45,6 +45,7 @@ const Home = () => {
 
   const handleKeyboardEvent = (event) => {
     if (event.key === "+") {
+      event.preventDefault();
       openModal(null);
     }
 
