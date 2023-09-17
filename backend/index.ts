@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { getCurrentDate, useDate } from "../hooks/useDate";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPBASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -43,7 +44,7 @@ export const updateTask = async (
   priority,
   targetGroup
 ) => {
-  const currentDate = new Date();
+  const currentDate = getCurrentDate();
   const user = await supabaseClient.auth.user();
 
   const { error } = await supabaseClient
@@ -65,7 +66,7 @@ export const updateTask = async (
 
 export const createTask = async (content, targetGroup) => {
   const user = await supabaseClient.auth.user();
-  const currentDate = new Date();
+  const currentDate = getCurrentDate();
 
   const { error } = await supabaseClient.from("tasks").insert([
     {

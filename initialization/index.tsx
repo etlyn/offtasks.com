@@ -2,11 +2,13 @@ import React, { useEffect, useContext } from "react";
 import { useRouter } from "next/router";
 import { supabaseClient, fetchTasks } from "../backend";
 import { AppState } from "../localState";
+import { useDate } from "../hooks/useDate";
 
 export const Initialization = ({ children }) => {
   const router = useRouter();
   const user = supabaseClient.auth.user();
   const { setAppState } = useContext(AppState);
+  const {today, yesterday} = useDate()
 
   // Fetch tasks
   useEffect(() => {
@@ -44,7 +46,7 @@ export const Initialization = ({ children }) => {
     if (data != null) {
       // Today tasks
       const todayTasks = data
-        .filter((task) => task.target_group === "today")
+        .filter((task) => task.target_group === "today" || task.date === yesterday)
         .sort((a, b) => a.priority - b.priority);
 
       // Tomorrow tasks
@@ -54,7 +56,7 @@ export const Initialization = ({ children }) => {
 
       // Upcoming tasks
       const upcomingTasks = data
-        .filter((task) => task.target_group === "upcoming")
+        .filter((task) => task.target_group === "upcoming" && task.isComplete === false)
         .sort((a, b) => a.priority - b.priority);
 
       // Status counter
