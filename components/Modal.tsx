@@ -24,7 +24,7 @@ export const Modal = ({ closeModal, initialRef, task, selectedGroup }) => {
     }
 
     if (task) {
-      await updateTask(task.id, content, task.isComplete, task.priority, targetGroup);
+      await updateTask(task.id, content, task.isComplete, task.priority, targetGroup, task.date);
     } else {
       createTask(content, targetGroup);
     }
