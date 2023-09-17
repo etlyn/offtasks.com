@@ -1,13 +1,13 @@
 import React, { useContext } from "react";
 import { Account } from "./Account";
 import { Logo, RocketIcon } from "../icons";
-import { AppContext } from "../context";
+import { AppState } from "../localState";
 import { useRouter } from "next/router";
 import { ThemeSwitch } from "./ThemeSwitch";
 import { useTheme } from "next-themes";
 
 export const Header = () => {
-  const { context } = useContext(AppContext);
+  const { appState } = useContext(AppState);
   const router = useRouter();
   const { theme } = useTheme();
 
@@ -33,7 +33,7 @@ export const Header = () => {
       >
         <RocketIcon />
         <h1 className="mx-2">
-          {context.completedTasks} of {context.totalTasks}
+          {appState?.completedTasks} of {appState?.totalTasks}
         </h1>
       </div>
       <div

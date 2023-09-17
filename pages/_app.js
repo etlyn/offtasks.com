@@ -2,11 +2,12 @@ import "../styles/globals.css";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { supabaseClient } from "../backend";
-import { ContextProvider } from "../context";
+import { ContextProvider } from "../localState";
 import Script from "next/script";
 import Head from "next/head";
 import { ThemeProvider } from "next-themes";
 import { useTheme } from "next-themes";
+import { Initialization } from "../initialization";
 
 function MyApp({ Component, pageProps }) {
   const router = useRouter();
@@ -84,7 +85,11 @@ function MyApp({ Component, pageProps }) {
 
       <ThemeProvider defaultTheme={theme}>
         <ContextProvider>
-          {mounted && <Component {...pageProps} />}
+          {mounted && (
+            <Initialization>
+              <Component {...pageProps} />
+            </Initialization>
+          )}
         </ContextProvider>
       </ThemeProvider>
     </>

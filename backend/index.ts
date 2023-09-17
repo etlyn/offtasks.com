@@ -40,9 +40,10 @@ export const updateTask = async (
   taskID,
   content,
   isComplete,
-  date,
-  priority
+  priority,
+  targetGroup
 ) => {
+  const currentDate = new Date();
   const user = await supabaseClient.auth.user();
 
   const { error } = await supabaseClient
@@ -51,8 +52,9 @@ export const updateTask = async (
       content: content,
       isComplete: isComplete,
       user_id: user.id,
-      date: date,
+      date: currentDate,
       priority: priority,
+      target_group: targetGroup,
     })
     .eq("id", taskID);
 
@@ -61,16 +63,18 @@ export const updateTask = async (
   }
 };
 
-export const createTask = async (content, date, priority) => {
+export const createTask = async (content, targetGroup) => {
   const user = await supabaseClient.auth.user();
+  const currentDate = new Date();
 
   const { error } = await supabaseClient.from("tasks").insert([
     {
       content: content,
       isComplete: false,
       user_id: user.id,
-      date: date,
-      priority: priority,
+      date: currentDate,
+      priority: null,
+      target_group: targetGroup,
     },
   ]);
   if (error) {

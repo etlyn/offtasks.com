@@ -1,26 +1,19 @@
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { updateTask, createTask, deleteTask } from "../backend";
-import { useDate } from "../hooks";
 import { CloseIcon, RemoveIcon, SaveIcon } from "../icons";
 import { Slider } from "./Slider";
 
-export const Modal = ({ closeModal, initialRef, task, selectedDate }) => {
-  const [content, setContent] = useState("");
-  const [priority, setPriority] = useState(1);
-  const [date, setDate] = useState(selectedDate);
-
+export const Modal = ({ closeModal, initialRef, task, selectedGroup }) => {
   const { theme } = useTheme();
-
-  const { today, tomorrow, upcoming } = useDate();
+  const [content, setContent] = useState("");
+  const [targetGroup, setTargetGroup] = useState(selectedGroup);
 
   useEffect(() => {
     if (task) {
       setContent(task.content);
-      setPriority(task.priority);
     } else {
       setContent("");
-      setPriority(1);
     }
   }, [task]);
 
@@ -31,9 +24,9 @@ export const Modal = ({ closeModal, initialRef, task, selectedDate }) => {
     }
 
     if (task) {
-      await updateTask(task.id, content, task.isComplete, date, priority);
+      await updateTask(task.id, content, task.isComplete, task.priority, targetGroup);
     } else {
-      createTask(content, date, priority);
+      createTask(content, targetGroup);
     }
 
     closeHandler();
@@ -92,39 +85,17 @@ export const Modal = ({ closeModal, initialRef, task, selectedDate }) => {
             />
           </div>
 
-          {/* <div className="py-6 flex flex-row justify-between items-center">
-            <div className="flex basis-1/2">
-              <h1 className="text-zinc-50 font-extralight">Priority:</h1>
-            </div>
-            <div className="flex basis-1/2">
-              <Slider
-                label1="Low"
-                label2="Medium"
-                label3="High"
-                onClick1={() => setPriority(1)}
-                onClick2={() => setPriority(2)}
-                onClick3={() => setPriority(3)}
-                isLabel1Active={priority === 1}
-                isLabel2Active={priority === 2}
-                isLabel3Active={priority === 3}
-              />
-            </div>
-          </div> */}
-
           <div className="pb-3 mt-6 flex flex-row">
-            {/* <div className="flex">
-              <h1 className="text-zinc-50 font-extralight">Date:</h1>
-            </div> */}
             <Slider
               label1="Today"
               label2="Tomorrow"
               label3="Upcoming"
-              onClick1={() => setDate(today)}
-              onClick2={() => setDate(tomorrow)}
-              onClick3={() => setDate(upcoming)}
-              isLabel1Active={date === today}
-              isLabel2Active={date === tomorrow}
-              isLabel3Active={date === upcoming}
+              onClick1={() => setTargetGroup("today")}
+              onClick2={() => setTargetGroup("tomorrow")}
+              onClick3={() => setTargetGroup("upcoming")}
+              isLabel1Active={targetGroup === "today"}
+              isLabel2Active={targetGroup === "tomorrow"}
+              isLabel3Active={targetGroup === "upcoming"}
             />
           </div>
 

@@ -1,21 +1,21 @@
 import React, { useEffect, useContext } from "react";
 import { useRouter } from "next/router";
 import { supabaseClient, fetchTasks } from "../backend";
-import { AppContext } from "../context";
-import { useDate } from "../hooks";
+import { AppState } from "../localState";
 
 export const Initialization = ({ children }) => {
   const router = useRouter();
   const user = supabaseClient.auth.user();
-  const { setContext } = useContext(AppContext);
-  const { today, yesterday, tomorrow, outdated, upcoming } = useDate();
+  const { setAppState } = useContext(AppState);
 
-  // Fetch tasks from Supabase
+  // Fetch tasks
   useEffect(() => {
     if (!user) {
       router.push("/login");
     }
-    fetchTasks().then((tasks) => handleData(tasks));
+    fetchTasks()
+      .then((tasks) => sortData(tasks))
+      .then((res) => setAppState(res));
   }, [user, router]);
 
   // Supabase Realtime Listener
@@ -28,7 +28,9 @@ export const Initialization = ({ children }) => {
           payload.eventType === "UPDATE" ||
           payload.eventType === "INSERT"
         ) {
-          fetchTasks().then((tasks) => handleData(tasks));
+          fetchTasks()
+            .then((tasks) => sortData(tasks))
+            .then((res) => setAppState(res));
         }
       })
       .subscribe();
@@ -38,36 +40,22 @@ export const Initialization = ({ children }) => {
     };
   }, []);
 
-  // Manage data and store it in AppContext
-  const handleData = (data) => {
+  const sortData = (data) => {
     if (data != null) {
       // Today tasks
       const todayTasks = data
-        .filter(
-          (task) =>
-            task.date === today ||
-            (task.date != upcoming &&
-              task.date != tomorrow &&
-              task.isComplete != true)
-        )
-        .sort((a, b) => b.priority - a.priority);
+        .filter((task) => task.target_group === "today")
+        .sort((a, b) => a.priority - b.priority);
 
       // Tomorrow tasks
       const tomorrowTasks = data
-        .filter((task) => task.date === tomorrow)
-        .sort((a, b) => b.priority - a.priority);
+        .filter((task) => task.target_group === "tomorrow")
+        .sort((a, b) => a.priority - b.priority);
 
       // Upcoming tasks
       const upcomingTasks = data
-        .filter(
-          (task) =>
-            task.isComplete != true &&
-            task.date != today &&
-            task.date != tomorrow &&
-            task.date != outdated &&
-            task.date != yesterday
-        )
-        .sort((a, b) => b.priority - a.priority);
+        .filter((task) => task.target_group === "upcoming")
+        .sort((a, b) => a.priority - b.priority);
 
       // Status counter
       const totalTasks = data.length;
@@ -75,13 +63,13 @@ export const Initialization = ({ children }) => {
         (task) => task.isComplete === true
       ).length;
 
-      setContext({
+      return {
         todayTasks,
         tomorrowTasks,
         upcomingTasks,
         totalTasks,
         completedTasks,
-      });
+      };
     }
   };
 

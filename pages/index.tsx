@@ -1,19 +1,16 @@
 import React, { useState, useRef, useContext, useEffect } from "react";
 import { Modal, Section, Layout } from "../components";
-import { useDate } from "../hooks";
-import { Initialization } from "../initialization";
-import { AppContext } from "../context";
+import { AppState } from "../localState";
 import { useTheme } from "next-themes";
 
 const Home = () => {
   const initialRef = useRef();
   const [task, setTask] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [date, setDate] = useState(null);
+  const [targetGroup, setTargetGroup] = useState("today");
   const { theme } = useTheme();
 
-  const { today, tomorrow, upcoming } = useDate();
-  const { context } = useContext(AppContext);
+  const { appState } = useContext(AppState);
 
   const closeModal = () => {
     setShowModal(false);
@@ -22,19 +19,19 @@ const Home = () => {
   const openModal = (clickedTodo) => {
     setTask(clickedTodo);
     setShowModal(true);
-    setDate(today);
+    setTargetGroup("today");
   };
 
   const openModalForTomorrow = (clickedTodo) => {
     setTask(clickedTodo);
     setShowModal(true);
-    setDate(tomorrow);
+    setTargetGroup("tomorrow");
   };
 
   const openModalForUpcoming = (clickedTodo) => {
     setTask(clickedTodo);
     setShowModal(true);
-    setDate(upcoming);
+    setTargetGroup("upcoming");
   };
 
   const handleKeyboardEvent = (event) => {
@@ -58,10 +55,10 @@ const Home = () => {
   }, []);
 
   return (
-    <Initialization>
+    <>
       {showModal && (
         <Modal
-          selectedDate={date}
+          selectedGroup={targetGroup}
           closeModal={closeModal}
           initialRef={initialRef}
           task={task}
@@ -76,29 +73,27 @@ const Home = () => {
           <div className={`flex flex-col md:flex-row container `}>
             <Section
               headline="Today"
-              data={context.todayTasks}
-              currentDate={today}
+              data={appState?.todayTasks}
               openModal={openModal}
               showCounter={true}
             />
 
             <Section
               headline="Tomorrow"
-              data={context.tomorrowTasks}
-              currentDate={tomorrow}
+              data={appState?.tomorrowTasks}
               openModal={openModalForTomorrow}
               showCounter={false}
             />
 
             <Section
               headline="Upcoming"
-              data={context.upcomingTasks}
+              data={appState?.upcomingTasks}
               openModal={openModalForUpcoming}
             />
           </div>
         </Layout>
       </div>
-    </Initialization>
+    </>
   );
 };
 

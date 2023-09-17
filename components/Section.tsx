@@ -1,38 +1,35 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { List } from "./List";
 import { SectionHeader } from "./SectionHeader";
 import { DragIcon } from "../icons";
+import { updateTask } from "../backend";
 
 export const Section = ({
   headline,
-  data = [],
+  data,
   openModal,
   statusHandler,
-  currentDate,
   showCounter,
 }: any) => {
-  const [items, setItems] = useState([]);
-
-  useEffect(() => {
-    setItems(data);
-  }, [data]);
-
-  const completedTasks = items.filter(
+  const completedTasks = data?.filter(
     (task) => task.isComplete === true
   ).length;
-  const allTasks = items.length;
+  const allTasks = data?.length;
 
   const onDragEnd = (result) => {
     if (!result.destination) {
       return;
     }
     const reorderedItems = reorder(
-      items,
+      data,
       result.source.index,
       result.destination.index
     );
-    setItems(reorderedItems);
+
+    reorderedItems.map(((task: any, index) =>{
+        updateTask(task.id, task.content, task.isComplete, index, task.targetGroup)
+    }))
   };
 
   const reorder = (list, startIndex, endIndex) => {
@@ -57,8 +54,11 @@ export const Section = ({
         <DragDropContext onDragEnd={onDragEnd}>
           <Droppable droppableId="droppable">
             {(provided) => (
-              <div {...provided.droppableProps} ref={provided.innerRef}>
-                {items.map((task, index) => (
+              <div
+                {...provided.droppableProps}
+                ref={provided.innerRef}
+              >
+                {data?.map((task, index) => (
                   <Draggable
                     key={task.id}
                     draggableId={task.id.toString()}
@@ -76,9 +76,7 @@ export const Section = ({
                           task={task}
                           openHandler={openModal}
                           statusHandler={statusHandler}
-                          date={currentDate}
                         />
-                        
                       </div>
                     )}
                   </Draggable>

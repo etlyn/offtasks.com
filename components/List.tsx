@@ -1,22 +1,25 @@
 import React from "react";
 import { updateTask } from "../backend";
 import { CheckIcon, MarkedIcon } from "../icons";
-import { useDate } from "../hooks";
 import { useTheme } from "next-themes";
 
 type TListProps = {
   task: any;
   openHandler: Function;
   statusHandler: Function;
-  date?: any;
 };
 
-export const List = ({ task, openHandler, date }: TListProps) => {
-  const { today } = useDate();
+export const List = ({ task, openHandler }: TListProps) => {
   const { theme } = useTheme();
 
   const updateStatus = () => {
-    updateTask(task.id, task.content, !task.isComplete, today, task.priority);
+    updateTask(
+      task.id,
+      task.content,
+      !task.isComplete,
+      task.priority,
+      task.targetGroup
+    );
   };
 
   return (
@@ -25,12 +28,7 @@ export const List = ({ task, openHandler, date }: TListProps) => {
         theme === "dark" ? "text-zinc-50" : "text-zinc-900"
       } flex flex-row mb-2 items-center w-full h-auto`}
     >
-      <button
-        className={`flex self-start pt-1 ${
-          date && task.date != date && "text-red-400"
-        }`}
-        onClick={updateStatus}
-      >
+      <button className={`flex self-start pt-1`} onClick={updateStatus}>
         {task.isComplete ? (
           <MarkedIcon checkColor={`${theme === "dark" ? "black" : "white"}`} />
         ) : (
@@ -42,9 +40,7 @@ export const List = ({ task, openHandler, date }: TListProps) => {
         <h1
           className={`${
             task.isComplete && "line-through"
-          } font-extralight text-left ${
-            date && task.date != date && "text-red-400"
-          }`}
+          } font-extralight text-left`}
         >
           {task.content}
         </h1>
