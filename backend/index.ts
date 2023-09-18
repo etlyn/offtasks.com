@@ -1,12 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
-import { getCurrentDate, useDate } from "../hooks/useDate";
+import { getCurrentDate } from "../hooks/useDate";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPBASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 export const supabaseClient = createClient(SUPABASE_URL, SUPBASE_ANON_KEY);
 
-export const fetchTasks = async () => {
+export const fetchTodaysTasks = async () => {
   const user = await supabaseClient.auth.user();
   let tasks = {};
 
@@ -15,7 +15,52 @@ export const fetchTasks = async () => {
       .from("tasks")
       .select("*")
       .eq("user_id", user?.id)
-      .order("id", { ascending: false })
+      .eq('target_group', 'today')
+      .order("priority", { ascending: true })
+      .then(({ data, error }) => {
+        error && console.log("Error when fetch tasks", error);
+        tasks = data;
+      });
+  } catch (error) {
+    console.log("Error when fetch tasks", error);
+  }
+
+  return tasks;
+};
+
+export const fetchTomorrowsTasks = async () => {
+  const user = await supabaseClient.auth.user();
+  let tasks = {};
+
+  try {
+    await supabaseClient
+      .from("tasks")
+      .select("*")
+      .eq("user_id", user?.id)
+      .eq('target_group', 'tomorrow')
+      .order("priority", { ascending: true })
+      .then(({ data, error }) => {
+        error && console.log("Error when fetch tasks", error);
+        tasks = data;
+      });
+  } catch (error) {
+    console.log("Error when fetch tasks", error);
+  }
+
+  return tasks;
+};
+
+export const fetchUpcomingTasks = async () => {
+  const user = await supabaseClient.auth.user();
+  let tasks = {};
+
+  try {
+    await supabaseClient
+      .from("tasks")
+      .select("*")
+      .eq("user_id", user?.id)
+      .eq('target_group', 'upcoming')
+      .order("priority", { ascending: true })
       .then(({ data, error }) => {
         error && console.log("Error when fetch tasks", error);
         tasks = data;
@@ -74,7 +119,7 @@ export const createTask = async (content, targetGroup) => {
       isComplete: false,
       user_id: user.id,
       date: currentDate,
-      priority: null,
+      priority: 0,
       target_group: targetGroup,
     },
   ]);

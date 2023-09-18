@@ -1,6 +1,11 @@
 import React, { useEffect, useContext } from "react";
 import { useRouter } from "next/router";
-import { supabaseClient, fetchTasks } from "../backend";
+import {
+  fetchTodaysTasks,
+  fetchTomorrowsTasks,
+  fetchUpcomingTasks,
+  supabaseClient,
+} from "../backend";
 import { AppState } from "../localState";
 import { useDate } from "../hooks/useDate";
 
@@ -16,8 +21,6 @@ export const Initialization = ({ children }) => {
       router.push("/login");
     } else {
       fetchTasks()
-        .then((tasks) => sortData(tasks))
-        .then((res) => setAppState(res));
     }
   }, [user, router]);
 
@@ -32,8 +35,6 @@ export const Initialization = ({ children }) => {
           payload.eventType === "INSERT"
         ) {
           fetchTasks()
-            .then((tasks) => sortData(tasks))
-            .then((res) => setAppState(res));
         }
       })
       .subscribe();
@@ -43,47 +44,27 @@ export const Initialization = ({ children }) => {
     };
   }, []);
 
-  const sortData = (data) => {
-    if (data != null) {
-      // Today tasks
-      const todayTasks = data
-        .filter(
-          (task) =>
-            (task.date === today &&
-              task.target_group === "today" &&
-              task.target_group != "tomorrow") ||
-            task.date === yesterday
-        )
-        .sort((a, b) => a.priority - b.priority);
+  const fetchTasks = async () => {
+    const todayTasks = await fetchTodaysTasks();
+    const tomorrowTasks = await fetchTomorrowsTasks();
+    const upcomingTasks = await fetchUpcomingTasks();
 
-      // Tomorrow tasks
-      const tomorrowTasks = data
-        .filter((task) => task.target_group === "tomorrow")
-        .sort((a, b) => a.priority - b.priority);
+    // Status counter
+    // const totalTasks = data.length;
+    // const completedTasks = data.filter(
+    //   (task) => task.isComplete === true
+    // ).length;
 
-      // Upcoming tasks
-      const upcomingTasks = data
-        .filter(
-          (task) =>
-            (task.date != today && task.isComplete === false) ||
-            task.target_group === "upcoming"
-        )
-        .sort((a, b) => a.priority - b.priority);
+    const totalTasks = 0;
+    const completedTasks = 0;
 
-      // Status counter
-      const totalTasks = data.length;
-      const completedTasks = data.filter(
-        (task) => task.isComplete === true
-      ).length;
-
-      return {
-        todayTasks,
-        tomorrowTasks,
-        upcomingTasks,
-        totalTasks,
-        completedTasks,
-      };
-    }
+    setAppState({
+      todayTasks,
+      tomorrowTasks,
+      upcomingTasks,
+      totalTasks,
+      completedTasks,
+    });
   };
 
   return children;
