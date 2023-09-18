@@ -77,6 +77,17 @@ export const Initialization = ({ children }) => {
             task.date
           );
         }
+
+        if (task.date === yesterday) {
+          updateTask(
+            task.id,
+            task.content,
+            task.isComplete,
+            task.priority,
+            "today",
+            task.date
+          );
+        }
       });
     }
 
