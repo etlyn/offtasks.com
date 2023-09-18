@@ -8,7 +8,7 @@ export const supabaseClient = createClient(SUPABASE_URL, SUPBASE_ANON_KEY);
 
 export const fetchTodaysTasks = async () => {
   const user = await supabaseClient.auth.user();
-  let tasks = {};
+  let tasks = [];
 
   try {
     await supabaseClient
@@ -30,7 +30,7 @@ export const fetchTodaysTasks = async () => {
 
 export const fetchTomorrowsTasks = async () => {
   const user = await supabaseClient.auth.user();
-  let tasks = {};
+  let tasks = [];
 
   try {
     await supabaseClient
@@ -52,7 +52,7 @@ export const fetchTomorrowsTasks = async () => {
 
 export const fetchUpcomingTasks = async () => {
   const user = await supabaseClient.auth.user();
-  let tasks = {};
+  let tasks = [];
 
   try {
     await supabaseClient

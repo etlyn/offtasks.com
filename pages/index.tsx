@@ -2,24 +2,14 @@ import React, { useState, useRef, useContext, useEffect } from "react";
 import { Modal, Section, Layout } from "../components";
 import { AppState } from "../localState";
 import { useTheme } from "next-themes";
-import { updateTask } from "../backend";
 
 const Home = () => {
+  const { appState } = useContext(AppState);
   const initialRef = useRef();
   const [task, setTask] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [targetGroup, setTargetGroup] = useState("today");
   const { theme } = useTheme();
-
-  const { appState } = useContext(AppState);
-
-  useEffect(()=>{
-    appState?.upcomingTasks.map(((task: any) =>{
-      if(task.isComplete) {
-        updateTask(task.id, task.content, task.isComplete, task.priority, "close", task.date)
-      }
-  }))
-  },[appState])
 
   const closeModal = () => {
     setShowModal(false);

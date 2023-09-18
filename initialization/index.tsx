@@ -5,6 +5,7 @@ import {
   fetchTomorrowsTasks,
   fetchUpcomingTasks,
   supabaseClient,
+  updateTask,
 } from "../backend";
 import { AppState } from "../localState";
 import { useDate } from "../hooks/useDate";
@@ -20,7 +21,7 @@ export const Initialization = ({ children }) => {
     if (!user) {
       router.push("/login");
     } else {
-      fetchTasks()
+      fetchTasks();
     }
   }, [user, router]);
 
@@ -34,7 +35,7 @@ export const Initialization = ({ children }) => {
           payload.eventType === "UPDATE" ||
           payload.eventType === "INSERT"
         ) {
-          fetchTasks()
+          fetchTasks();
         }
       })
       .subscribe();
@@ -48,6 +49,36 @@ export const Initialization = ({ children }) => {
     const todayTasks = await fetchTodaysTasks();
     const tomorrowTasks = await fetchTomorrowsTasks();
     const upcomingTasks = await fetchUpcomingTasks();
+
+    if (todayTasks) {
+      todayTasks?.map((task: any) => {
+        if (task.isComplete && task.date != today) {
+          updateTask(
+            task.id,
+            task.content,
+            task.isComplete,
+            task.priority,
+            "close",
+            task.date
+          );
+        }
+      });
+    }
+
+    if (upcomingTasks) {
+      upcomingTasks?.map((task: any) => {
+        if (task.isComplete) {
+          updateTask(
+            task.id,
+            task.content,
+            task.isComplete,
+            task.priority,
+            "close",
+            task.date
+          );
+        }
+      });
+    }
 
     // Status counter
     // const totalTasks = data.length;
