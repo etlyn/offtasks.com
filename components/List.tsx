@@ -13,7 +13,7 @@ type TListProps = {
 
 export const List = ({ task, openHandler }: TListProps) => {
   const { theme } = useTheme();
-  const { today } = useDate();
+  const { yesterday } = useDate();
 
   const updateStatus = () => {
     updateTask(
@@ -34,7 +34,7 @@ export const List = ({ task, openHandler }: TListProps) => {
     >
       <button
         className={`flex self-start pt-1 ${
-          task.date < today && "text-red-400"
+          task.date < yesterday && "text-red-400"
         }`}
         onClick={updateStatus}
       >
@@ -49,7 +49,7 @@ export const List = ({ task, openHandler }: TListProps) => {
         <h1
           className={`${
             task.isComplete && "line-through"
-          } font-extralight text-left ${task.date < today && "text-red-400"}`}
+          } font-extralight text-left ${task.date < yesterday && "text-red-400"}`}
         >
           {task.content}
         </h1>
