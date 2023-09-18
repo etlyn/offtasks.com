@@ -65,6 +65,21 @@ export const Initialization = ({ children }) => {
       });
     }
 
+    if (tomorrowTasks) {
+      tomorrowTasks?.map((task: any) => {
+        if (task.isComplete && task.date != today) {
+          updateTask(
+            task.id,
+            task.content,
+            task.isComplete,
+            task.priority,
+            "close",
+            task.date
+          );
+        }
+      });
+    }
+
     if (upcomingTasks) {
       upcomingTasks?.map((task: any) => {
         if (task.isComplete) {
