@@ -1,6 +1,7 @@
 import React, { useEffect, useContext } from "react";
 import { useRouter } from "next/router";
 import {
+  fetchClosedTasks,
   fetchTodaysTasks,
   fetchTomorrowsTasks,
   fetchUpcomingTasks,
@@ -52,7 +53,7 @@ export const Initialization = ({ children }) => {
 
     if (todayTasks) {
       todayTasks?.map((task: any) => {
-        if (task.isComplete) {
+        if (task.isComplete && task.date != today) {
           updateTask(
             task.id,
             task.content,
@@ -106,14 +107,8 @@ export const Initialization = ({ children }) => {
       });
     }
 
-    // Status counter
-    // const totalTasks = data.length;
-    // const completedTasks = data.filter(
-    //   (task) => task.isComplete === true
-    // ).length;
-
-    const totalTasks = 0;
-    const completedTasks = 0;
+    const completedTasks = (await fetchClosedTasks()).length
+    const totalTasks = completedTasks+ todayTasks.length + tomorrowTasks.length+upcomingTasks.length
 
     setAppState({
       todayTasks,

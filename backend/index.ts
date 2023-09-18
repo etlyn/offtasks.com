@@ -72,6 +72,28 @@ export const fetchUpcomingTasks = async () => {
   return tasks;
 };
 
+export const fetchClosedTasks = async () => {
+  const user = await supabaseClient.auth.user();
+  let tasks = [];
+
+  try {
+    await supabaseClient
+      .from("tasks")
+      .select("*")
+      .eq("user_id", user?.id)
+      .eq('target_group', 'close')
+      .order("priority", { ascending: true })
+      .then(({ data, error }) => {
+        error && console.log("Error when fetch tasks", error);
+        tasks = data;
+      });
+  } catch (error) {
+    console.log("Error when fetch tasks", error);
+  }
+
+  return tasks;
+};
+
 export const deleteTask = async (taskID) => {
   const { error } = await supabaseClient
     .from("tasks")
