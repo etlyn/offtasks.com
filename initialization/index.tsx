@@ -53,7 +53,7 @@ export const Initialization = ({ children }) => {
 
     if (todayTasks) {
       todayTasks?.map((task: any) => {
-        if (task.isComplete && task.date != today) {
+        if (task.isComplete && (task.date != today || task.date != yesterday)) {
           updateTask(
             task.id,
             task.content,
