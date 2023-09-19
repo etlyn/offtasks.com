@@ -53,8 +53,7 @@ export const Initialization = ({ children }) => {
 
     if (todayTasks) {
       todayTasks?.map((task: any) => {
-        if (task.isComplete) {
-          if (task.date != today || task.date != yesterday) {
+        if (task.isComplete && task.date != (today || yesterday)) {
             updateTask(
               task.id,
               task.content,
@@ -63,25 +62,13 @@ export const Initialization = ({ children }) => {
               "close",
               task.date
             );
-          }
         }
       });
     }
 
     if (tomorrowTasks) {
       tomorrowTasks?.map((task: any) => {
-        if (task.isComplete && task.date != today) {
-          updateTask(
-            task.id,
-            task.content,
-            task.isComplete,
-            task.priority,
-            "close",
-            task.date
-          );
-        }
-
-        if (task.date === yesterday) {
+        if (task.date === yesterday || task.isComplete) {
           updateTask(
             task.id,
             task.content,
