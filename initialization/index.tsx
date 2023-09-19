@@ -53,15 +53,17 @@ export const Initialization = ({ children }) => {
 
     if (todayTasks) {
       todayTasks?.map((task: any) => {
-        if (task.isComplete && (task.date != today || task.date != yesterday)) {
-          updateTask(
-            task.id,
-            task.content,
-            task.isComplete,
-            task.priority,
-            "close",
-            task.date
-          );
+        if (task.isComplete) {
+          if (task.date != today || task.date != yesterday) {
+            updateTask(
+              task.id,
+              task.content,
+              task.isComplete,
+              task.priority,
+              "close",
+              task.date
+            );
+          }
         }
       });
     }
@@ -107,8 +109,12 @@ export const Initialization = ({ children }) => {
       });
     }
 
-    const completedTasks = (await fetchClosedTasks()).length
-    const totalTasks = completedTasks+ todayTasks.length + tomorrowTasks.length+upcomingTasks.length
+    const completedTasks = (await fetchClosedTasks()).length;
+    const totalTasks =
+      completedTasks +
+      todayTasks.length +
+      tomorrowTasks.length +
+      upcomingTasks.length;
 
     setAppState({
       todayTasks,
