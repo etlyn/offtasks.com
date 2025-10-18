@@ -42,13 +42,13 @@ export const ThemeSwitch = () => {
     <button
       type="button"
       aria-label="Toggle Dark Mode"
-      className="rounded-full border border-zinc-200 bg-white p-2 text-zinc-600 transition hover:border-sky-400 hover:text-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:border-cyan-400 dark:hover:text-cyan-300 dark:focus:ring-cyan-400"
+      className="group relative flex h-10 w-10 items-center justify-center rounded-full border border-white/60 bg-white/80 text-zinc-600 shadow-[0_10px_30px_rgba(15,118,230,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-soft-md focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2 dark:border-zinc-700/60 dark:bg-zinc-900/80 dark:text-zinc-200 dark:hover:text-sky-300"
       onClick={toggleTheme}
     >
       {mounted && theme === "dark" ? (
-        <Moon className="h-5 w-5" aria-hidden="true" />
+        <Moon className="h-5 w-5 transition-transform duration-200 group-hover:scale-105" aria-hidden="true" />
       ) : (
-        <Sun className="h-5 w-5" aria-hidden="true" />
+        <Sun className="h-5 w-5 transition-transform duration-200 group-hover:scale-105" aria-hidden="true" />
       )}
     </button>
   );

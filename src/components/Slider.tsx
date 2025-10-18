@@ -23,14 +23,14 @@ export const Slider = ({
   isLabel2Active,
   isLabel3Active,
 }: SliderProps) => (
-  <div className="flex rounded-lg bg-zinc-200 p-1 dark:bg-zinc-700">
+  <div className="flex items-center rounded-2xl border border-white/10 bg-zinc-800/70 p-1 text-sm font-medium text-zinc-300 shadow-inner">
     <button
       type="button"
       onClick={onClick1}
-      className={`flex flex-1 items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-1 dark:focus:ring-cyan-400 ${
+      className={`flex flex-1 items-center justify-center rounded-2xl px-4 py-2 transition ${
         isLabel1Active
-          ? "bg-zinc-600 text-white dark:bg-white dark:text-zinc-900"
-          : "text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
+          ? "bg-sky-500 text-white shadow-[0_10px_30px_rgba(56,189,248,0.25)]"
+          : "text-zinc-400 hover:text-zinc-100"
       }`}
     >
       {label1}
@@ -39,10 +39,10 @@ export const Slider = ({
     <button
       type="button"
       onClick={onClick2}
-      className={`flex flex-1 items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-1 dark:focus:ring-cyan-400 ${
+      className={`flex flex-1 items-center justify-center rounded-2xl px-4 py-2 transition ${
         isLabel2Active
-          ? "bg-zinc-600 text-white dark:bg-white dark:text-zinc-900"
-          : "text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
+          ? "bg-sky-500 text-white shadow-[0_10px_30px_rgba(56,189,248,0.25)]"
+          : "text-zinc-400 hover:text-zinc-100"
       }`}
     >
       {label2}
@@ -51,10 +51,10 @@ export const Slider = ({
     <button
       type="button"
       onClick={onClick3}
-      className={`flex flex-1 items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-1 dark:focus:ring-cyan-400 ${
+      className={`flex flex-1 items-center justify-center rounded-2xl px-4 py-2 transition ${
         isLabel3Active
-          ? "bg-zinc-600 text-white dark:bg-white dark:text-zinc-900"
-          : "text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
+          ? "bg-sky-500 text-white shadow-[0_10px_30px_rgba(56,189,248,0.25)]"
+          : "text-zinc-400 hover:text-zinc-100"
       }`}
     >
       {label3}

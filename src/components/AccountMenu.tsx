@@ -1,10 +1,21 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { LogOut } from "lucide-react";
 import { supabaseClient } from "@/lib/supabase";
 
 export const AccountMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const user = supabaseClient.auth.user();
+
+  const userInitials = useMemo(() => {
+    if (user?.email) {
+      return user.email.charAt(0).toUpperCase();
+    }
+    if (user?.id) {
+      return user.id.charAt(0).toUpperCase();
+    }
+    return "O";
+  }, [user]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -42,20 +53,25 @@ export const AccountMenu = () => {
       <button
         type="button"
         onClick={handleToggle}
-        className="flex items-center justify-center rounded-full border border-zinc-200 bg-white p-2 text-zinc-600 transition hover:border-zinc-300 hover:text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:border-zinc-600 dark:hover:text-zinc-100"
+        className="flex h-10 w-10 items-center justify-center rounded-full border border-white/60 bg-white/80 text-sm font-medium text-zinc-700 shadow-[0_10px_30px_rgba(15,118,230,0.12)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-soft-md focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2 dark:border-zinc-700/60 dark:bg-zinc-900/80 dark:text-zinc-100"
         aria-haspopup="menu"
         aria-expanded={isOpen}
       >
-        <LogOut className="h-5 w-5" aria-hidden="true" />
+        <span>{userInitials}</span>
         <span className="sr-only">Account</span>
       </button>
 
       {isOpen ? (
-        <div className="absolute right-0 mt-2 w-32 rounded-md border border-zinc-200 bg-white shadow-lg focus:outline-none dark:border-zinc-700 dark:bg-zinc-800">
+        <div className="absolute right-0 mt-3 w-48 rounded-2xl border border-white/60 bg-white/90 p-3 shadow-[0_24px_60px_rgba(15,118,230,0.14)] backdrop-blur-lg focus:outline-none dark:border-zinc-700/60 dark:bg-zinc-900/90">
+          {user?.email ? (
+            <div className="mb-3 rounded-xl bg-white/70 px-3 py-2 text-[13px] text-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-300">
+              {user.email}
+            </div>
+          ) : null}
           <button
             type="button"
             onClick={handleLogout}
-            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-700 dark:hover:text-white"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-sky-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-300 dark:bg-sky-600 dark:hover:bg-sky-500"
           >
             <LogOut className="h-4 w-4" aria-hidden="true" />
             Log out
