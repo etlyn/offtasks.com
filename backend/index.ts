@@ -2,9 +2,17 @@ import { createClient } from "@supabase/supabase-js";
 import { getCurrentDate } from "../hooks/useDate";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPBASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-export const supabaseClient = createClient(SUPABASE_URL, SUPBASE_ANON_KEY);
+if (!SUPABASE_URL) {
+  throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL. Check your environment variables.");
+}
+
+if (!SUPABASE_ANON_KEY) {
+  throw new Error("Missing NEXT_PUBLIC_SUPABASE_ANON_KEY. Check your environment variables.");
+}
+
+export const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 export const fetchTodaysTasks = async () => {
   const user = await supabaseClient.auth.user();

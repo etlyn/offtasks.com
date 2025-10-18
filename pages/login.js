@@ -9,6 +9,7 @@ const Page = () => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [message, setMessage] = useState(null);
 
   const router = useRouter();
 
@@ -16,6 +17,7 @@ const Page = () => {
     event.preventDefault();
     setIsLoading(true);
     setError(null);
+    setMessage(null);
     try {
       const { error } = await supabaseClient.auth.signIn({
         email,
@@ -24,6 +26,8 @@ const Page = () => {
 
       if (error) {
         setError(error.message);
+      } else {
+        setMessage("Signed in successfully. Redirecting...");
       }
     } catch (error) {
       setError(error.message);
@@ -45,16 +49,59 @@ const Page = () => {
   };
 
   const handleGuestLogin = async () => {
+    setIsLoading(true);
+    setError(null);
+    setMessage(null);
+
     try {
       const uniqueCredentials = uuidv4();
+      const guestEmail = `${uniqueCredentials}@example.com`;
       const { error } = await supabaseClient.auth.signUp({
-        email: `${uniqueCredentials}}@example.com`,
+        email: guestEmail,
         password: uniqueCredentials,
       });
 
       if (error) {
         setError(error.message);
-        console.log(error);
+      } else {
+        setMessage(
+          "Guest account created. Please check the mailbox to confirm before signing in."
+        );
+      }
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    if (!email) {
+      setError("Enter your email address first.");
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      const redirectTo =
+        typeof window !== "undefined"
+          ? `${window.location.origin}/reset-password`
+          : undefined;
+
+      const { error } = await supabaseClient.auth.api.resetPasswordForEmail(
+        email,
+        {
+          redirectTo,
+        }
+      );
+
+      if (error) {
+        setError(error.message);
+      } else {
+        setMessage("Check your email for the password reset link.");
       }
     } catch (error) {
       setError(error.message);
@@ -81,6 +128,13 @@ const Page = () => {
         <div className="container flex flex-col justify-center items-center mt-12 md:w-2/6 w-3/4">
           <h1 className="text-zinc-50 text-xl font-bold">Log in</h1>
 
+          {error && (
+            <p className="text-red-400 text-sm mt-4 text-center">{error}</p>
+          )}
+          {message && !error && (
+            <p className="text-emerald-400 text-sm mt-4 text-center">{message}</p>
+          )}
+
           <h1 className="text-zinc-50 mt-4 self-start mb-2 font-medium text-sm">
             Email
           </h1>
@@ -103,13 +157,19 @@ const Page = () => {
             disabled={isLoading}
           />
 
-          <h1 className="text-zinc-50 mt-4 self-end mb-2 font-light text-sm cursor-pointer">
+          <button
+            type="button"
+            className="text-zinc-50 mt-4 self-end mb-2 font-light text-sm underline"
+            onClick={handlePasswordReset}
+            disabled={isLoading}
+          >
             Forgot Password?
-          </h1>
+          </button>
 
           <button
             className=" bg-cyan-600 mt-8 w-full h-12 rounded-lg"
             onClick={handleLogin}
+            disabled={isLoading}
           >
             <h1 className="text-zinc-50 text-sm  font-light">Log in</h1>
           </button>

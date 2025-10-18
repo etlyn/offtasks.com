@@ -7,6 +7,7 @@ type TSectionHeader = {
   onClickAdd: Function;
   progressData: any;
   showCounter: boolean;
+  showAddButton?: boolean;
 };
 
 export const SectionHeader = ({
@@ -14,35 +15,40 @@ export const SectionHeader = ({
   onClickAdd,
   progressData,
   showCounter,
+  showAddButton = true,
 }: TSectionHeader) => {
   const { theme } = useTheme();
 
   return (
-    <div
-      className={`${
-        theme === "dark"
-          ? "border-b-zinc-100 text-zinc-50"
-          : "border-b-zinc-900 text-zinc-900"
-      } container flex flex-row justify-between border-b border-opacity-20 pb-2 mb-4`}
-    >
-      <div className="flex flex-row font-medium">
-        <h1 className=" flex">{headline}</h1>
+    <div className="flex flex-row items-center justify-between">
+      <div
+        className={`flex flex-row text-base font-semibold ${
+          theme === "dark" ? "text-zinc-50" : "text-zinc-900"
+        }`}
+      >
+        <h1>{headline}</h1>
         {showCounter ? (
-          <h1>
+          <h1 className="font-normal">
             &nbsp;- {progressData.completedTasks} of {progressData.allTasks}
           </h1>
         ) : (
-          <h1>&nbsp;- {progressData.allTasks}</h1>
+          <h1 className="font-normal">&nbsp;- {progressData.allTasks}</h1>
         )}
       </div>
 
-      <button
-        className="text-sky-500 flex flex-row"
-        onClick={() => onClickAdd(null)}
-      >
-        <AddIcon />
-        <h2 className="font-medium">Add Task</h2>
-      </button>
+      {showAddButton && (
+        <button
+          className={`flex flex-row items-center gap-2 text-sm font-semibold transition ${
+            theme === "dark"
+              ? "text-cyan-600 hover:text-cyan-500"
+              : "text-sky-500 hover:text-sky-600"
+          }`}
+          onClick={() => onClickAdd(null)}
+        >
+          <AddIcon />
+          <span>Add Task</span>
+        </button>
+      )}
     </div>
   );
 };

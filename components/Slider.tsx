@@ -27,73 +27,54 @@ export const Slider = ({
   const { theme } = useTheme();
   return (
     <div
-      className={`flex flex-grow rounded-2xl ${
-        theme === "dark"
-          ? "bg-zinc-700 text-zinc-50"
-          : "bg-zinc-200 text-zinc-900"
+      className={`flex rounded-lg p-1 ${
+        theme === "dark" ? "bg-zinc-700" : "bg-zinc-200"
       }`}
     >
-      <div className="flex basis-1/3 flex-grow justify-center">
-        <button
-          onClick={() => onClick1()}
-          className={`flex flex-grow justify-center items-center rounded-l-2xl ${
-            isLabel1Active &&
-            `${
-              theme === "dark"
-                ? "bg-zinc-50 text-zinc-900"
-                : "bg-zinc-600 text-zinc-50"
-            } rounded-2xl py-1`
-          }`}
-        >
-          <h1>{label1}</h1>
-        </button>
+      <button
+        onClick={() => onClick1()}
+        className={`flex flex-1 items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition ${
+          isLabel1Active
+            ? theme === "dark"
+              ? "bg-white text-zinc-900"
+              : "bg-zinc-600 text-white"
+            : theme === "dark"
+            ? "text-zinc-300 hover:text-white"
+            : "text-zinc-700 hover:text-zinc-900"
+        }`}
+      >
+        {label1}
+      </button>
 
-        <div
-          className={`py-3  w-0.5 ${
-            isLabel3Active &&
-            `${theme === "dark" ? "bg-zinc-800" : "bg-zinc-50"}`
-          }`}
-        />
-      </div>
+      <button
+        onClick={() => onClick2()}
+        className={`flex flex-1 items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition ${
+          isLabel2Active
+            ? theme === "dark"
+              ? "bg-white text-zinc-900"
+              : "bg-zinc-600 text-white"
+            : theme === "dark"
+            ? "text-zinc-300 hover:text-white"
+            : "text-zinc-700 hover:text-zinc-900"
+        }`}
+      >
+        {label2}
+      </button>
 
-      <div className="flex basis-1/3 flex-grow justify-center">
-        <button
-          onClick={() => onClick2()}
-          className={`flex flex-grow justify-center items-center rounded-l-2xl ${
-            isLabel2Active &&
-            `${
-              theme === "dark"
-                ? "bg-zinc-50 text-zinc-900"
-                : "bg-zinc-600 text-zinc-50"
-            } rounded-2xl py-1`
-          }`}
-        >
-          <h1>{label2}</h1>
-        </button>
-
-        <div
-          className={`py-3  w-0.5 ${
-            isLabel1Active &&
-            `${theme === "dark" ? "bg-zinc-800" : "bg-zinc-50"}`
-          }`}
-        />
-      </div>
-
-      <div className="flex basis-1/3 flex-grow justify-center">
-        <button
-          onClick={() => onClick3()}
-          className={`flex flex-grow justify-center items-center rounded-l-2xl ${
-            isLabel3Active &&
-            `${
-              theme === "dark"
-                ? "bg-zinc-50 text-zinc-900"
-                : "bg-zinc-600 text-zinc-50"
-            } rounded-2xl py-1`
-          }`}
-        >
-          <h1>{label3}</h1>
-        </button>
-      </div>
+      <button
+        onClick={() => onClick3()}
+        className={`flex flex-1 items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition ${
+          isLabel3Active
+            ? theme === "dark"
+              ? "bg-white text-zinc-900"
+              : "bg-zinc-600 text-white"
+            : theme === "dark"
+            ? "text-zinc-300 hover:text-white"
+            : "text-zinc-700 hover:text-zinc-900"
+        }`}
+      >
+        {label3}
+      </button>
     </div>
   );
 };

@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useContext } from "react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { List } from "./List";
 import { SectionHeader } from "./SectionHeader";
 import { DragIcon } from "../icons";
 import { updateTask } from "../backend";
+import { AppState } from "../localState";
 
 export const Section = ({
   headline,
@@ -11,7 +12,11 @@ export const Section = ({
   openModal,
   statusHandler,
   showCounter,
+  allowAdd = true,
+  droppableId,
+  emptyMessage = "You're all caught up."
 }: any) => {
+  const { appState } = useContext(AppState);
   const completedTasks = data?.filter(
     (task) => task.isComplete === true
   ).length;
@@ -27,9 +32,20 @@ export const Section = ({
       result.destination.index
     );
 
-    reorderedItems.map(((task: any, index) =>{
-        updateTask(task.id, task.content, task.isComplete, index, task.targetGroup, task.date)
-    }))
+    reorderedItems.forEach((task: any, index) => {
+      const currentTargetGroup = task.target_group ?? "today";
+
+      updateTask(
+        task.id,
+        task.content,
+        task.isComplete,
+        index,
+        currentTargetGroup,
+        task.date
+      );
+    });
+
+    appState?.refreshTasks?.();
   };
 
   const reorder = (list, startIndex, endIndex) => {
@@ -40,47 +56,54 @@ export const Section = ({
   };
 
   return (
-    <div className="flex flex-col mt-12 md:mt-8 container md:w-1/2">
-      <div className="container px-6">
+    <div className="flex flex-1 flex-col">
+      <div className="mb-6">
         <SectionHeader
           headline={headline}
           onClickAdd={openModal}
           progressData={{ completedTasks, allTasks }}
           showCounter={showCounter}
+          showAddButton={allowAdd}
         />
       </div>
 
-      <div className="container md:-ml-8 -ml-4 px-6 h-96 md:h-[596px] overflow-y-scroll scrollbar">
+      <div className="flex flex-col gap-4">
         <DragDropContext onDragEnd={onDragEnd}>
-          <Droppable droppableId="droppable">
+          <Droppable droppableId={droppableId ?? headline}>
             {(provided) => (
               <div
                 {...provided.droppableProps}
                 ref={provided.innerRef}
+                className="flex flex-col gap-4"
               >
-                {data?.map((task, index) => (
-                  <Draggable
-                    key={task.id}
-                    draggableId={task.id.toString()}
-                    index={index}
-                  >
-                    {(provided) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        {...provided.dragHandleProps}
-                        className="flex flex-row justify-center items-start"
-                      >
-                        <DragIcon className="opacity-0 hover:opacity-100 transition duration-150" />
-                        <List
-                          task={task}
-                          openHandler={openModal}
-                          statusHandler={statusHandler}
-                        />
-                      </div>
-                    )}
-                  </Draggable>
-                ))}
+                {data?.length ? (
+                  data.map((task, index) => (
+                    <Draggable
+                      key={task.id}
+                      draggableId={task.id.toString()}
+                      index={index}
+                    >
+                      {(providedDrag) => (
+                        <div
+                          ref={providedDrag.innerRef}
+                          {...providedDrag.draggableProps}
+                          {...providedDrag.dragHandleProps}
+                          className="flex flex-row items-start gap-3"
+                        >
+                          <List
+                            task={task}
+                            openHandler={openModal}
+                            statusHandler={statusHandler}
+                          />
+                        </div>
+                      )}
+                    </Draggable>
+                  ))
+                ) : (
+                  <p className="text-sm text-zinc-400 dark:text-zinc-500">
+                    {emptyMessage}
+                  </p>
+                )}
                 {provided.placeholder}
               </div>
             )}

@@ -15,23 +15,15 @@ const Home = () => {
     setShowModal(false);
   };
 
-  const openModal = (clickedTodo) => {
+  const openModal = (clickedTodo, group = "today") => {
     setTask(clickedTodo);
     setShowModal(true);
-    setTargetGroup("today");
+    setTargetGroup(group);
   };
 
-  const openModalForTomorrow = (clickedTodo) => {
-    setTask(clickedTodo);
-    setShowModal(true);
-    setTargetGroup("tomorrow");
-  };
-
-  const openModalForUpcoming = (clickedTodo) => {
-    setTask(clickedTodo);
-    setShowModal(true);
-    setTargetGroup("upcoming");
-  };
+  const openModalForTomorrow = (clickedTodo) => openModal(clickedTodo, "tomorrow");
+  const openModalForUpcoming = (clickedTodo) => openModal(clickedTodo, "upcoming");
+  const openModalForCompleted = (clickedTodo) => openModal(clickedTodo, "today");
 
   const handleKeyboardEvent = (event) => {
     if (event.key === "+") {
@@ -65,30 +57,37 @@ const Home = () => {
         />
       )}
       <div
-        className={`w-screen h-screen 
-        ${showModal && "contrast-50 blur-sm"}
-        ${theme === "dark" ? "bg-zinc-900 " : "bg-zinc-50 "}`}
+        className={`min-h-screen w-full transition ${
+          theme === "dark" ? "bg-zinc-900" : "bg-zinc-50"
+        }`}
       >
         <Layout title="Tasks">
-          <div className={`flex flex-col md:flex-row container `}>
+          <div className="mx-auto flex w-full max-w-7xl gap-8 px-20 py-8">
             <Section
               headline="Today"
               data={appState?.todayTasks}
               openModal={openModal}
               showCounter={true}
+              droppableId="today"
+              emptyMessage="No tasks for today yet. Add one to get started."
             />
 
             <Section
               headline="Tomorrow"
               data={appState?.tomorrowTasks}
               openModal={openModalForTomorrow}
-              showCounter={false}
+              showCounter={true}
+              droppableId="tomorrow"
+              emptyMessage="You're all set for tomorrow."
             />
 
             <Section
               headline="Upcoming"
               data={appState?.upcomingTasks}
               openModal={openModalForUpcoming}
+              showCounter={false}
+              droppableId="upcoming"
+              emptyMessage="Plan ahead by adding upcoming work."
             />
           </div>
         </Layout>

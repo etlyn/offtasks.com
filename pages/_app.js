@@ -9,11 +9,14 @@ import { ThemeProvider } from "next-themes";
 import { useTheme } from "next-themes";
 import { Initialization } from "../initialization";
 
+const AUTH_PAGES = ["/login", "/signup", "/reset-password"];
+
 function MyApp({ Component, pageProps }) {
   const router = useRouter();
   const user = supabaseClient.auth.user();
   const [mounted, setMounted] = useState(false);
   const { theme } = useTheme();
+  const isAuthPage = AUTH_PAGES.includes(router.pathname);
 
   // Avoid theme Hydration Mismatch:
   useEffect(() => {
@@ -48,10 +51,8 @@ function MyApp({ Component, pageProps }) {
   }, [router]);
 
   useEffect(() => {
-    if (user) {
-      if (router.pathname === "/login") {
-        router.push("/");
-      }
+    if (user && AUTH_PAGES.includes(router.pathname)) {
+      router.push("/");
     }
   }, [router.pathname, user, router]);
 
@@ -86,9 +87,13 @@ function MyApp({ Component, pageProps }) {
       <ThemeProvider defaultTheme={theme}>
         <ContextProvider>
           {mounted && (
-            <Initialization>
+            isAuthPage ? (
               <Component {...pageProps} />
-            </Initialization>
+            ) : (
+              <Initialization>
+                <Component {...pageProps} />
+              </Initialization>
+            )
           )}
         </ContextProvider>
       </ThemeProvider>
