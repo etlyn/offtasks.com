@@ -1,6 +1,6 @@
 ## Offtasks Web App
 
-Collaborative task planning dashboard built with Next.js 12, Tailwind CSS, and Supabase.
+Collaborative task planning dashboard built with Next.js 12, Tailwind CSS, Supabase, and lucide-react icons. The repository has been reorganised to follow a conventional `src/`-based layout with clear separation between components, domain features, shared hooks, and platform utilities.
 
 ### Prerequisites
 - Node.js 16.x or newer (18.x works fine)
@@ -8,20 +8,35 @@ Collaborative task planning dashboard built with Next.js 12, Tailwind CSS, and S
 - Supabase project with email/password auth enabled
 
 ### Quick Start
-1. Clone the repository and install dependencies.
+1. Install dependencies.
 	```bash
 	npm install
 	```
-2. Copy `.env.example` to `.env.local` and populate the Supabase keys.
+2. Copy `.env.example` to `.env.local` and populate `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (find both under **Project Settings → API** in Supabase).
 	```bash
 	cp .env.example .env.local
 	```
-3. Fill in `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local` (find them in your Supabase project settings under API).
-4. Start the development server.
+3. Start the development server.
 	```bash
 	npm run dev
 	```
-5. Visit `http://localhost:3000`.
+4. Visit `http://localhost:3000`.
+
+### Project Structure
+
+```
+src/
+  components/        # Reusable UI building blocks (Task modal, lists, layout, etc.)
+  features/tasks/    # Task-specific orchestration such as the Supabase initialiser
+  hooks/             # Shared client-side hooks (date helpers)
+  lib/               # Supabase client + data helpers
+  pages/             # Next.js routes (includes API routes)
+  providers/         # React context providers (App state)
+  styles/            # Global Tailwind entrypoint
+  types/             # Shared TypeScript contracts
+```
+
+Dark mode is driven by a lightweight theme switch that toggles the Tailwind `dark` class on the document root. Icons have been standardised on [`lucide-react`](https://lucide.dev/icons/).
 
 ### Supabase Schema
 Create the following tables in Supabase (adjust types as needed):
