@@ -1,11 +1,25 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { AuthLayout } from "@/components/AuthLayout";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { LogoWordmark } from "@/components/LogoWordmark";
 import { supabaseClient } from "@/lib/supabase";
+
+const mapAuthErrorMessage = (raw: string): string => {
+  const normalized = raw.toLowerCase();
+
+  if (normalized.includes("email not confirmed")) {
+    return "Confirm your email from the signup message before signing in.";
+  }
+
+  if (normalized.includes("invalid login credentials")) {
+    return "We couldn't find a matching account. Double-check your email and password.";
+  }
+
+  if (normalized.includes("too many requests")) {
+    return "Too many attempts in a short period. Wait a moment and try again.";
+  }
+
+  return raw;
+};
 
 export const LoginScreen = () => {
   const [email, setEmail] = useState("");
@@ -18,63 +32,53 @@ export const LoginScreen = () => {
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) {
+      setError("Enter the email you used to sign up.");
+      setMessage(null);
+      return;
+    }
+
+    if (!password) {
+      setError("Enter your password to continue.");
+      setMessage(null);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     setMessage(null);
 
     try {
       const { error: signInError } = await supabaseClient.auth.signIn({
-        email,
+        email: normalizedEmail,
         password,
       });
 
       if (signInError) {
-        setError(signInError.message);
+        setError(mapAuthErrorMessage(signInError.message));
       } else {
-        setMessage("Signed in successfully. Redirecting...");
+        setMessage("Welcome back! Redirecting to your workspace...");
         setTimeout(() => {
           navigate("/");
-        }, 750);
+        }, 600);
       }
     } catch (unknownError) {
-      const message =
+      const fallback =
         unknownError instanceof Error ? unknownError.message : "Unable to sign in.";
-      setError(message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGuestLogin = async () => {
-    setIsLoading(true);
-    setError(null);
-    setMessage(null);
-
-    try {
-      const uniqueCredentials = typeof crypto !== "undefined" ? crypto.randomUUID() : Date.now().toString();
-      const guestEmail = `${uniqueCredentials}@example.com`;
-      const { error: signUpError } = await supabaseClient.auth.signUp({
-        email: guestEmail,
-        password: uniqueCredentials,
-      });
-
-      if (signUpError) {
-        setError(signUpError.message);
-      } else {
-        setMessage("Guest account created. Check your inbox to confirm before signing in.");
-      }
-    } catch (unknownError) {
-      const message =
-        unknownError instanceof Error ? unknownError.message : "Unable to create a guest account.";
-      setError(message);
+      setError(mapAuthErrorMessage(fallback));
     } finally {
       setIsLoading(false);
     }
   };
 
   const handlePasswordReset = async () => {
-    if (!email) {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!normalizedEmail) {
       setError("Enter your email address first.");
+      setMessage(null);
       return;
     }
 
@@ -85,19 +89,19 @@ export const LoginScreen = () => {
     try {
       const redirectTo = `${window.location.origin}/reset-password`;
 
-      const { error: resetError } = await supabaseClient.auth.api.resetPasswordForEmail(email, {
+      const { error: resetError } = await supabaseClient.auth.api.resetPasswordForEmail(normalizedEmail, {
         redirectTo,
       });
 
       if (resetError) {
-        setError(resetError.message);
+        setError(mapAuthErrorMessage(resetError.message));
       } else {
-        setMessage("Check your email for the password reset link.");
+        setMessage("Check your inbox for the password reset link.");
       }
     } catch (unknownError) {
-      const message =
+      const fallback =
         unknownError instanceof Error ? unknownError.message : "Unable to initiate the password reset.";
-      setError(message);
+      setError(mapAuthErrorMessage(fallback));
     } finally {
       setIsLoading(false);
     }
@@ -116,94 +120,103 @@ export const LoginScreen = () => {
   };
 
   return (
-    <AuthLayout
-      title="Welcome back"
-      subtitle="Sign in to access your tasks"
-    >
-      {error ? (
-        <Alert variant="destructive">
-          <AlertTitle>Check your details</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      ) : null}
-
-      {message && !error ? (
-        <Alert>
-          <AlertTitle>All set</AlertTitle>
-          <AlertDescription>{message}</AlertDescription>
-        </Alert>
-      ) : null}
-
-      <form className="space-y-6" onSubmit={handleLogin} noValidate>
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={changeHandlerEmail}
-            disabled={isLoading}
-            required
-          />
+    <div className="min-h-screen bg-black flex items-center justify-center px-4 py-12">
+      <div className="w-full" style={{ maxWidth: '400px' }}>
+        {/* Header */}
+        <div className="mb-8 text-center">
+          <div className="flex justify-center mb-6">
+            <LogoWordmark width={160} height={40} />
+          </div>
+          <h1 className="text-4xl font-semibold text-white mb-3">Welcome back</h1>
+          <p className="text-zinc-400 text-base">Sign in to access your workspace</p>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={changeHandlerPassword}
-            disabled={isLoading}
-            required
-          />
+        {/* Card */}
+        <div className="bg-zinc-900/80 backdrop-blur-sm border border-zinc-800/50 rounded-2xl p-6 shadow-2xl">
+          {/* Alerts */}
+          {error ? (
+            <div className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+              {error}
+            </div>
+          ) : null}
+
+          {message && !error ? (
+            <div className="mb-6 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400">
+              {message}
+            </div>
+          ) : null}
+
+          {/* Form */}
+          <form className="space-y-5" onSubmit={handleLogin} noValidate>
+            <div className="space-y-2">
+              <label htmlFor="email" className="block text-sm font-medium text-zinc-300">
+                Email address
+              </label>
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={changeHandlerEmail}
+                disabled={isLoading}
+                required
+                autoFocus
+                placeholder="you@example.com"
+                className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-base text-white placeholder:text-zinc-500 transition focus:border-zinc-600 focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-700/50 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="password" className="block text-sm font-medium text-zinc-300">
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={changeHandlerPassword}
+                disabled={isLoading}
+                required
+                placeholder="Enter your password"
+                className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-base text-white placeholder:text-zinc-500 transition focus:border-zinc-600 focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-700/50 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
+
+            <div className="flex items-center justify-end">
+              <button
+                type="button"
+                onClick={handlePasswordReset}
+                disabled={isLoading}
+                className="text-sm font-medium text-zinc-400 transition hover:text-white disabled:opacity-50"
+              >
+                Forgot password?
+              </button>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full rounded-lg bg-white px-4 py-3 text-base font-semibold text-black transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isLoading ? "Signing in..." : "Sign in"}
+            </button>
+          </form>
         </div>
 
-        <div className="flex items-center justify-end">
-          <Button
+        {/* Footer */}
+        <div className="mt-6 text-center">
+          <span className="text-sm text-zinc-400">Don't have an account?</span>{" "}
+          <button
             type="button"
-            variant="link"
-            size="sm"
-            className="px-0 text-xs font-medium text-sky-400 hover:text-sky-300"
-            onClick={handlePasswordReset}
+            onClick={handleSignUp}
             disabled={isLoading}
+            className="text-sm font-semibold text-white transition hover:text-zinc-300 disabled:opacity-50"
           >
-            Forgot password?
-          </Button>
+            Create one
+          </button>
         </div>
-
-        <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
-          {isLoading ? "Signing in..." : "Log in"}
-        </Button>
-      </form>
-
-      <div className="text-center text-sm text-zinc-400">
-        <span>Don&apos;t have an account?</span>
-        <Button
-          type="button"
-          variant="link"
-          className="px-1 font-semibold text-sky-400 hover:text-sky-300"
-          onClick={handleSignUp}
-          disabled={isLoading}
-        >
-          Sign up
-        </Button>
       </div>
-
-      <div className="flex items-center justify-center pt-2">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="text-zinc-500 hover:text-zinc-300"
-          onClick={handleGuestLogin}
-          disabled={isLoading}
-        >
-          Continue as guest
-        </Button>
-      </div>
-    </AuthLayout>
+    </div>
   );
 };
