@@ -1,6 +1,6 @@
 ## Offtasks Web App
 
-Collaborative task planning dashboard built with Next.js 12, Tailwind CSS, Supabase, and lucide-react icons. The repository has been reorganised to follow a conventional `src/`-based layout with clear separation between components, domain features, shared hooks, and platform utilities.
+Task planner with Today, Tomorrow, Upcoming, and Close sections. Tasks are created with a scheduled date and group, then fetched and categorized on refresh: incomplete tasks due today or earlier show in Today, future tasks stay in their group, and completed tasks show in Today only if they were completed today—otherwise they go to Close. Missed deadlines are highlighted red only if the task is still in Today; priority doesn’t affect styling.
 
 ### Prerequisites
 - Node.js 16.x or newer (18.x works fine)
