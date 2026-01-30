@@ -19,14 +19,25 @@ interface QuickViewProps {
   onToggleTask: (id: string) => void;
   onEditTask: (id: string) => void;
   advancedMode: boolean;
+  hideCompleted?: boolean;
+  onToggleHideCompleted?: (value: boolean) => void;
 }
 
-export function QuickView({ tasks, onToggleTask, onEditTask, advancedMode }: QuickViewProps) {
+export function QuickView({
+  tasks,
+  onToggleTask,
+  onEditTask,
+  advancedMode,
+  hideCompleted,
+  onToggleHideCompleted,
+}: QuickViewProps) {
   // Advanced mode states
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
   const [prioritySortDirection, setPrioritySortDirection] = useState<"asc" | "desc" | null>(null);
   const [showCompleted, setShowCompleted] = useState(true);
+  const effectiveShowCompleted = typeof hideCompleted === "boolean" ? !hideCompleted : showCompleted;
+  const applyFilters = advancedMode || hideCompleted === true;
 
   // Get all unique labels from tasks
   const allLabels = useMemo(() => {
@@ -41,29 +52,31 @@ export function QuickView({ tasks, onToggleTask, onEditTask, advancedMode }: Qui
 
   // Filter tasks when advanced mode is enabled
   const filteredTasks = useMemo(() => {
-    if (!advancedMode) return tasks;
+    if (!applyFilters) return tasks;
 
     return tasks.filter((task) => {
-      // Search filter
-      if (searchQuery && !task.text.toLowerCase().includes(searchQuery.toLowerCase())) {
-        return false;
-      }
-
-      // Label filter
-      if (selectedLabels.length > 0) {
-        if (!task.label || !selectedLabels.includes(task.label)) {
+      if (advancedMode) {
+        // Search filter
+        if (searchQuery && !task.text.toLowerCase().includes(searchQuery.toLowerCase())) {
           return false;
+        }
+
+        // Label filter
+        if (selectedLabels.length > 0) {
+          if (!task.label || !selectedLabels.includes(task.label)) {
+            return false;
+          }
         }
       }
 
       // Completed filter
-      if (!showCompleted && task.completed) {
+      if (!effectiveShowCompleted && task.completed) {
         return false;
       }
 
       return true;
     });
-  }, [tasks, searchQuery, selectedLabels, showCompleted, advancedMode]);
+  }, [advancedMode, applyFilters, effectiveShowCompleted, searchQuery, selectedLabels, tasks]);
 
   // Sort tasks when advanced mode is enabled
   const sortedTasks = useMemo(() => {
@@ -90,13 +103,25 @@ export function QuickView({ tasks, onToggleTask, onEditTask, advancedMode }: Qui
   const activeFilterCount =
     (searchQuery ? 1 : 0) +
     selectedLabels.length +
-    (!showCompleted ? 1 : 0);
+    (!effectiveShowCompleted ? 1 : 0);
 
   const clearAllFilters = () => {
     setSearchQuery("");
     setSelectedLabels([]);
     setPrioritySortDirection(null);
-    setShowCompleted(true);
+    if (typeof hideCompleted === "boolean") {
+      onToggleHideCompleted?.(false);
+    } else {
+      setShowCompleted(true);
+    }
+  };
+
+  const toggleShowCompleted = () => {
+    if (typeof hideCompleted === "boolean") {
+      onToggleHideCompleted?.(!hideCompleted);
+      return;
+    }
+    setShowCompleted((prev) => !prev);
   };
 
   const toggleLabel = (label: string) => {
@@ -136,13 +161,13 @@ export function QuickView({ tasks, onToggleTask, onEditTask, advancedMode }: Qui
                         {selectedLabels.length}
                       </Badge>
                     )}
-                  </Button>
+                  <Button
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-[200px]">
-                  <DropdownMenuLabel className="font-['Poppins',_sans-serif] text-[12px]">
+                    onClick={toggleShowCompleted}
                     Filter by Category
                   </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
+                    {effectiveShowCompleted ? "Hide" : "Show"} Completed
                   {allLabels.map((label) => {
                     const config = getCategoryConfig(label) || getDefaultCategoryColor();
                     return (

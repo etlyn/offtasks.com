@@ -27,6 +27,7 @@ import { fromSupabaseTask, priorityLabelToNumber } from "@/utils/taskMapping";
 const CATEGORIES_STORAGE_KEY = "offtasks-categories";
 const THEME_STORAGE_KEY = "offtasks-theme";
 const ADVANCED_STORAGE_KEY = "offtasks-advanced-mode";
+const HIDE_COMPLETED_STORAGE_KEY = "offtasks-hide-completed";
 
 const DEFAULT_CATEGORIES = ["Work", "Personal", "Home", "Shopping", "Health", "Finance"];
 
@@ -76,6 +77,15 @@ export const DashboardScreen = () => {
     }
 
     const saved = localStorage.getItem(ADVANCED_STORAGE_KEY);
+    return saved ? saved === "true" : false;
+  });
+
+  const [hideCompleted, setHideCompleted] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    const saved = localStorage.getItem(HIDE_COMPLETED_STORAGE_KEY);
     return saved ? saved === "true" : false;
   });
 
@@ -144,6 +154,13 @@ export const DashboardScreen = () => {
     }
     localStorage.setItem(ADVANCED_STORAGE_KEY, advancedMode.toString());
   }, [advancedMode]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    localStorage.setItem(HIDE_COMPLETED_STORAGE_KEY, hideCompleted.toString());
+  }, [hideCompleted]);
 
   const handleAddTask = (category: DialogCategory) => {
     setEditingTask(null);
@@ -297,7 +314,14 @@ export const DashboardScreen = () => {
       </div>
 
       <TabsContent value="quick-view" className="mt-0">
-        <QuickView tasks={tasks} onToggleTask={handleToggleTask} onEditTask={handleEditTask} advancedMode={advancedMode} />
+        <QuickView
+          tasks={tasks}
+          onToggleTask={handleToggleTask}
+          onEditTask={handleEditTask}
+          advancedMode={advancedMode}
+          hideCompleted={hideCompleted}
+          onToggleHideCompleted={setHideCompleted}
+        />
       </TabsContent>
 
       <TabsContent value="completed" className="mt-0">
@@ -336,6 +360,14 @@ export const DashboardScreen = () => {
           isDark={isDark}
           onToggleTheme={() => setIsDark((prev: boolean) => !prev)}
           onLogout={handleLogout}
+          advancedMode={advancedMode}
+          hideCompleted={hideCompleted}
+          onToggleAdvancedMode={() => setAdvancedMode((prev: boolean) => !prev)}
+          onToggleHideCompleted={setHideCompleted}
+          onOpenSearch={() => {
+            setCurrentTab("quick-view");
+            setAdvancedMode(true);
+          }}
           onViewQuickView={() => setCurrentTab("quick-view")}
           onViewCompleted={() => setCurrentTab("completed")}
           onViewAnalytics={() => setCurrentTab("analytics")}

@@ -7,6 +7,11 @@ interface HeaderProps {
   isDark: boolean;
   onToggleTheme: () => void;
   onLogout: () => void;
+  advancedMode?: boolean;
+  hideCompleted?: boolean;
+  onToggleAdvancedMode?: () => void;
+  onToggleHideCompleted?: (value: boolean) => void;
+  onOpenSearch?: () => void;
   onViewQuickView?: () => void;
   onViewCompleted: () => void;
   onViewAnalytics?: () => void;
@@ -23,6 +28,11 @@ export function Header({
   isDark,
   onToggleTheme,
   onLogout,
+  advancedMode,
+  hideCompleted,
+  onToggleAdvancedMode,
+  onToggleHideCompleted,
+  onOpenSearch,
   onViewQuickView,
   onViewCompleted,
   onViewAnalytics,
@@ -114,11 +124,18 @@ export function Header({
         
         <ProfileMenu 
           onLogout={onLogout}
+          totalCompleted={totalCompleted}
+          totalTasks={totalTasks}
           onViewQuickView={onViewQuickView}
           onViewCompleted={onViewCompleted}
           onViewAnalytics={onViewAnalytics}
+          onOpenSearch={onOpenSearch}
           isDark={isDark}
           onToggleTheme={onToggleTheme}
+          advancedMode={advancedMode}
+          hideCompleted={hideCompleted}
+          onToggleAdvancedMode={onToggleAdvancedMode}
+          onToggleHideCompleted={onToggleHideCompleted}
           userEmail={userEmail}
           userName={userName}
         />
