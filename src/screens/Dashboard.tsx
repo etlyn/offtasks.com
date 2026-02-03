@@ -13,7 +13,7 @@ import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Task } from "@/types/task";
-import type { TaskGroup } from "@/types/supabase";
+import type { SupabaseTask, TaskGroup } from "@/types/supabase";
 import { useAuth } from "@/providers/auth";
 import {
   createTask,
@@ -29,6 +29,7 @@ const CATEGORIES_STORAGE_KEY = "offtasks-categories";
 const THEME_STORAGE_KEY = "offtasks-theme";
 const ADVANCED_STORAGE_KEY = "offtasks-advanced-mode";
 const HIDE_COMPLETED_STORAGE_KEY = "offtasks-hide-completed";
+const AUTO_ARRANGE_STORAGE_KEY = "offtasks-auto-arrange";
 
 const DEFAULT_CATEGORIES = ["Work", "Personal", "Home", "Shopping", "Health", "Finance"];
 
@@ -90,6 +91,15 @@ export const DashboardScreen = () => {
     return saved ? saved === "true" : false;
   });
 
+  const [autoArrange, setAutoArrange] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    const saved = localStorage.getItem(AUTO_ARRANGE_STORAGE_KEY);
+    return saved ? saved === "true" : false;
+  });
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [dialogCategory, setDialogCategory] = useState<DialogCategory>("today");
@@ -108,8 +118,49 @@ export const DashboardScreen = () => {
     setIsLoadingTasks(true);
     try {
       const data = await fetchAllTasks();
-      const mapped = data.map(fromSupabaseTask);
-      setTasks(mapped);
+      const today = getCurrentDate();
+
+      const isSupabaseComplete = (task: SupabaseTask): boolean => {
+        if (typeof task.isComplete === "boolean") {
+          return task.isComplete;
+        }
+        const snake = (task as { is_complete?: boolean | null }).is_complete;
+        return typeof snake === "boolean" ? snake : false;
+      };
+
+      const applyAutoOverdue = (mappedTasks: Task[]) => {
+        if (!autoArrange) {
+          return mappedTasks;
+        }
+
+        return mappedTasks.map((task) => {
+          const rawDate = task.raw?.date;
+          if (!task.completed && task.category === "today" && rawDate && rawDate !== today) {
+            return { ...task, overdue: true };
+          }
+          return task;
+        });
+      };
+
+      let needsRefresh = false;
+
+      if (autoArrange) {
+        for (const task of data) {
+          if (isSupabaseComplete(task)) {
+            continue;
+          }
+
+          if (task.target_group === "tomorrow" && task.date <= today) {
+            needsRefresh = true;
+            await updateTask(task.id, {
+              targetGroup: "today",
+            });
+          }
+        }
+      }
+
+      const mapped = (needsRefresh ? (await fetchAllTasks()) : data).map(fromSupabaseTask);
+      setTasks(applyAutoOverdue(mapped));
 
       const labels = new Set<string>();
       mapped.forEach((task) => {
@@ -130,7 +181,7 @@ export const DashboardScreen = () => {
     } finally {
       setIsLoadingTasks(false);
     }
-  }, [user]);
+  }, [autoArrange, user]);
 
   useEffect(() => {
     refreshTasks();
@@ -162,6 +213,13 @@ export const DashboardScreen = () => {
     }
     localStorage.setItem(HIDE_COMPLETED_STORAGE_KEY, hideCompleted.toString());
   }, [hideCompleted]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    localStorage.setItem(AUTO_ARRANGE_STORAGE_KEY, autoArrange.toString());
+  }, [autoArrange]);
 
   const handleAddTask = useCallback((category: DialogCategory) => {
     setEditingTask(null);
@@ -359,6 +417,8 @@ export const DashboardScreen = () => {
           hideCompleted={hideCompleted}
           onToggleAdvancedMode={() => setAdvancedMode((prev: boolean) => !prev)}
           onToggleHideCompleted={setHideCompleted}
+          autoArrange={autoArrange}
+          onToggleAutoArrange={setAutoArrange}
           onOpenSearch={() => {
             setCurrentTab("quick-view");
             setAdvancedMode(true);

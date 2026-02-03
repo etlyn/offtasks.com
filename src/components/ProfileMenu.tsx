@@ -1,6 +1,7 @@
 import * as React from "react";
 import {
   BarChart3,
+  CalendarClock,
   CheckCircle2,
   ChevronRight,
   Cpu,
@@ -16,7 +17,7 @@ import {
 import { Sheet, SheetClose, SheetContent, SheetTrigger } from "./ui/sheet";
 import { Switch } from "./ui/switch";
 
-interface ProfileMenuProps {
+export interface ProfileMenuProps {
   onLogout: () => void;
   totalCompleted?: number;
   totalTasks?: number;
@@ -30,6 +31,8 @@ interface ProfileMenuProps {
   hideCompleted?: boolean;
   onToggleAdvancedMode?: () => void;
   onToggleHideCompleted?: (value: boolean) => void;
+  autoArrange?: boolean;
+  onToggleAutoArrange?: (value: boolean) => void;
   userEmail?: string;
   userName?: string;
 }
@@ -57,7 +60,7 @@ const getInitials = (email?: string, name?: string) => {
   return "JD";
 };
 
-export function ProfileMenu({
+export const ProfileMenu: React.FC<ProfileMenuProps> = ({
   onLogout,
   totalCompleted = 0,
   totalTasks = 0,
@@ -71,9 +74,11 @@ export function ProfileMenu({
   hideCompleted,
   onToggleAdvancedMode,
   onToggleHideCompleted,
+  autoArrange,
+  onToggleAutoArrange,
   userEmail,
   userName,
-}: ProfileMenuProps) {
+}) => {
   const initials = getInitials(userEmail, userName);
   const [open, setOpen] = React.useState(false);
   const themeLabel = isDark ? "Dark" : "Light";
@@ -217,6 +222,19 @@ export function ProfileMenu({
                   onCheckedChange={() => onToggleAdvancedMode?.()}
                 />
               </div>
+
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-900 dark:text-zinc-100">
+                <div className="size-9 rounded-full border border-[#bfdbfe] bg-[#dbeafe] flex items-center justify-center">
+                  <CalendarClock className="size-4 text-sky-600" />
+                </div>
+                <span className="flex-1 font-['Poppins',_sans-serif] text-[15px] text-zinc-900 dark:text-zinc-100">
+                  Auto-move due tasks
+                </span>
+                <Switch
+                  checked={!!autoArrange}
+                  onCheckedChange={(value) => onToggleAutoArrange?.(value)}
+                />
+              </div>
             </div>
           </div>
 
@@ -236,4 +254,4 @@ export function ProfileMenu({
       </SheetContent>
     </Sheet>
   );
-}
+};

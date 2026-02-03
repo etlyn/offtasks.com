@@ -2,7 +2,7 @@
 	"servers": {
 	    "Figma MCP": {
 			"url": "http://127.0.0.1:3845/mcp",
-			"type": "http",
+			"type": "http"
 		},
     	"supabase": {
       		"type": "http",

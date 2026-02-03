@@ -11,6 +11,8 @@ interface HeaderProps {
   hideCompleted?: boolean;
   onToggleAdvancedMode?: () => void;
   onToggleHideCompleted?: (value: boolean) => void;
+  autoArrange?: boolean;
+  onToggleAutoArrange?: (value: boolean) => void;
   onOpenSearch?: () => void;
   onViewQuickView?: () => void;
   onViewCompleted: () => void;
@@ -32,6 +34,8 @@ export function Header({
   hideCompleted,
   onToggleAdvancedMode,
   onToggleHideCompleted,
+  autoArrange,
+  onToggleAutoArrange,
   onOpenSearch,
   onViewQuickView,
   onViewCompleted,
@@ -136,6 +140,8 @@ export function Header({
           hideCompleted={hideCompleted}
           onToggleAdvancedMode={onToggleAdvancedMode}
           onToggleHideCompleted={onToggleHideCompleted}
+          autoArrange={autoArrange}
+          onToggleAutoArrange={onToggleAutoArrange}
           userEmail={userEmail}
           userName={userName}
         />
