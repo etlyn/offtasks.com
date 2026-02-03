@@ -9,8 +9,8 @@ import { SettingsSheet } from "@/components/SettingsSheet";
 import { QuickView } from "@/components/QuickView";
 import { CompletedView } from "@/components/CompletedView";
 import { AnalyticsView } from "@/components/AnalyticsView";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LayoutGrid, CheckCircle2, BarChart3, SlidersHorizontal } from "lucide-react";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Task } from "@/types/task";
 import type { TaskGroup } from "@/types/supabase";
@@ -23,6 +23,7 @@ import {
   updateTask,
 } from "@/lib/supabase";
 import { fromSupabaseTask, priorityLabelToNumber } from "@/utils/taskMapping";
+import { getCurrentDate } from "@/hooks/useDate";
 
 const CATEGORIES_STORAGE_KEY = "offtasks-categories";
 const THEME_STORAGE_KEY = "offtasks-theme";
@@ -162,11 +163,35 @@ export const DashboardScreen = () => {
     localStorage.setItem(HIDE_COMPLETED_STORAGE_KEY, hideCompleted.toString());
   }, [hideCompleted]);
 
-  const handleAddTask = (category: DialogCategory) => {
+  const handleAddTask = useCallback((category: DialogCategory) => {
     setEditingTask(null);
     setDialogCategory(category);
     setDialogOpen(true);
-  };
+  }, []);
+
+  useEffect(() => {
+    const handleQuickAdd = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const isTypingTarget =
+        !!target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable);
+
+      if (isTypingTarget) {
+        return;
+      }
+
+      const isQuickAdd = (event.metaKey || event.ctrlKey) && (event.key === "+" || event.key === "=");
+      if (isQuickAdd) {
+        event.preventDefault();
+        handleAddTask("today");
+      }
+    };
+
+    window.addEventListener("keydown", handleQuickAdd);
+    return () => window.removeEventListener("keydown", handleQuickAdd);
+  }, [handleAddTask]);
 
   const handleEditTask = (id: string) => {
   const task = tasks.find((t: Task) => t.id === id);
@@ -229,14 +254,11 @@ export const DashboardScreen = () => {
     }
 
     const nextCompleted = !task.completed;
-    const nextTargetGroup: TaskGroup =
-      task.category === "upcoming" && nextCompleted ? "today" : (task.category as TaskGroup);
 
     try {
       await updateTask(task.id, {
         isComplete: nextCompleted,
-        targetGroup: nextTargetGroup,
-        completedAt: nextCompleted ? new Date().toISOString() : null,
+        completedAt: nextCompleted ? getCurrentDate() : null,
       });
       await refreshTasks();
     } catch (error) {
@@ -273,45 +295,18 @@ export const DashboardScreen = () => {
   onValueChange={(value: string) => setCurrentTab(value as TabId)}
       className="w-full"
     >
-      <div className="mb-12 border-b border-zinc-200/80 dark:border-zinc-700/60">
-        <div className="flex items-center justify-between">
-          <TabsList className="bg-transparent h-auto p-0 gap-1 flex overflow-x-auto scrollbar-hide">
-            <TabsTrigger
-              value="quick-view"
-              className="group relative !bg-transparent data-[state=active]:!border-transparent data-[state=active]:!shadow-none data-[state=active]:text-sky-600 dark:data-[state=active]:text-sky-400 data-[state=active]:after:scale-x-100 data-[state=active]:after:opacity-100 px-5 pb-3.5 pt-3.5 h-auto !border-none rounded-t-lg font-['Poppins',_sans-serif] text-[14px] text-zinc-500 dark:text-zinc-400 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/30 hover:after:scale-x-100 hover:after:opacity-40 transition-all duration-300 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[3px] after:bg-gradient-to-r after:from-sky-500 after:via-sky-600 after:to-sky-500 dark:after:from-sky-400 dark:after:via-sky-500 dark:after:to-sky-400 after:scale-x-0 after:opacity-0 after:transition-all after:duration-300 after:ease-out flex items-center gap-2 whitespace-nowrap"
-            >
-              <LayoutGrid className="size-[15px] opacity-60 group-data-[state=active]:opacity-100 group-hover:opacity-100 transition-opacity" />
-              <span>Quick View</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="completed"
-              className="hidden md:flex group relative !bg-transparent data-[state=active]:!border-transparent data-[state=active]:!shadow-none data-[state=active]:text-sky-600 dark:data-[state=active]:text-sky-400 data-[state=active]:after:scale-x-100 data-[state=active]:after:opacity-100 px-5 pb-3.5 pt-3.5 h-auto !border-none rounded-t-lg font-['Poppins',_sans-serif] text-[14px] text-zinc-500 dark:text-zinc-400 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/30 hover:after:scale-x-100 hover:after:opacity-40 transition-all duration-300 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[3px] after:bg-gradient-to-r after:from-sky-500 after:via-sky-600 after:to-sky-500 dark:after:from-sky-400 dark:after:via-sky-500 dark:after:to-sky-400 after:scale-x-0 after:opacity-0 after:transition-all after:duration-300 after:ease-out items-center gap-2 whitespace-nowrap"
-            >
-              <CheckCircle2 className="size-[15px] opacity-60 group-data-[state=active]:opacity-100 group-hover:opacity-100 transition-opacity" />
-              <span>Completed</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="analytics"
-              className="hidden md:flex group relative !bg-transparent data-[state=active]:!border-transparent data-[state=active]:!shadow-none data-[state=active]:text-sky-600 dark:data-[state=active]:text-sky-400 data-[state=active]:after:scale-x-100 data-[state=active]:after:opacity-100 px-5 pb-3.5 pt-3.5 h-auto !border-none rounded-t-lg font-['Poppins',_sans-serif] text-[14px] text-zinc-500 dark:text-zinc-400 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/30 hover:after:scale-x-100 hover:after:opacity-40 transition-all duration-300 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[3px] after:bg-gradient-to-r after:from-sky-500 after:via-sky-600 after:to-sky-500 dark:after:from-sky-400 dark:after:via-sky-500 dark:after:to-sky-400 after:scale-x-0 after:opacity-0 after:transition-all after:duration-300 after:ease-out items-center gap-2 whitespace-nowrap"
-            >
-              <BarChart3 className="size-[15px] opacity-60 group-data-[state=active]:opacity-100 group-hover:opacity-100 transition-opacity" />
-              <span>Analytics</span>
-            </TabsTrigger>
-          </TabsList>
-
-          {currentTab === "quick-view" && (
-            <Button
-              variant={advancedMode ? "secondary" : "outline"}
-              size="sm"
-              onClick={() => setAdvancedMode((prev: boolean) => !prev)}
-              className="h-9 gap-2 font-['Poppins',_sans-serif] text-[13px] bg-white dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600 shadow-none dark:shadow-sm hover:bg-zinc-50 dark:hover:bg-zinc-700 mb-3.5"
-            >
-              <SlidersHorizontal className="size-[14px]" />
-              {advancedMode ? "Hide Filters" : "Show Filters"}
-            </Button>
-          )}
+      {currentTab !== "quick-view" && (
+        <div className="mb-8">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setCurrentTab("quick-view")}
+            className="size-16 rounded-full border border-white/40 dark:border-zinc-700/60 bg-white/60 dark:bg-zinc-800/50 backdrop-blur-md shadow-[0px_14px_34px_rgba(0,0,0,0.16)] hover:bg-white/80 dark:hover:bg-zinc-700/60"
+          >
+            <ArrowLeft className="size-[22px]" />
+          </Button>
         </div>
-      </div>
+      )}
 
       <TabsContent value="quick-view" className="mt-0">
         <QuickView
@@ -385,7 +380,7 @@ export const DashboardScreen = () => {
         <button
           onClick={() => handleAddTask("today")}
           className="fixed bottom-[100px] right-[40px] md:right-[80px] px-[24px] py-[14px] bg-sky-600 hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-600 rounded-full shadow-md hover:shadow-lg dark:shadow-lg dark:hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-[10px] group z-50"
-          title="Add new task (⌘K)"
+          title="Add new task (⌘+)"
         >
           <svg className="size-[20px]" fill="none" viewBox="0 0 24 24">
             <path d="M12 5V19" stroke="white" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
@@ -399,7 +394,7 @@ export const DashboardScreen = () => {
             © {new Date().getFullYear()} offtasks.com
           </p>
           <p className="hidden md:block font-['Poppins',_sans-serif] leading-[1.3] not-italic text-[12px] text-zinc-400">
-            <kbd className="px-[6px] py-[2px] bg-zinc-200 dark:bg-zinc-700 rounded-[4px] text-[11px]">⌘K</kbd> Quick add
+            <kbd className="px-[6px] py-[2px] bg-zinc-200 dark:bg-zinc-700 rounded-[4px] text-[11px]">⌘+</kbd> Quick add
           </p>
         </div>
 

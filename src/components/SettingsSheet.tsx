@@ -59,7 +59,7 @@ export function SettingsSheet({ isOpen, onClose, isDark, onToggleTheme }: Settin
                   Quick add task
                 </p>
                 <kbd className="px-[8px] py-[4px] bg-zinc-200 dark:bg-zinc-700 rounded-[4px] text-[12px] font-['Poppins',_sans-serif]">
-                  ⌘K
+                  ⌘+
                 </kbd>
               </div>
             </div>

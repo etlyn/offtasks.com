@@ -48,7 +48,34 @@ const isTaskOverdue = (task: SupabaseTask): boolean => {
   }
 
   const today = getCurrentDate();
-  return task.date < today;
+  return task.date < today && task.target_group === "today";
+};
+
+const deriveCategory = (task: SupabaseTask): Task["category"] => {
+  const today = getCurrentDate();
+
+  if (isTaskCompleted(task)) {
+    const completedAt = task.completed_at ?? undefined;
+    const completedToday = completedAt ? completedAt === today : task.date === today;
+    return completedToday ? "today" : "close";
+  }
+
+  if (task.date <= today && task.target_group === "today") {
+    return "today";
+  }
+
+  switch (task.target_group) {
+    case "today":
+      return "today";
+    case "tomorrow":
+      return "tomorrow";
+    case "upcoming":
+      return "upcoming";
+    case "close":
+      return "close";
+    default:
+      return "today";
+  }
 };
 
 const deriveCompletedTimestamp = (task: SupabaseTask): number | undefined => {
@@ -81,9 +108,9 @@ export const fromSupabaseTask = (task: SupabaseTask): Task => ({
   text: task.content,
   completed: isTaskCompleted(task),
   overdue: isTaskOverdue(task),
-  category: task.target_group,
+  category: deriveCategory(task),
   completedAt: deriveCompletedTimestamp(task),
-  label: task.label ?? undefined,
+  label: task.label ?? (task as { category?: string | null }).category ?? undefined,
   priority: priorityNumberToLabel(task.priority),
   raw: task,
 });

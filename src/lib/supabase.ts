@@ -21,7 +21,9 @@ const COMPLETION_COLUMNS: CompletionColumn[] = ["isComplete", "is_complete"];
 
 const MISSING_COMPLETED_AT_MESSAGE = "completed_at";
 const LABEL_COLUMN = "label";
+const CATEGORY_COLUMN = "category";
 const MISSING_LABEL_MESSAGE = "label";
+const MISSING_CATEGORY_MESSAGE = "category";
 
 const isCompletionColumnError = (message: string | null | undefined): boolean => {
   if (!message) {
@@ -35,6 +37,7 @@ const isCompletionColumnError = (message: string | null | undefined): boolean =>
 let detectedCompletionColumn: CompletionColumn | null = null;
 let hasCompletedAtColumn: boolean | null = null;
 let hasLabelColumn: boolean | null = null;
+let hasCategoryColumn: boolean | null = null;
 
 const noteCompletionColumn = (tasks?: SupabaseTask[] | null) => {
   if (detectedCompletionColumn || !tasks) {
@@ -92,6 +95,23 @@ const noteLabelColumn = (tasks?: SupabaseTask[] | null) => {
   }
 };
 
+const noteCategoryColumn = (tasks?: SupabaseTask[] | null) => {
+  if (hasCategoryColumn === true || !tasks) {
+    return;
+  }
+
+  for (const task of tasks) {
+    if (!task) {
+      continue;
+    }
+
+    if (typeof (task as { [CATEGORY_COLUMN]?: unknown })[CATEGORY_COLUMN] !== "undefined") {
+      hasCategoryColumn = true;
+      return;
+    }
+  }
+};
+
 const ensureCompletionColumn = async (): Promise<CompletionColumn> => {
   if (detectedCompletionColumn) {
     return detectedCompletionColumn;
@@ -116,6 +136,7 @@ const ensureCompletionColumn = async (): Promise<CompletionColumn> => {
         noteCompletionColumn(data as unknown as SupabaseTask[]);
         noteCompletedAtColumn(data as unknown as SupabaseTask[]);
         noteLabelColumn(data as unknown as SupabaseTask[]);
+        noteCategoryColumn(data as unknown as SupabaseTask[]);
       }
       return column;
     }
@@ -199,6 +220,41 @@ const ensureLabelColumn = async (): Promise<boolean> => {
   throw error;
 };
 
+const ensureCategoryColumn = async (): Promise<boolean> => {
+  if (hasCategoryColumn !== null) {
+    return hasCategoryColumn;
+  }
+
+  const user = supabaseClient.auth.user();
+
+  if (!user) {
+    hasCategoryColumn = false;
+    return hasCategoryColumn;
+  }
+
+  const { data, error } = await supabaseClient
+    .from<Record<string, unknown>>("tasks")
+    .select(CATEGORY_COLUMN)
+    .eq("user_id", user.id)
+    .limit(1);
+
+  if (!error) {
+    hasCategoryColumn = true;
+    if (Array.isArray(data)) {
+      noteCategoryColumn(data as unknown as SupabaseTask[]);
+    }
+    return hasCategoryColumn;
+  }
+
+  const message = error.message?.toLowerCase();
+  if (message && message.includes(MISSING_CATEGORY_MESSAGE)) {
+    hasCategoryColumn = false;
+    return hasCategoryColumn;
+  }
+
+  throw error;
+};
+
 const fetchTasksByGroup = async (group: TaskGroup): Promise<SupabaseTask[]> => {
   const user = supabaseClient.auth.user();
 
@@ -221,6 +277,7 @@ const fetchTasksByGroup = async (group: TaskGroup): Promise<SupabaseTask[]> => {
   noteCompletionColumn(data);
   noteCompletedAtColumn(data);
   noteLabelColumn(data);
+  noteCategoryColumn(data);
   return data ?? [];
 };
 
@@ -246,6 +303,7 @@ export const fetchAllTasks = async (): Promise<SupabaseTask[]> => {
   noteCompletionColumn(data);
   noteCompletedAtColumn(data);
   noteLabelColumn(data);
+  noteCategoryColumn(data);
   return data ?? [];
 };
 
@@ -318,6 +376,8 @@ export const updateTask = async (taskID: string, updates: UpdateTaskInput): Prom
     if (typeof updates.label !== "undefined") {
       if (await ensureLabelColumn()) {
         payload.label = updates.label;
+      } else if (await ensureCategoryColumn()) {
+        payload.category = updates.label;
       }
     }
 
@@ -340,6 +400,9 @@ export const updateTask = async (taskID: string, updates: UpdateTaskInput): Prom
       }
       if (error.message?.toLowerCase().includes(MISSING_LABEL_MESSAGE)) {
         hasLabelColumn = false;
+      }
+      if (error.message?.toLowerCase().includes(MISSING_CATEGORY_MESSAGE)) {
+        hasCategoryColumn = false;
       }
       throw error;
     }
@@ -405,6 +468,8 @@ export const createTask = async ({
     if (typeof label !== "undefined") {
       if (await ensureLabelColumn()) {
         payload.label = label;
+      } else if (await ensureCategoryColumn()) {
+        payload.category = label;
       }
     }
 
@@ -417,6 +482,9 @@ export const createTask = async ({
       }
       if (error.message?.toLowerCase().includes(MISSING_LABEL_MESSAGE)) {
         hasLabelColumn = false;
+      }
+      if (error.message?.toLowerCase().includes(MISSING_CATEGORY_MESSAGE)) {
+        hasCategoryColumn = false;
       }
       throw error;
     }

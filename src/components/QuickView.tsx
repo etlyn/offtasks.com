@@ -161,13 +161,13 @@ export function QuickView({
                         {selectedLabels.length}
                       </Badge>
                     )}
-                  <Button
+                  </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-[200px]">
-                    onClick={toggleShowCompleted}
+                  <DropdownMenuLabel className="font-['Poppins',_sans-serif] text-[12px]">
                     Filter by Category
                   </DropdownMenuLabel>
-                    {effectiveShowCompleted ? "Hide" : "Show"} Completed
+                  <DropdownMenuSeparator />
                   {allLabels.map((label) => {
                     const config = getCategoryConfig(label) || getDefaultCategoryColor();
                     return (

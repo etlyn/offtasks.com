@@ -110,80 +110,72 @@ export function ProfileMenu({
       </SheetTrigger>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-[420px] p-0 bg-white text-zinc-900 border-zinc-200"
+        className="w-[340px] sm:w-[420px] max-w-[90vw] p-0 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border-zinc-200 dark:border-zinc-800 shadow-xl"
       >
         <div className="flex h-full flex-col">
-          <div className="border-b border-zinc-200 px-6 py-6">
+          <div className="border-b border-zinc-200 dark:border-zinc-800 px-6 py-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="size-12 rounded-full bg-gradient-to-b from-teal-900 to-teal-800 shadow-[0px_10px_15px_rgba(0,0,0,0.1)] flex items-center justify-center">
-                  <User className="size-6 text-white" />
+                <div className="size-12 rounded-full bg-gradient-to-b from-teal-600 to-teal-700 dark:from-teal-900 dark:to-teal-800 shadow-[0px_10px_15px_rgba(0,0,0,0.12)] flex items-center justify-center">
+                  <span className="font-['Poppins',_sans-serif] text-[16px] text-white select-none">
+                    {initials}
+                  </span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-['Poppins',_sans-serif] text-[16px] text-zinc-900">
-                    {displayName}
-                  </span>
-                  <span className="font-['Poppins',_sans-serif] text-[12px] text-zinc-500">
+                  <span className="font-['Poppins',_sans-serif] text-[12px] text-zinc-500 dark:text-zinc-400">
                     {completionLabel}
                   </span>
                 </div>
               </div>
 
-              <SheetClose asChild>
-                <button
-                  className="size-10 rounded-md flex items-center justify-center text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 transition"
-                  aria-label="Close menu"
-                >
-                  <X className="size-5" />
-                </button>
-              </SheetClose>
+              <div className="size-10" />
             </div>
           </div>
 
           <div className="flex-1 overflow-y-auto px-5 py-6">
-            <div className="rounded-2xl border border-zinc-200/80 bg-white shadow-[0px_8px_32px_rgba(0,0,0,0.08)]">
+            <div className="rounded-2xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900/70 shadow-[0px_8px_32px_rgba(0,0,0,0.08)] p-2 space-y-2">
               <button
                 onClick={handleSearch}
-                className="w-full flex items-center gap-3 px-4 py-4 border-b border-zinc-100 text-left hover:bg-zinc-50 transition"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-transparent text-left text-zinc-900 dark:text-zinc-100 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition"
               >
                 <div className="size-9 rounded-full border border-[#bedbff] bg-[#dbeafe] flex items-center justify-center">
                   <Search className="size-4 text-sky-600" />
                 </div>
-                <span className="flex-1 font-['Poppins',_sans-serif] text-[15px] text-zinc-900">
+                <span className="flex-1 font-['Poppins',_sans-serif] text-[15px] text-zinc-900 dark:text-zinc-100">
                   Search
                 </span>
-                <ChevronRight className="size-4 text-zinc-400" />
+                <ChevronRight className="size-4 text-zinc-400 dark:text-zinc-500" />
               </button>
 
               <button
                 onClick={closeAndRun(onViewAnalytics)}
-                className="w-full flex items-center gap-3 px-4 py-4 border-b border-zinc-100 text-left hover:bg-zinc-50 transition"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-transparent text-left text-zinc-900 dark:text-zinc-100 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition"
               >
                 <div className="size-9 rounded-full border border-[#e9d4ff] bg-[#f3e8ff] flex items-center justify-center">
                   <BarChart3 className="size-4 text-purple-600" />
                 </div>
-                <span className="flex-1 font-['Poppins',_sans-serif] text-[15px] text-zinc-900">
+                <span className="flex-1 font-['Poppins',_sans-serif] text-[15px] text-zinc-900 dark:text-zinc-100">
                   Analytics
                 </span>
-                <ChevronRight className="size-4 text-zinc-400" />
+                <ChevronRight className="size-4 text-zinc-400 dark:text-zinc-500" />
               </button>
 
               <button
                 onClick={closeAndRun(onViewCompleted)}
-                className="w-full flex items-center gap-3 px-4 py-4 border-b border-zinc-100 text-left hover:bg-zinc-50 transition"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-transparent text-left text-zinc-900 dark:text-zinc-100 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition"
               >
                 <div className="size-9 rounded-full border border-[#b9f8cf] bg-[#dcfce7] flex items-center justify-center">
                   <CheckCircle2 className="size-4 text-emerald-600" />
                 </div>
-                <span className="flex-1 font-['Poppins',_sans-serif] text-[15px] text-zinc-900">
+                <span className="flex-1 font-['Poppins',_sans-serif] text-[15px] text-zinc-900 dark:text-zinc-100">
                   Completed Tasks
                 </span>
-                <ChevronRight className="size-4 text-zinc-400" />
+                <ChevronRight className="size-4 text-zinc-400 dark:text-zinc-500" />
               </button>
 
               <button
                 onClick={closeAndRun(onToggleTheme)}
-                className="w-full flex items-center gap-3 px-4 py-4 border-b border-zinc-100 text-left hover:bg-zinc-50 transition"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-transparent text-left text-zinc-900 dark:text-zinc-100 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition"
               >
                 <div className="size-9 rounded-full border border-[#fee685] bg-[#fef3c6] flex items-center justify-center">
                   {isDark ? (
@@ -192,19 +184,19 @@ export function ProfileMenu({
                     <Sun className="size-4 text-amber-600" />
                   )}
                 </div>
-                <span className="flex-1 font-['Poppins',_sans-serif] text-[15px] text-zinc-900">
+                <span className="flex-1 font-['Poppins',_sans-serif] text-[15px] text-zinc-900 dark:text-zinc-100">
                   Theme
                 </span>
-                <span className="font-['Poppins',_sans-serif] text-[13px] text-zinc-500">
+                <span className="font-['Poppins',_sans-serif] text-[13px] text-zinc-500 dark:text-zinc-400">
                   {themeLabel}
                 </span>
               </button>
 
-              <div className="flex items-center gap-3 px-4 py-4 border-b border-zinc-100">
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-900 dark:text-zinc-100">
                 <div className="size-9 rounded-full border border-[#b8e6fe] bg-[#dff2fe] flex items-center justify-center">
                   <EyeOff className="size-4 text-sky-600" />
                 </div>
-                <span className="flex-1 font-['Poppins',_sans-serif] text-[15px] text-zinc-900">
+                <span className="flex-1 font-['Poppins',_sans-serif] text-[15px] text-zinc-900 dark:text-zinc-100">
                   Hide Completed Tasks
                 </span>
                 <Switch
@@ -213,11 +205,11 @@ export function ProfileMenu({
                 />
               </div>
 
-              <div className="flex items-center gap-3 px-4 py-4">
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-900 dark:text-zinc-100">
                 <div className="size-9 rounded-full border border-[#96f7e4] bg-[#cbfbf1] flex items-center justify-center">
                   <Cpu className="size-4 text-teal-600" />
                 </div>
-                <span className="flex-1 font-['Poppins',_sans-serif] text-[15px] text-zinc-900">
+                <span className="flex-1 font-['Poppins',_sans-serif] text-[15px] text-zinc-900 dark:text-zinc-100">
                   Advanced Mode
                 </span>
                 <Switch
@@ -228,15 +220,15 @@ export function ProfileMenu({
             </div>
           </div>
 
-          <div className="border-t border-zinc-200 px-5 py-6">
+          <div className="border-t border-zinc-200 dark:border-zinc-800 px-5 py-6">
             <button
               onClick={closeAndRun(onLogout)}
-              className="w-full flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 shadow-[0px_1px_3px_rgba(0,0,0,0.1)] transition hover:bg-red-100"
+              className="w-full flex items-center justify-center gap-2 rounded-xl border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/40 px-4 py-3 shadow-[0px_1px_3px_rgba(0,0,0,0.1)] transition hover:bg-red-100 dark:hover:bg-red-900/50"
             >
               <LogOut className="size-4 text-red-600" />
               <span className="font-['Poppins',_sans-serif] text-[15px] text-red-600">Log Out</span>
             </button>
-            <p className="mt-4 text-center font-['Poppins',_sans-serif] text-[11px] text-zinc-400">
+            <p className="mt-4 text-center font-['Poppins',_sans-serif] text-[11px] text-zinc-400 dark:text-zinc-500">
               offtasks mobile v1.0.0
             </p>
           </div>
