@@ -1,6 +1,8 @@
 import { TaskItem } from "./TaskItem";
 import { Task } from "../types/task";
 import { motion } from "motion/react";
+import { Inbox } from "lucide-react";
+import { EmptyState } from "./EmptyState";
 
 interface TaskColumnProps {
   title: string;
@@ -11,7 +13,14 @@ interface TaskColumnProps {
   showMetadata?: boolean;
 }
 
-export function TaskColumn({ title, tasks, onToggleTask, onEditTask, category, showMetadata = false }: TaskColumnProps) {
+export function TaskColumn({
+  title,
+  tasks,
+  onToggleTask,
+  onEditTask,
+  category,
+  showMetadata = false,
+}: TaskColumnProps) {
   const completedCount = tasks.filter((t) => t.completed).length;
   const totalCount = tasks.length;
 
@@ -33,33 +42,12 @@ export function TaskColumn({ title, tasks, onToggleTask, onEditTask, category, s
 
       <div className="content-stretch flex flex-col gap-[16px] items-start relative w-full max-h-[calc(100vh-420px)] min-h-[200px] overflow-y-auto pr-[4px] scrollbar-visible">
         {tasks.length === 0 ? (
-          <div className="w-full py-[40px] flex flex-col items-center justify-center gap-[8px]">
-            <div className="relative shrink-0 size-[48px] opacity-20">
-              <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 24 24">
-                <g>
-                  <path 
-                    d="M9 11l3 3L22 4" 
-                    stroke="currentColor" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth="2" 
-                    className="text-zinc-400 dark:text-zinc-600"
-                  />
-                  <path 
-                    d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" 
-                    stroke="currentColor" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth="2" 
-                    className="text-zinc-400 dark:text-zinc-600"
-                  />
-                </g>
-              </svg>
-            </div>
-            <p className="font-['Poppins',_sans-serif] text-[14px] text-zinc-400 dark:text-zinc-500">
-              No tasks yet
-            </p>
-          </div>
+          <EmptyState
+            icon={Inbox}
+            title={`No ${title.toLowerCase()} tasks`}
+            description="Tasks for this section will show up here once you add them."
+            className="w-full border-none bg-transparent px-4 py-10 dark:bg-transparent"
+          />
         ) : (
           sortedTasks.map((task) => (
             <TaskItem

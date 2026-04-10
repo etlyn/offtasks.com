@@ -1,9 +1,12 @@
 import { useState, useMemo } from "react";
 import { TaskColumn } from "./TaskColumn";
 import { Task } from "../types/task";
-import { Search, Tag, X, ArrowUpDown } from "lucide-react";
+import { Tag, X, ArrowUpDown } from "lucide-react";
 import { Badge } from "./ui/badge";
-import { getCategoryConfig, getDefaultCategoryColor } from "../utils/categoryConfig";
+import {
+  getCategoryConfig,
+  getDefaultCategoryColor,
+} from "../utils/categoryConfig";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -13,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { Button } from "./ui/button";
+import { SearchSectionBar } from "./SearchSectionBar";
 
 interface QuickViewProps {
   tasks: Task[];
@@ -34,9 +38,12 @@ export function QuickView({
   // Advanced mode states
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
-  const [prioritySortDirection, setPrioritySortDirection] = useState<"asc" | "desc" | null>(null);
+  const [prioritySortDirection, setPrioritySortDirection] = useState<
+    "asc" | "desc" | null
+  >(null);
   const [showCompleted, setShowCompleted] = useState(true);
-  const effectiveShowCompleted = typeof hideCompleted === "boolean" ? !hideCompleted : showCompleted;
+  const effectiveShowCompleted =
+    typeof hideCompleted === "boolean" ? !hideCompleted : showCompleted;
   const applyFilters = advancedMode || hideCompleted === true;
 
   // Get all unique labels from tasks
@@ -57,7 +64,10 @@ export function QuickView({
     return tasks.filter((task) => {
       if (advancedMode) {
         // Search filter
-        if (searchQuery && !task.text.toLowerCase().includes(searchQuery.toLowerCase())) {
+        if (
+          searchQuery &&
+          !task.text.toLowerCase().includes(searchQuery.toLowerCase())
+        ) {
           return false;
         }
 
@@ -76,7 +86,14 @@ export function QuickView({
 
       return true;
     });
-  }, [advancedMode, applyFilters, effectiveShowCompleted, searchQuery, selectedLabels, tasks]);
+  }, [
+    advancedMode,
+    applyFilters,
+    effectiveShowCompleted,
+    searchQuery,
+    selectedLabels,
+    tasks,
+  ]);
 
   // Sort tasks when advanced mode is enabled
   const sortedTasks = useMemo(() => {
@@ -90,7 +107,7 @@ export function QuickView({
       const comparison = priorityOrder[aPriority] - priorityOrder[bPriority];
       return prioritySortDirection === "desc" ? comparison : -comparison;
     });
-    
+
     return sorted;
   }, [filteredTasks, prioritySortDirection, advancedMode]);
 
@@ -126,7 +143,7 @@ export function QuickView({
 
   const toggleLabel = (label: string) => {
     setSelectedLabels((prev) =>
-      prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label]
+      prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label],
     );
   };
 
@@ -157,7 +174,10 @@ export function QuickView({
                     <Tag className="size-[14px]" />
                     Categories
                     {selectedLabels.length > 0 && (
-                      <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-[11px] h-[18px]">
+                      <Badge
+                        variant="secondary"
+                        className="ml-1 px-1.5 py-0 text-[11px] h-[18px]"
+                      >
                         {selectedLabels.length}
                       </Badge>
                     )}
@@ -169,7 +189,8 @@ export function QuickView({
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   {allLabels.map((label) => {
-                    const config = getCategoryConfig(label) || getDefaultCategoryColor();
+                    const config =
+                      getCategoryConfig(label) || getDefaultCategoryColor();
                     return (
                       <DropdownMenuCheckboxItem
                         key={label}
@@ -178,7 +199,9 @@ export function QuickView({
                         className="font-['Poppins',_sans-serif] text-[13px]"
                       >
                         <div className="flex items-center gap-2">
-                          <span className={`size-2 rounded-full ${config.dotColor}`} />
+                          <span
+                            className={`size-2 rounded-full ${config.dotColor}`}
+                          />
                           <span>{label}</span>
                         </div>
                       </DropdownMenuCheckboxItem>
@@ -226,16 +249,11 @@ export function QuickView({
             <div className="flex-1" />
 
             {/* Search - Right Aligned */}
-            <div className="relative w-[280px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-[16px] text-zinc-400 dark:text-zinc-500 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Search tasks..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-9 pl-10 pr-4 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 rounded-[10px] font-['Poppins',_sans-serif] text-[14px] text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 shadow-none dark:shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 dark:focus:border-sky-400 transition-all"
-              />
-            </div>
+            <SearchSectionBar
+              value={searchQuery}
+              onChange={setSearchQuery}
+              onClear={() => setSearchQuery("")}
+            />
           </div>
 
           {/* Active Filters Display */}
@@ -256,14 +274,17 @@ export function QuickView({
                 </Badge>
               )}
               {selectedLabels.map((label) => {
-                const config = getCategoryConfig(label) || getDefaultCategoryColor();
+                const config =
+                  getCategoryConfig(label) || getDefaultCategoryColor();
                 return (
                   <Badge
                     key={label}
                     variant="secondary"
                     className="gap-1.5 pr-1 font-['Poppins',_sans-serif] text-[12px]"
                   >
-                    <span className={`size-2 rounded-full ${config.dotColor}`} />
+                    <span
+                      className={`size-2 rounded-full ${config.dotColor}`}
+                    />
                     {label}
                     <button
                       onClick={() => toggleLabel(label)}
@@ -298,7 +319,7 @@ export function QuickView({
           showMetadata={advancedMode}
         />
         <TaskColumn
-          title="Upcoming"
+          title="Later"
           tasks={upcomingTasks}
           onToggleTask={onToggleTask}
           onEditTask={onEditTask}

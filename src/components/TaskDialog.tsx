@@ -69,7 +69,7 @@ export function TaskDialog({
       case "tomorrow":
         return "What's on your agenda for tomorrow?";
       case "upcoming":
-        return "What's coming up?";
+        return "What can wait until later?";
       default:
         return "Enter task description...";
     }
@@ -210,7 +210,7 @@ export function TaskDialog({
                       : "text-neutral-50"
                   }`}
                 >
-                  Upcoming
+                  Later
                 </button>
               </div>
             </div>

@@ -1,9 +1,19 @@
 import { useState, useMemo } from "react";
 import { Task } from "../types/task";
 import { TaskColumn } from "./TaskColumn";
-import { Search, Filter, Tag, SlidersHorizontal, X, ArrowUpDown } from "lucide-react";
+import {
+  Search,
+  Filter,
+  Tag,
+  SlidersHorizontal,
+  X,
+  ArrowUpDown,
+} from "lucide-react";
 import { Badge } from "./ui/badge";
-import { getCategoryConfig, getDefaultCategoryColor } from "../utils/categoryConfig";
+import {
+  getCategoryConfig,
+  getDefaultCategoryColor,
+} from "../utils/categoryConfig";
 import {
   Select,
   SelectContent,
@@ -20,6 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { Button } from "./ui/button";
+import { EmptyState } from "./EmptyState";
 
 interface FullViewProps {
   tasks: Task[];
@@ -35,7 +46,9 @@ export function FullView({ tasks, onToggleTask, onEditTask }: FullViewProps) {
   const [groupBy, setGroupBy] = useState<GroupBy>("none");
   const [sortBy, setSortBy] = useState<SortBy>("default");
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
-  const [prioritySortDirection, setPrioritySortDirection] = useState<"asc" | "desc" | null>(null);
+  const [prioritySortDirection, setPrioritySortDirection] = useState<
+    "asc" | "desc" | null
+  >(null);
   const [showCompleted, setShowCompleted] = useState(true);
 
   // Get all unique labels from tasks
@@ -53,7 +66,10 @@ export function FullView({ tasks, onToggleTask, onEditTask }: FullViewProps) {
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
       // Search filter
-      if (searchQuery && !task.text.toLowerCase().includes(searchQuery.toLowerCase())) {
+      if (
+        searchQuery &&
+        !task.text.toLowerCase().includes(searchQuery.toLowerCase())
+      ) {
         return false;
       }
 
@@ -76,7 +92,7 @@ export function FullView({ tasks, onToggleTask, onEditTask }: FullViewProps) {
   // Sort tasks
   const sortedTasks = useMemo(() => {
     const sorted = [...filteredTasks];
-    
+
     // Priority sorting takes precedence
     if (prioritySortDirection) {
       const priorityOrder = { high: 0, medium: 1, low: 2 };
@@ -96,7 +112,7 @@ export function FullView({ tasks, onToggleTask, onEditTask }: FullViewProps) {
     } else if (sortBy === "alphabetical") {
       sorted.sort((a, b) => a.text.localeCompare(b.text));
     }
-    
+
     return sorted;
   }, [filteredTasks, sortBy, prioritySortDirection]);
 
@@ -127,7 +143,7 @@ export function FullView({ tasks, onToggleTask, onEditTask }: FullViewProps) {
 
     if (groupBy === "labels") {
       const groups: Record<string, Task[]> = { unlabeled: [] };
-      
+
       sortedTasks.forEach((task) => {
         if (!task.label) {
           groups.unlabeled.push(task);
@@ -138,7 +154,7 @@ export function FullView({ tasks, onToggleTask, onEditTask }: FullViewProps) {
           groups[task.label].push(task);
         }
       });
-      
+
       return groups;
     }
 
@@ -146,9 +162,7 @@ export function FullView({ tasks, onToggleTask, onEditTask }: FullViewProps) {
   }, [sortedTasks, groupBy]);
 
   const activeFilterCount =
-    (searchQuery ? 1 : 0) +
-    selectedLabels.length +
-    (!showCompleted ? 1 : 0);
+    (searchQuery ? 1 : 0) + selectedLabels.length + (!showCompleted ? 1 : 0);
 
   const clearAllFilters = () => {
     setSearchQuery("");
@@ -159,7 +173,7 @@ export function FullView({ tasks, onToggleTask, onEditTask }: FullViewProps) {
 
   const toggleLabel = (label: string) => {
     setSelectedLabels((prev) =>
-      prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label]
+      prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label],
     );
   };
 
@@ -218,7 +232,10 @@ export function FullView({ tasks, onToggleTask, onEditTask }: FullViewProps) {
                   <Tag className="size-[14px]" />
                   Categories
                   {selectedLabels.length > 0 && (
-                    <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-[11px] h-[18px]">
+                    <Badge
+                      variant="secondary"
+                      className="ml-1 px-1.5 py-0 text-[11px] h-[18px]"
+                    >
                       {selectedLabels.length}
                     </Badge>
                   )}
@@ -230,7 +247,8 @@ export function FullView({ tasks, onToggleTask, onEditTask }: FullViewProps) {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {allLabels.map((label) => {
-                  const config = getCategoryConfig(label) || getDefaultCategoryColor();
+                  const config =
+                    getCategoryConfig(label) || getDefaultCategoryColor();
                   return (
                     <DropdownMenuCheckboxItem
                       key={label}
@@ -239,7 +257,9 @@ export function FullView({ tasks, onToggleTask, onEditTask }: FullViewProps) {
                       className="font-['Poppins',_sans-serif] text-[13px]"
                     >
                       <div className="flex items-center gap-2">
-                        <span className={`size-2 rounded-full ${config.dotColor}`} />
+                        <span
+                          className={`size-2 rounded-full ${config.dotColor}`}
+                        />
                         <span>{label}</span>
                       </div>
                     </DropdownMenuCheckboxItem>
@@ -317,7 +337,8 @@ export function FullView({ tasks, onToggleTask, onEditTask }: FullViewProps) {
               </Badge>
             )}
             {selectedLabels.map((label) => {
-              const config = getCategoryConfig(label) || getDefaultCategoryColor();
+              const config =
+                getCategoryConfig(label) || getDefaultCategoryColor();
               return (
                 <Badge
                   key={label}
@@ -356,19 +377,21 @@ export function FullView({ tasks, onToggleTask, onEditTask }: FullViewProps) {
 
       {/* Empty State */}
       {Object.values(groupedTasks).every((group) => group.length === 0) && (
-        <div className="text-center py-20">
-          <Filter className="size-16 mx-auto mb-4 text-zinc-300 dark:text-zinc-600" />
-          <p className="font-['Poppins',_sans-serif] text-[16px] text-zinc-400 dark:text-zinc-500">
-            No tasks match your filters
-          </p>
-          <Button
-            variant="link"
-            onClick={clearAllFilters}
-            className="mt-2 font-['Poppins',_sans-serif] text-[14px]"
-          >
-            Clear all filters
-          </Button>
-        </div>
+        <EmptyState
+          icon={Filter}
+          title="No tasks match your filters"
+          description="Adjust or clear the current filters to see tasks again."
+          className="py-20"
+          action={
+            <Button
+              variant="link"
+              onClick={clearAllFilters}
+              className="font-['Poppins',_sans-serif] text-[14px]"
+            >
+              Clear all filters
+            </Button>
+          }
+        />
       )}
     </div>
   );

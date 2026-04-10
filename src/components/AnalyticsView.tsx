@@ -1,8 +1,26 @@
 import { Task } from "../types/task";
-import { CheckCircle2, Clock, TrendingUp, AlertTriangle, Calendar, Flag, Tag } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import {
+  CheckCircle2,
+  Clock,
+  TrendingUp,
+  AlertTriangle,
+  Calendar,
+  Flag,
+  Tag,
+  BarChart3,
+} from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
 import { useMemo } from "react";
 import { getCategoryConfig } from "../utils/categoryConfig";
+import { EmptyState } from "./EmptyState";
 
 interface AnalyticsViewProps {
   tasks: Task[];
@@ -11,71 +29,80 @@ interface AnalyticsViewProps {
 function getCompletionStats(tasks: Task[]) {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  
-  const completedTasks = tasks.filter(t => t.completed && t.completedAt);
-  
+
+  const completedTasks = tasks.filter((t) => t.completed && t.completedAt);
+
   // Tasks completed today
-  const completedToday = completedTasks.filter(t => {
+  const completedToday = completedTasks.filter((t) => {
     const completedDate = new Date(t.completedAt!);
     return completedDate >= today;
   }).length;
-  
+
   // Tasks completed this week
   const weekAgo = new Date(today);
   weekAgo.setDate(weekAgo.getDate() - 7);
-  const completedThisWeek = completedTasks.filter(t => {
+  const completedThisWeek = completedTasks.filter((t) => {
     const completedDate = new Date(t.completedAt!);
     return completedDate >= weekAgo;
   }).length;
-  
+
   // Tasks completed this month
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const completedThisMonth = completedTasks.filter(t => {
+  const completedThisMonth = completedTasks.filter((t) => {
     const completedDate = new Date(t.completedAt!);
     return completedDate >= monthStart;
   }).length;
-  
+
   // Category breakdown
   const categoryStats = {
-    today: tasks.filter(t => t.category === "today" && t.completed).length,
-    tomorrow: tasks.filter(t => t.category === "tomorrow" && t.completed).length,
-    upcoming: tasks.filter(t => t.category === "upcoming" && t.completed).length,
+    today: tasks.filter((t) => t.category === "today" && t.completed).length,
+    tomorrow: tasks.filter((t) => t.category === "tomorrow" && t.completed)
+      .length,
+    upcoming: tasks.filter((t) => t.category === "upcoming" && t.completed)
+      .length,
   };
-  
+
   // Completion rate
   const totalTasks = tasks.length;
   const completedCount = completedTasks.length;
-  const completionRate = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
-  
+  const completionRate =
+    totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
+
   // Active tasks by category
-  const activeTasks = tasks.filter(t => !t.completed).length;
+  const activeTasks = tasks.filter((t) => !t.completed).length;
   const activeByCategory = {
-    today: tasks.filter(t => t.category === "today" && !t.completed).length,
-    tomorrow: tasks.filter(t => t.category === "tomorrow" && !t.completed).length,
-    upcoming: tasks.filter(t => t.category === "upcoming" && !t.completed).length,
+    today: tasks.filter((t) => t.category === "today" && !t.completed).length,
+    tomorrow: tasks.filter((t) => t.category === "tomorrow" && !t.completed)
+      .length,
+    upcoming: tasks.filter((t) => t.category === "upcoming" && !t.completed)
+      .length,
   };
-  
-  const overdueTasks = tasks.filter(t => t.overdue && !t.completed).length;
-  
+
+  const overdueTasks = tasks.filter((t) => t.overdue && !t.completed).length;
+
   // Priority breakdown
   const priorityStats = {
     high: {
-      active: tasks.filter(t => !t.completed && t.priority === "high").length,
-      completed: tasks.filter(t => t.completed && t.priority === "high").length,
+      active: tasks.filter((t) => !t.completed && t.priority === "high").length,
+      completed: tasks.filter((t) => t.completed && t.priority === "high")
+        .length,
     },
     medium: {
-      active: tasks.filter(t => !t.completed && t.priority === "medium").length,
-      completed: tasks.filter(t => t.completed && t.priority === "medium").length,
+      active: tasks.filter((t) => !t.completed && t.priority === "medium")
+        .length,
+      completed: tasks.filter((t) => t.completed && t.priority === "medium")
+        .length,
     },
     low: {
-      active: tasks.filter(t => !t.completed && t.priority === "low").length,
-      completed: tasks.filter(t => t.completed && t.priority === "low").length,
+      active: tasks.filter((t) => !t.completed && t.priority === "low").length,
+      completed: tasks.filter((t) => t.completed && t.priority === "low")
+        .length,
     },
   };
-  
+
   // Label breakdown
   const labelStats: Record<string, { active: number; completed: number }> = {};
-  tasks.forEach(task => {
+  tasks.forEach((task) => {
     if (task.label) {
       if (!labelStats[task.label]) {
         labelStats[task.label] = { active: 0, completed: 0 };
@@ -87,7 +114,7 @@ function getCompletionStats(tasks: Task[]) {
       }
     }
   });
-  
+
   // Last 7 days completion data
   const last7Days = [];
   for (let i = 6; i >= 0; i--) {
@@ -95,20 +122,20 @@ function getCompletionStats(tasks: Task[]) {
     date.setDate(date.getDate() - i);
     const nextDate = new Date(date);
     nextDate.setDate(nextDate.getDate() + 1);
-    
-    const count = completedTasks.filter(t => {
+
+    const count = completedTasks.filter((t) => {
       const completedDate = new Date(t.completedAt!);
       return completedDate >= date && completedDate < nextDate;
     }).length;
-    
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     last7Days.push({
       day: dayNames[date.getDay()],
       count,
       isToday: i === 0,
     });
   }
-  
+
   return {
     completedToday,
     completedThisWeek,
@@ -128,7 +155,29 @@ function getCompletionStats(tasks: Task[]) {
 
 export function AnalyticsView({ tasks }: AnalyticsViewProps) {
   const stats = useMemo(() => getCompletionStats(tasks), [tasks]);
-  
+
+  if (tasks.length === 0) {
+    return (
+      <div className="max-w-[1200px] mx-auto">
+        <div className="mb-8">
+          <h2 className="font-['Poppins',_sans-serif] text-[28px] text-zinc-900 dark:text-zinc-100 mb-2">
+            Analytics & Insights
+          </h2>
+          <p className="font-['Poppins',_sans-serif] text-[14px] text-zinc-500 dark:text-zinc-400">
+            Track your productivity and task completion metrics
+          </p>
+        </div>
+
+        <EmptyState
+          icon={BarChart3}
+          title="No analytics yet"
+          description="Add and complete tasks to unlock trends, completion rates, and activity charts."
+          className="min-h-[360px]"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-[1200px] mx-auto">
       <div className="mb-8">
@@ -189,7 +238,7 @@ export function AnalyticsView({ tasks }: AnalyticsViewProps) {
             {stats.completionRate}%
           </p>
           <div className="mt-3 w-full h-2 bg-purple-200 dark:bg-zinc-700/50 rounded-full overflow-hidden">
-            <div 
+            <div
               className="h-full bg-purple-600 dark:bg-purple-500/80 transition-all duration-500"
               style={{ width: `${stats.completionRate}%` }}
             />
@@ -209,7 +258,7 @@ export function AnalyticsView({ tasks }: AnalyticsViewProps) {
             {stats.overdueTasks}
           </p>
           <p className="font-['Poppins',_sans-serif] text-[12px] text-red-600 dark:text-zinc-500 mt-1">
-            {stats.overdueTasks > 0 ? 'need attention' : 'all caught up!'}
+            {stats.overdueTasks > 0 ? "need attention" : "all caught up!"}
           </p>
         </div>
       </div>
@@ -223,7 +272,7 @@ export function AnalyticsView({ tasks }: AnalyticsViewProps) {
               Recent Activity
             </h3>
           </div>
-          
+
           <div className="space-y-3">
             <div className="flex items-center justify-between p-4 rounded-[12px] bg-zinc-50 dark:bg-zinc-900/30 border border-zinc-200 dark:border-zinc-700/50">
               <p className="font-['Poppins',_sans-serif] text-[14px] text-zinc-700 dark:text-zinc-300">
@@ -233,7 +282,7 @@ export function AnalyticsView({ tasks }: AnalyticsViewProps) {
                 {stats.completedToday}
               </p>
             </div>
-            
+
             <div className="flex items-center justify-between p-4 rounded-[12px] bg-zinc-50 dark:bg-zinc-900/30 border border-zinc-200 dark:border-zinc-700/50">
               <p className="font-['Poppins',_sans-serif] text-[14px] text-zinc-700 dark:text-zinc-300">
                 Completed this week
@@ -242,7 +291,7 @@ export function AnalyticsView({ tasks }: AnalyticsViewProps) {
                 {stats.completedThisWeek}
               </p>
             </div>
-            
+
             <div className="flex items-center justify-between p-4 rounded-[12px] bg-zinc-50 dark:bg-zinc-900/30 border border-zinc-200 dark:border-zinc-700/50">
               <p className="font-['Poppins',_sans-serif] text-[14px] text-zinc-700 dark:text-zinc-300">
                 Completed this month
@@ -262,7 +311,7 @@ export function AnalyticsView({ tasks }: AnalyticsViewProps) {
               By Priority
             </h3>
           </div>
-          
+
           <div className="space-y-4">
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -273,13 +322,16 @@ export function AnalyticsView({ tasks }: AnalyticsViewProps) {
                   </p>
                 </div>
                 <p className="font-['Poppins',_sans-serif] text-[14px] text-zinc-600 dark:text-zinc-400">
-                  {stats.priorityStats.high.active} active · {stats.priorityStats.high.completed} completed
+                  {stats.priorityStats.high.active} active ·{" "}
+                  {stats.priorityStats.high.completed} completed
                 </p>
               </div>
               <div className="w-full h-3 bg-red-100 dark:bg-zinc-700/50 rounded-full overflow-hidden">
-                <div 
+                <div
                   className="h-full bg-red-600 dark:bg-red-500/80 transition-all duration-500"
-                  style={{ width: `${stats.priorityStats.high.completed > 0 ? (stats.priorityStats.high.completed / (stats.priorityStats.high.active + stats.priorityStats.high.completed)) * 100 : 0}%` }}
+                  style={{
+                    width: `${stats.priorityStats.high.completed > 0 ? (stats.priorityStats.high.completed / (stats.priorityStats.high.active + stats.priorityStats.high.completed)) * 100 : 0}%`,
+                  }}
                 />
               </div>
             </div>
@@ -293,13 +345,16 @@ export function AnalyticsView({ tasks }: AnalyticsViewProps) {
                   </p>
                 </div>
                 <p className="font-['Poppins',_sans-serif] text-[14px] text-zinc-600 dark:text-zinc-400">
-                  {stats.priorityStats.medium.active} active · {stats.priorityStats.medium.completed} completed
+                  {stats.priorityStats.medium.active} active ·{" "}
+                  {stats.priorityStats.medium.completed} completed
                 </p>
               </div>
               <div className="w-full h-3 bg-amber-100 dark:bg-zinc-700/50 rounded-full overflow-hidden">
-                <div 
+                <div
                   className="h-full bg-amber-600 dark:bg-amber-500/80 transition-all duration-500"
-                  style={{ width: `${stats.priorityStats.medium.completed > 0 ? (stats.priorityStats.medium.completed / (stats.priorityStats.medium.active + stats.priorityStats.medium.completed)) * 100 : 0}%` }}
+                  style={{
+                    width: `${stats.priorityStats.medium.completed > 0 ? (stats.priorityStats.medium.completed / (stats.priorityStats.medium.active + stats.priorityStats.medium.completed)) * 100 : 0}%`,
+                  }}
                 />
               </div>
             </div>
@@ -313,13 +368,16 @@ export function AnalyticsView({ tasks }: AnalyticsViewProps) {
                   </p>
                 </div>
                 <p className="font-['Poppins',_sans-serif] text-[14px] text-zinc-600 dark:text-zinc-400">
-                  {stats.priorityStats.low.active} active · {stats.priorityStats.low.completed} completed
+                  {stats.priorityStats.low.active} active ·{" "}
+                  {stats.priorityStats.low.completed} completed
                 </p>
               </div>
               <div className="w-full h-3 bg-blue-100 dark:bg-zinc-700/50 rounded-full overflow-hidden">
-                <div 
+                <div
                   className="h-full bg-blue-600 dark:bg-blue-500/80 transition-all duration-500"
-                  style={{ width: `${stats.priorityStats.low.completed > 0 ? (stats.priorityStats.low.completed / (stats.priorityStats.low.active + stats.priorityStats.low.completed)) * 100 : 0}%` }}
+                  style={{
+                    width: `${stats.priorityStats.low.completed > 0 ? (stats.priorityStats.low.completed / (stats.priorityStats.low.active + stats.priorityStats.low.completed)) * 100 : 0}%`,
+                  }}
                 />
               </div>
             </div>
@@ -336,18 +394,25 @@ export function AnalyticsView({ tasks }: AnalyticsViewProps) {
               By Label
             </h3>
           </div>
-          
+
           <div className="space-y-4 max-h-[250px] overflow-y-auto scrollbar-visible pr-2">
             {Object.keys(stats.labelStats).length > 0 ? (
               Object.entries(stats.labelStats)
-                .sort((a, b) => (b[1].active + b[1].completed) - (a[1].active + a[1].completed))
+                .sort(
+                  (a, b) =>
+                    b[1].active +
+                    b[1].completed -
+                    (a[1].active + a[1].completed),
+                )
                 .map(([label, data]) => {
                   const config = getCategoryConfig(label);
                   return (
                     <div key={label}>
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <div className={`size-[8px] rounded-full ${config?.dotColor || 'bg-zinc-500'}`} />
+                          <div
+                            className={`size-[8px] rounded-full ${config?.dotColor || "bg-zinc-500"}`}
+                          />
                           <p className="font-['Poppins',_sans-serif] text-[14px] text-zinc-700 dark:text-zinc-300">
                             {label}
                           </p>
@@ -357,9 +422,11 @@ export function AnalyticsView({ tasks }: AnalyticsViewProps) {
                         </p>
                       </div>
                       <div className="w-full h-3 bg-zinc-200 dark:bg-zinc-700/50 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full transition-all duration-500 ${config?.dotColor || 'bg-zinc-500'}`}
-                          style={{ width: `${data.completed > 0 ? (data.completed / (data.active + data.completed)) * 100 : 0}%` }}
+                        <div
+                          className={`h-full transition-all duration-500 ${config?.dotColor || "bg-zinc-500"}`}
+                          style={{
+                            width: `${data.completed > 0 ? (data.completed / (data.active + data.completed)) * 100 : 0}%`,
+                          }}
                         />
                       </div>
                     </div>
@@ -383,41 +450,47 @@ export function AnalyticsView({ tasks }: AnalyticsViewProps) {
               Completion Trends
             </h3>
           </div>
-          
+
           <div className="h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats.last7Days} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-                <XAxis 
-                  dataKey="day" 
-                  tick={{ fill: 'currentColor', fontSize: 12 }}
+              <BarChart
+                data={stats.last7Days}
+                margin={{ top: 5, right: 5, left: -20, bottom: 5 }}
+              >
+                <XAxis
+                  dataKey="day"
+                  tick={{ fill: "currentColor", fontSize: 12 }}
                   className="text-zinc-600 dark:text-zinc-400"
-                  axisLine={{ stroke: 'currentColor', strokeWidth: 0.5 }}
-                  tickLine={{ stroke: 'currentColor', strokeWidth: 0.5 }}
+                  axisLine={{ stroke: "currentColor", strokeWidth: 0.5 }}
+                  tickLine={{ stroke: "currentColor", strokeWidth: 0.5 }}
                 />
-                <YAxis 
-                  tick={{ fill: 'currentColor', fontSize: 12 }}
+                <YAxis
+                  tick={{ fill: "currentColor", fontSize: 12 }}
                   className="text-zinc-600 dark:text-zinc-400"
-                  axisLine={{ stroke: 'currentColor', strokeWidth: 0.5 }}
-                  tickLine={{ stroke: 'currentColor', strokeWidth: 0.5 }}
+                  axisLine={{ stroke: "currentColor", strokeWidth: 0.5 }}
+                  tickLine={{ stroke: "currentColor", strokeWidth: 0.5 }}
                   allowDecimals={false}
                 />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                    border: '1px solid rgba(0, 0, 0, 0.1)',
-                    borderRadius: '8px',
-                    fontSize: '12px',
-                    padding: '8px 12px',
+                    backgroundColor: "rgba(255, 255, 255, 0.95)",
+                    border: "1px solid rgba(0, 0, 0, 0.1)",
+                    borderRadius: "8px",
+                    fontSize: "12px",
+                    padding: "8px 12px",
                   }}
-                  labelStyle={{ fontFamily: 'Poppins, sans-serif', marginBottom: '4px' }}
-                  itemStyle={{ fontFamily: 'Poppins, sans-serif' }}
-                  formatter={(value) => [`${value} tasks`, 'Completed']}
+                  labelStyle={{
+                    fontFamily: "Poppins, sans-serif",
+                    marginBottom: "4px",
+                  }}
+                  itemStyle={{ fontFamily: "Poppins, sans-serif" }}
+                  formatter={(value) => [`${value} tasks`, "Completed"]}
                 />
                 <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                   {stats.last7Days.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={entry.isToday ? '#0ea5e9' : '#94a3b8'}
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={entry.isToday ? "#0ea5e9" : "#94a3b8"}
                       opacity={entry.isToday ? 1 : 0.7}
                     />
                   ))}

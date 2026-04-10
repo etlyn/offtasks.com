@@ -5,7 +5,15 @@
     "scripts": {
         "dev": "vite",
         "build": "vite build",
-        "preview": "vite preview"
+        "preview": "vite preview",
+        "manual:test:list": "node manual-tests/scripts/run-manual-gherkin.mjs list",
+        "manual:test:all": "node manual-tests/scripts/run-manual-gherkin.mjs run",
+        "manual:test:web": "node manual-tests/scripts/run-manual-gherkin.mjs run --platform web",
+        "manual:test:web:feature": "node manual-tests/scripts/run-manual-gherkin.mjs run --platform web",
+        "manual:test:mobile": "node manual-tests/scripts/run-manual-gherkin.mjs run --platform mobile",
+        "manual:test:mobile:feature": "node manual-tests/scripts/run-manual-gherkin.mjs run --platform mobile",
+        "manual:report:open": "node manual-tests/scripts/open-report.mjs",
+        "manual:report:preview": "node manual-tests/scripts/preview-report.mjs"
     },
     "dependencies": {
         "@radix-ui/react-accordion": "^1.2.3",
@@ -55,12 +63,16 @@
         "vaul": "^1.1.2"
     },
     "devDependencies": {
+        "@cucumber/gherkin": "^37.0.0",
+        "@cucumber/messages": "^31.0.0",
         "@tailwindcss/postcss": "^4.1.14",
         "@types/node": "^20.10.0",
         "@types/react": "^18.3.3",
         "@types/react-dom": "^18.3.0",
         "@vitejs/plugin-react-swc": "^3.10.2",
         "autoprefixer": "^10.4.21",
+        "cucumber-html-reporter": "^7.2.0",
+        "glob": "^11.0.3",
         "tailwindcss": "^4.1.14",
         "typescript": "^5.4.5",
         "vite": "6.3.5"

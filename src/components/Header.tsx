@@ -15,8 +15,7 @@ interface HeaderProps {
   onToggleAutoArrange?: (value: boolean) => void;
   onOpenSearch?: () => void;
   onViewQuickView?: () => void;
-  onViewCompleted: () => void;
-  onViewAnalytics?: () => void;
+  onViewStatistics: () => void;
   onViewHistory: () => void;
   onViewStats: () => void;
   onViewSettings: () => void;
@@ -38,8 +37,7 @@ export function Header({
   onToggleAutoArrange,
   onOpenSearch,
   onViewQuickView,
-  onViewCompleted,
-  onViewAnalytics,
+  onViewStatistics,
   userEmail,
   userName,
 }: HeaderProps) {
@@ -47,12 +45,24 @@ export function Header({
     <div className="bg-white/80 dark:bg-zinc-800/80 backdrop-blur-sm box-border content-stretch flex items-center justify-between px-[40px] md:px-[80px] py-[16px] w-full border-b-[0.5px] border-zinc-300 dark:border-zinc-700/50 transition-colors duration-300 shadow-none dark:shadow-sm">
       <div className="content-stretch flex gap-[4px] items-center justify-center relative shrink-0">
         <div className="relative shrink-0 size-[32px]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 32 32">
+          <svg
+            className="block size-full"
+            fill="none"
+            preserveAspectRatio="none"
+            viewBox="0 0 32 32"
+          >
             <g>
               <path d={svgPaths.p9c53700} fill="#99F6E4" />
               <path d={svgPaths.p79ae300} fill="#134E4A" />
               <g>
-                <rect fill="#FAFAFA" height="24.0802" rx="5.07009" width="24.814" x="3.58887" y="3.08118" />
+                <rect
+                  fill="#FAFAFA"
+                  height="24.0802"
+                  rx="5.07009"
+                  width="24.814"
+                  x="3.58887"
+                  y="3.08118"
+                />
                 <path
                   clipRule="evenodd"
                   d={svgPaths.p32a3f280}
@@ -66,12 +76,17 @@ export function Header({
       </div>
 
       <button
-        onClick={onViewCompleted}
+        onClick={onViewStatistics}
         className="content-stretch flex gap-[8px] items-center relative shrink-0 hover:opacity-70 transition-opacity group"
-        title="View completed tasks"
+        title="View statistics"
       >
         <div className="relative shrink-0 size-[24px]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 24 24">
+          <svg
+            className="block size-full"
+            fill="none"
+            preserveAspectRatio="none"
+            viewBox="0 0 24 24"
+          >
             <g>
               <path
                 d={svgPaths.p31a5d180}
@@ -95,7 +110,12 @@ export function Header({
           title={isDark ? "Switch to light mode" : "Switch to dark mode"}
         >
           {isDark ? (
-            <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 24 24">
+            <svg
+              className="block size-full"
+              fill="none"
+              preserveAspectRatio="none"
+              viewBox="0 0 24 24"
+            >
               <g clipPath="url(#clip0_1_901)">
                 <path
                   d={svgPaths.p3e505380}
@@ -112,7 +132,12 @@ export function Header({
               </defs>
             </svg>
           ) : (
-            <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 24 24">
+            <svg
+              className="block size-full"
+              fill="none"
+              preserveAspectRatio="none"
+              viewBox="0 0 24 24"
+            >
               <g>
                 <path
                   d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
@@ -125,14 +150,13 @@ export function Header({
             </svg>
           )}
         </button>
-        
-        <ProfileMenu 
+
+        <ProfileMenu
           onLogout={onLogout}
           totalCompleted={totalCompleted}
           totalTasks={totalTasks}
           onViewQuickView={onViewQuickView}
-          onViewCompleted={onViewCompleted}
-          onViewAnalytics={onViewAnalytics}
+          onViewStatistics={onViewStatistics}
           onOpenSearch={onOpenSearch}
           isDark={isDark}
           onToggleTheme={onToggleTheme}

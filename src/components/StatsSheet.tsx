@@ -188,7 +188,7 @@ export function StatsSheet({ isOpen, onClose, tasks }: StatsSheetProps) {
               
               <div className="flex items-center justify-between p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900">
                 <p className="font-['Poppins',_sans-serif] text-[14px] text-amber-700 dark:text-amber-400">
-                  Upcoming
+                  Later
                 </p>
                 <p className="font-['Poppins',_sans-serif] text-[16px] text-amber-900 dark:text-amber-300">
                   {stats.categoryStats.upcoming}

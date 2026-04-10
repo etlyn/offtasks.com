@@ -37,7 +37,7 @@ export function CategorySelector({ selected, onChange }: CategorySelectorProps) 
         </p>
       </button>
       
-      {/* Upcoming button */}
+      {/* Later button */}
       <button
         onClick={() => onChange("upcoming")}
         className={`absolute left-[66.67%] top-0 bottom-0 w-[33.33%] rounded-[8px] transition-all duration-200 flex items-center justify-center ${
@@ -47,7 +47,7 @@ export function CategorySelector({ selected, onChange }: CategorySelectorProps) 
         <p className={`font-['Poppins',_sans-serif] leading-[1.4] not-italic text-[12px] text-nowrap transition-colors ${
           selected === "upcoming" ? "text-white" : "text-zinc-600 dark:text-neutral-50"
         }`}>
-          Upcoming
+          Later
         </p>
       </button>
       

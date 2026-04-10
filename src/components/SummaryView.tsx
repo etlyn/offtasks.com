@@ -1,5 +1,7 @@
 import { Task } from "../types/task";
+import { History } from "lucide-react";
 import { Badge } from "./ui/badge";
+import { EmptyState } from "./EmptyState";
 
 interface SummaryViewProps {
   tasks: Task[];
@@ -9,32 +11,36 @@ interface SummaryViewProps {
 function getRelativeDate(timestamp: number): string {
   const now = new Date();
   const completedDate = new Date(timestamp);
-  
+
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const completed = new Date(completedDate.getFullYear(), completedDate.getMonth(), completedDate.getDate());
-  
+  const completed = new Date(
+    completedDate.getFullYear(),
+    completedDate.getMonth(),
+    completedDate.getDate(),
+  );
+
   const diffTime = today.getTime() - completed.getTime();
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-  
+
   if (diffDays === 0) return "Today";
   if (diffDays === 1) return "Yesterday";
   if (diffDays <= 7) return `${diffDays} days ago`;
   if (diffDays <= 30) {
     const weeks = Math.floor(diffDays / 7);
-    return `${weeks} week${weeks > 1 ? 's' : ''} ago`;
+    return `${weeks} week${weeks > 1 ? "s" : ""} ago`;
   }
   if (diffDays <= 365) {
     const months = Math.floor(diffDays / 30);
-    return `${months} month${months > 1 ? 's' : ''} ago`;
+    return `${months} month${months > 1 ? "s" : ""} ago`;
   }
   const years = Math.floor(diffDays / 365);
-  return `${years} year${years > 1 ? 's' : ''} ago`;
+  return `${years} year${years > 1 ? "s" : ""} ago`;
 }
 
 function groupTasksByDate(tasks: Task[]): Map<string, Task[]> {
   const grouped = new Map<string, Task[]>();
-  
-  tasks.forEach(task => {
+
+  tasks.forEach((task) => {
     if (task.completed && task.completedAt) {
       const relativeDate = getRelativeDate(task.completedAt);
       if (!grouped.has(relativeDate)) {
@@ -43,32 +49,32 @@ function groupTasksByDate(tasks: Task[]): Map<string, Task[]> {
       grouped.get(relativeDate)!.push(task);
     }
   });
-  
+
   return grouped;
 }
 
 export function SummaryView({ tasks, isDark }: SummaryViewProps) {
   const completedTasks = tasks
-    .filter(t => t.completed && t.completedAt)
+    .filter((t) => t.completed && t.completedAt)
     .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
-  
+
   const groupedTasks = groupTasksByDate(completedTasks);
-  
+
   const sortedGroups = Array.from(groupedTasks.entries()).sort((a, b) => {
     const order = ["Today", "Yesterday"];
     const aIndex = order.indexOf(a[0]);
     const bIndex = order.indexOf(b[0]);
-    
+
     if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
     if (aIndex !== -1) return -1;
     if (bIndex !== -1) return 1;
-    
+
     const aMatch = a[0].match(/^(\d+)/);
     const bMatch = b[0].match(/^(\d+)/);
     if (aMatch && bMatch) {
       return parseInt(aMatch[1]) - parseInt(bMatch[1]);
     }
-    
+
     return 0;
   });
 
@@ -85,6 +91,19 @@ export function SummaryView({ tasks, isDark }: SummaryViewProps) {
     }
   };
 
+  const getCategoryLabel = (category: string) => {
+    switch (category) {
+      case "today":
+        return "Today";
+      case "tomorrow":
+        return "Tomorrow";
+      case "upcoming":
+        return "Later";
+      default:
+        return category;
+    }
+  };
+
   return (
     <div className="max-w-[1000px] mx-auto">
       <div className="mb-8">
@@ -95,29 +114,15 @@ export function SummaryView({ tasks, isDark }: SummaryViewProps) {
           View all your completed tasks organized by completion date
         </p>
       </div>
-      
+
       <div className="space-y-8">
         {sortedGroups.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="relative shrink-0 size-[80px] opacity-20 mb-4">
-              <svg className="block size-full" fill="none" viewBox="0 0 24 24">
-                <path 
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" 
-                  stroke="currentColor" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth="2" 
-                  className="text-zinc-400 dark:text-zinc-600"
-                />
-              </svg>
-            </div>
-            <p className="font-['Poppins',_sans-serif] text-[16px] text-zinc-500 dark:text-zinc-400">
-              No completed tasks yet
-            </p>
-            <p className="font-['Poppins',_sans-serif] text-[14px] text-zinc-400 dark:text-zinc-500 mt-2">
-              Complete tasks to see them organized by date here
-            </p>
-          </div>
+          <EmptyState
+            icon={History}
+            title="No history yet"
+            description="Complete a few tasks and this view will group them by completion date."
+            className="py-20"
+          />
         ) : (
           sortedGroups.map(([dateLabel, dateTasks]) => (
             <div key={dateLabel} className="space-y-4">
@@ -127,10 +132,10 @@ export function SummaryView({ tasks, isDark }: SummaryViewProps) {
                 </h3>
                 <div className="flex-1 h-[1px] bg-zinc-200 dark:bg-zinc-700" />
                 <span className="font-['Poppins',_sans-serif] text-[13px] text-zinc-500 dark:text-zinc-400">
-                  {dateTasks.length} task{dateTasks.length !== 1 ? 's' : ''}
+                  {dateTasks.length} task{dateTasks.length !== 1 ? "s" : ""}
                 </span>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {dateTasks.map((task) => (
                   <div
@@ -138,7 +143,11 @@ export function SummaryView({ tasks, isDark }: SummaryViewProps) {
                     className="flex items-start gap-3 p-4 rounded-[12px] bg-white dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/50 hover:shadow-md transition-all shadow-sm"
                   >
                     <div className="relative shrink-0 size-[20px] mt-[2px]">
-                      <svg className="block size-full" fill="none" viewBox="0 0 24 24">
+                      <svg
+                        className="block size-full"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
                         <path
                           d="M9 11l3 3L22 4"
                           stroke="currentColor"
@@ -161,8 +170,11 @@ export function SummaryView({ tasks, isDark }: SummaryViewProps) {
                       <p className="font-['Poppins',_sans-serif] text-[14px] text-zinc-500 dark:text-zinc-400 line-through break-words mb-2">
                         {task.text}
                       </p>
-                      <Badge variant="secondary" className={`text-[11px] capitalize ${getCategoryColor(task.category)}`}>
-                        {task.category}
+                      <Badge
+                        variant="secondary"
+                        className={`text-[11px] capitalize ${getCategoryColor(task.category)}`}
+                      >
+                        {getCategoryLabel(task.category)}
                       </Badge>
                     </div>
                   </div>

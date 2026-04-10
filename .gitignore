@@ -4,9 +4,11 @@
 /node_modules
 /.pnp
 .pnp.js
+.temp
 
 # testing
 /coverage
+/manual-tests/reports
 
 # next.js
 /.next/

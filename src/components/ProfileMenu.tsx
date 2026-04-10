@@ -23,8 +23,7 @@ export interface ProfileMenuProps {
   totalTasks?: number;
   onOpenSearch?: () => void;
   onViewQuickView?: () => void;
-  onViewCompleted?: () => void;
-  onViewAnalytics?: () => void;
+  onViewStatistics?: () => void;
   isDark?: boolean;
   onToggleTheme?: () => void;
   advancedMode?: boolean;
@@ -66,8 +65,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
   totalTasks = 0,
   onOpenSearch,
   onViewQuickView,
-  onViewCompleted,
-  onViewAnalytics,
+  onViewStatistics,
   isDark,
   onToggleTheme,
   advancedMode,
@@ -82,7 +80,10 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
   const initials = getInitials(userEmail, userName);
   const [open, setOpen] = React.useState(false);
   const themeLabel = isDark ? "Dark" : "Light";
-  const completionLabel = totalTasks > 0 ? `${totalCompleted}/${totalTasks} completed` : "No tasks yet";
+  const completionLabel =
+    totalTasks > 0
+      ? `${totalCompleted}/${totalTasks} completed`
+      : "No tasks yet";
   const displayName = userName ?? "User";
 
   const closeAndRun = (action?: () => void) => () => {
@@ -153,27 +154,14 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
               </button>
 
               <button
-                onClick={closeAndRun(onViewAnalytics)}
+                onClick={closeAndRun(onViewStatistics)}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-transparent text-left text-zinc-900 dark:text-zinc-100 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition"
               >
                 <div className="size-9 rounded-full border border-[#e9d4ff] bg-[#f3e8ff] flex items-center justify-center">
                   <BarChart3 className="size-4 text-purple-600" />
                 </div>
                 <span className="flex-1 font-['Poppins',_sans-serif] text-[15px] text-zinc-900 dark:text-zinc-100">
-                  Analytics
-                </span>
-                <ChevronRight className="size-4 text-zinc-400 dark:text-zinc-500" />
-              </button>
-
-              <button
-                onClick={closeAndRun(onViewCompleted)}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-transparent text-left text-zinc-900 dark:text-zinc-100 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition"
-              >
-                <div className="size-9 rounded-full border border-[#b9f8cf] bg-[#dcfce7] flex items-center justify-center">
-                  <CheckCircle2 className="size-4 text-emerald-600" />
-                </div>
-                <span className="flex-1 font-['Poppins',_sans-serif] text-[15px] text-zinc-900 dark:text-zinc-100">
-                  Completed Tasks
+                  Statistics
                 </span>
                 <ChevronRight className="size-4 text-zinc-400 dark:text-zinc-500" />
               </button>
@@ -244,7 +232,9 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
               className="w-full flex items-center justify-center gap-2 rounded-xl border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/40 px-4 py-3 shadow-[0px_1px_3px_rgba(0,0,0,0.1)] transition hover:bg-red-100 dark:hover:bg-red-900/50"
             >
               <LogOut className="size-4 text-red-600" />
-              <span className="font-['Poppins',_sans-serif] text-[15px] text-red-600">Log Out</span>
+              <span className="font-['Poppins',_sans-serif] text-[15px] text-red-600">
+                Log Out
+              </span>
             </button>
             <p className="mt-4 text-center font-['Poppins',_sans-serif] text-[11px] text-zinc-400 dark:text-zinc-500">
               offtasks mobile v1.0.0
