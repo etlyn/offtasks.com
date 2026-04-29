@@ -2,13 +2,20 @@ import type { ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/providers/auth";
 import { DashboardScreen } from "@/screens/Dashboard";
+import { ForgotPasswordScreen } from "@/screens/ForgotPassword";
+import { LandingScreen } from "@/screens/Landing";
+import { PrivacyScreen, SupportScreen, TermsScreen } from "@/screens/Legal";
 import { LoginScreen } from "@/screens/Login";
 import { SignupScreen } from "@/screens/Signup";
 import { ResetPasswordScreen } from "@/screens/ResetPassword";
 
 const LoadingView = () => (
-  <div className="flex min-h-screen items-center justify-center bg-zinc-900 text-zinc-100">
-    <p className="font-['Poppins',_sans-serif] text-[16px]">Loading...</p>
+  <div className="flex min-h-screen items-center justify-center bg-[#f3fbf8] px-6 text-[#123532]">
+    <div className="rounded-full border border-[#d9ece6] bg-white/85 px-5 py-3 shadow-[0_24px_60px_-32px_rgba(9,48,43,0.28)] backdrop-blur-xl">
+      <p className="font-['Sora',_sans-serif] text-sm font-semibold tracking-[0.18em] text-[#134E4A] uppercase">
+        Loading Offtasks
+      </p>
+    </div>
   </div>
 );
 
@@ -26,7 +33,7 @@ const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   return <>{children}</>;
 };
 
-const PublicRoute = ({ children }: { children: ReactNode }) => {
+const GuestRoute = ({ children }: { children: ReactNode }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -34,7 +41,17 @@ const PublicRoute = ({ children }: { children: ReactNode }) => {
   }
 
   if (user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/app" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+const LoadingAwareRoute = ({ children }: { children: ReactNode }) => {
+  const { loading } = useAuth();
+
+  if (loading) {
+    return <LoadingView />;
   }
 
   return <>{children}</>;
@@ -42,8 +59,14 @@ const PublicRoute = ({ children }: { children: ReactNode }) => {
 
 const AppRoutes = () => (
   <Routes>
+    <Route path="/" element={<LandingScreen />} />
+    <Route path="/privacy" element={<PrivacyScreen />} />
+    <Route path="/privacy-policy" element={<PrivacyScreen />} />
+    <Route path="/support" element={<SupportScreen />} />
+    <Route path="/contact" element={<SupportScreen />} />
+    <Route path="/terms" element={<TermsScreen />} />
     <Route
-      path="/"
+      path="/app"
       element={
         <ProtectedRoute>
           <DashboardScreen />
@@ -53,25 +76,33 @@ const AppRoutes = () => (
     <Route
       path="/login"
       element={
-        <PublicRoute>
+        <GuestRoute>
           <LoginScreen />
-        </PublicRoute>
+        </GuestRoute>
       }
     />
     <Route
       path="/signup"
       element={
-        <PublicRoute>
+        <GuestRoute>
           <SignupScreen />
-        </PublicRoute>
+        </GuestRoute>
+      }
+    />
+    <Route
+      path="/forgot-password"
+      element={
+        <GuestRoute>
+          <ForgotPasswordScreen />
+        </GuestRoute>
       }
     />
     <Route
       path="/reset-password"
       element={
-        <PublicRoute>
+        <LoadingAwareRoute>
           <ResetPasswordScreen />
-        </PublicRoute>
+        </LoadingAwareRoute>
       }
     />
     <Route path="*" element={<Navigate to="/" replace />} />

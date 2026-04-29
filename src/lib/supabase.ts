@@ -513,3 +513,33 @@ export const createTask = async ({
 
   await performCreate();
 };
+
+interface ContactMessageInput {
+  name: string;
+  email: string;
+  message: string;
+  source?: string;
+}
+
+export const submitContactMessage = async ({
+  name,
+  email,
+  message,
+  source = "landing",
+}: ContactMessageInput): Promise<void> => {
+  const payload = {
+    name: name.trim(),
+    email: email.trim().toLowerCase(),
+    message: message.trim(),
+    source,
+  };
+
+  const { error } = await supabaseClient
+    .from("contact_messages")
+    .insert([payload]);
+
+  if (error) {
+    console.error("Error submitting contact message", error);
+    throw error;
+  }
+};
