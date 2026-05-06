@@ -38,6 +38,7 @@ export function Header({
   onOpenSearch,
   onViewQuickView,
   onViewStatistics,
+  onViewSettings,
   userEmail,
   userName,
 }: HeaderProps) {
@@ -157,6 +158,7 @@ export function Header({
           totalTasks={totalTasks}
           onViewQuickView={onViewQuickView}
           onViewStatistics={onViewStatistics}
+          onViewSettings={onViewSettings}
           onOpenSearch={onOpenSearch}
           isDark={isDark}
           onToggleTheme={onToggleTheme}

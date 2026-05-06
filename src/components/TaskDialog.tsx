@@ -1,7 +1,15 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Plus, Check, ChevronDown } from "lucide-react";
-import { getCategoryConfig, getDefaultCategoryColor } from "../utils/categoryConfig";
+import {
+  getCategoryConfig,
+  getDefaultCategoryColor,
+  normalizeCategory,
+} from "../utils/categoryConfig";
+import {
+  getDefaultDateForGroup,
+  type SchedulableTaskGroup,
+} from "../utils/taskMapping";
 import {
   Command,
   CommandEmpty,
@@ -10,22 +18,25 @@ import {
   CommandItem,
   CommandList,
 } from "./ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "./ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import svgPaths from "../imports/svg-aum7itla9p";
 
 interface TaskDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (text: string, category: string, priority?: "low" | "medium" | "high", label?: string) => void;
+  onSave: (
+    text: string,
+    category: string,
+    priority?: "low" | "medium" | "high",
+    label?: string,
+    scheduledDate?: string | null,
+  ) => void;
   onDelete?: () => void;
   initialText?: string;
   initialCategory?: string;
   initialPriority?: "low" | "medium" | "high";
   initialLabel?: string;
+  initialDate?: string | null;
   availableCategories: string[];
   isEditing?: boolean;
 }
@@ -39,13 +50,22 @@ export function TaskDialog({
   initialCategory = "today",
   initialPriority,
   initialLabel,
+  initialDate,
   availableCategories,
   isEditing = false,
 }: TaskDialogProps) {
   const [text, setText] = useState(initialText);
   const [category, setCategory] = useState(initialCategory);
-  const [priority, setPriority] = useState<"low" | "medium" | "high" | undefined>(initialPriority);
-  const [selectedLabel, setSelectedLabel] = useState<string | undefined>(initialLabel);
+  const [scheduledDate, setScheduledDate] = useState<string | null>(
+    initialDate ??
+      getDefaultDateForGroup(initialCategory as SchedulableTaskGroup),
+  );
+  const [priority, setPriority] = useState<
+    "low" | "medium" | "high" | undefined
+  >(initialPriority);
+  const [selectedLabel, setSelectedLabel] = useState<string | undefined>(
+    initialLabel,
+  );
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [categorySearch, setCategorySearch] = useState("");
   const [priorityOpen, setPriorityOpen] = useState(false);
@@ -54,13 +74,24 @@ export function TaskDialog({
     if (isOpen) {
       setText(initialText);
       setCategory(initialCategory);
+      setScheduledDate(
+        initialDate ??
+          getDefaultDateForGroup(initialCategory as SchedulableTaskGroup),
+      );
       setPriority(initialPriority);
       setSelectedLabel(initialLabel);
       setCategoryOpen(false);
       setCategorySearch("");
       setPriorityOpen(false);
     }
-  }, [isOpen, initialText, initialCategory, initialPriority, initialLabel]);
+  }, [
+    isOpen,
+    initialText,
+    initialCategory,
+    initialPriority,
+    initialLabel,
+    initialDate,
+  ]);
 
   const getPlaceholder = () => {
     switch (category) {
@@ -99,7 +130,7 @@ export function TaskDialog({
 
   const handleSave = () => {
     if (text.trim()) {
-      onSave(text.trim(), category, priority, selectedLabel);
+      onSave(text.trim(), category, priority, selectedLabel, scheduledDate);
       setText("");
       setPriority(undefined);
       setSelectedLabel(undefined);
@@ -112,6 +143,11 @@ export function TaskDialog({
       onDelete();
       onClose();
     }
+  };
+
+  const handleCategoryChange = (nextCategory: SchedulableTaskGroup) => {
+    setCategory(nextCategory);
+    setScheduledDate(getDefaultDateForGroup(nextCategory));
   };
 
   return (
@@ -137,8 +173,19 @@ export function TaskDialog({
               onClick={onClose}
               className="absolute right-[20px] size-[20px] top-[20px] hover:opacity-70 transition-opacity"
             >
-              <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 12 12">
-                <path d={svgPaths.p23458280} stroke="#9F9FA9" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.25" />
+              <svg
+                className="block size-full"
+                fill="none"
+                preserveAspectRatio="none"
+                viewBox="0 0 12 12"
+              >
+                <path
+                  d={svgPaths.p23458280}
+                  stroke="#9F9FA9"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="1.25"
+                />
               </svg>
             </button>
 
@@ -179,7 +226,7 @@ export function TaskDialog({
               </label>
               <div className="relative bg-[#3f3f47] h-[32px] rounded-[8px] flex items-center">
                 <button
-                  onClick={() => setCategory("today")}
+                  onClick={() => handleCategoryChange("today")}
                   className={`flex-1 h-[32px] rounded-[8px] flex items-center justify-center font-['Poppins',_sans-serif] text-[12px] transition-all ${
                     category === "today"
                       ? "bg-[#0084d1] text-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]"
@@ -192,7 +239,7 @@ export function TaskDialog({
                   <div className="bg-[#52525c] w-px h-[19.203px]" />
                 )}
                 <button
-                  onClick={() => setCategory("tomorrow")}
+                  onClick={() => handleCategoryChange("tomorrow")}
                   className={`flex-1 h-[32px] rounded-[8px] flex items-center justify-center font-['Poppins',_sans-serif] text-[12px] transition-all ${
                     category === "tomorrow"
                       ? "bg-[#0084d1] text-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]"
@@ -203,7 +250,7 @@ export function TaskDialog({
                 </button>
                 <div className="bg-[#52525c] w-px h-[19.203px]" />
                 <button
-                  onClick={() => setCategory("upcoming")}
+                  onClick={() => handleCategoryChange("upcoming")}
                   className={`flex-1 h-[32px] rounded-[8px] flex items-center justify-center font-['Poppins',_sans-serif] text-[12px] transition-all ${
                     category === "upcoming"
                       ? "bg-[#0084d1] text-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]"
@@ -213,6 +260,34 @@ export function TaskDialog({
                   Later
                 </button>
               </div>
+            </div>
+
+            {/* Scheduled Date */}
+            <div className="mb-[24px]">
+              <label className="block font-['Inter',_sans-serif] text-[#9f9fa9] text-[12px] mb-[8px]">
+                Scheduled Date
+              </label>
+              <div className="flex gap-[10px] items-center">
+                <input
+                  type="date"
+                  value={scheduledDate ?? ""}
+                  onChange={(event) =>
+                    setScheduledDate(event.target.value || null)
+                  }
+                  className="flex-1 h-[36px] bg-[rgba(38,38,38,0.3)] border border-zinc-700 rounded-[8px] px-[13px] text-zinc-300 font-['Poppins',_sans-serif] text-[13px] focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-sky-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setScheduledDate(null)}
+                  className="h-[36px] px-[12px] rounded-[8px] border border-zinc-700 text-zinc-400 font-['Poppins',_sans-serif] text-[12px] hover:bg-zinc-800 transition-colors"
+                >
+                  Backlog
+                </button>
+              </div>
+              <p className="mt-[6px] font-['Poppins',_sans-serif] text-[11px] text-zinc-500">
+                Matches mobile: empty dates stay in Later, tomorrow dates go to
+                Tomorrow, and past dates are corrected to Today.
+              </p>
             </div>
 
             {/* Priority and Category */}
@@ -230,29 +305,48 @@ export function TaskDialog({
                     >
                       <div className="flex items-center gap-1.5">
                         {priority === "high" && (
-                          <span className="font-['Poppins',_sans-serif] text-[#ff6467] text-[13px]">High</span>
+                          <span className="font-['Poppins',_sans-serif] text-[#ff6467] text-[13px]">
+                            High
+                          </span>
                         )}
                         {priority === "medium" && (
-                          <span className="font-['Poppins',_sans-serif] text-[#ffa500] text-[13px]">Medium</span>
+                          <span className="font-['Poppins',_sans-serif] text-[#ffa500] text-[13px]">
+                            Medium
+                          </span>
                         )}
                         {priority === "low" && (
-                          <span className="font-['Poppins',_sans-serif] text-[#2b7fff] text-[13px]">Low</span>
+                          <span className="font-['Poppins',_sans-serif] text-[#2b7fff] text-[13px]">
+                            Low
+                          </span>
                         )}
                         {!priority && (
-                          <span className="font-['Poppins',_sans-serif] text-zinc-400 text-[13px]">None</span>
+                          <span className="font-['Poppins',_sans-serif] text-zinc-400 text-[13px]">
+                            None
+                          </span>
                         )}
                       </div>
                       <div className="relative shrink-0 size-[16px] opacity-50">
-                        <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 16 16">
-                          <path d="M4 6L8 10L12 6" stroke="#A1A1A1" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
+                        <svg
+                          className="block size-full"
+                          fill="none"
+                          preserveAspectRatio="none"
+                          viewBox="0 0 16 16"
+                        >
+                          <path
+                            d="M4 6L8 10L12 6"
+                            stroke="#A1A1A1"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="1.33333"
+                          />
                         </svg>
                       </div>
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent 
-                    className="p-0 bg-zinc-900 border-zinc-800" 
+                  <PopoverContent
+                    className="p-0 bg-zinc-900 border-zinc-800"
                     align="start"
-                    style={{ width: 'var(--radix-popover-trigger-width)' }}
+                    style={{ width: "var(--radix-popover-trigger-width)" }}
                   >
                     <Command className="bg-transparent">
                       <CommandList>
@@ -318,33 +412,52 @@ export function TaskDialog({
                       {selectedLabel ? (
                         <div className="flex items-center gap-[6px]">
                           {(() => {
-                            const config = getCategoryConfig(selectedLabel) || getDefaultCategoryColor();
+                            const config =
+                              getCategoryConfig(selectedLabel) ||
+                              getDefaultCategoryColor();
                             return (
                               <>
-                                <span className={`size-[6px] rounded-full ${config.dotColor}`} />
-                                <span className="font-['Poppins',_sans-serif] text-zinc-300 text-[13px]">{selectedLabel}</span>
+                                <span
+                                  className={`size-[6px] rounded-full ${config.dotColor}`}
+                                />
+                                <span className="font-['Poppins',_sans-serif] text-zinc-300 text-[13px]">
+                                  {selectedLabel}
+                                </span>
                               </>
                             );
                           })()}
                         </div>
                       ) : (
-                        <span className="font-['Poppins',_sans-serif] text-zinc-400 text-[13px]">None</span>
+                        <span className="font-['Poppins',_sans-serif] text-zinc-400 text-[13px]">
+                          None
+                        </span>
                       )}
                       <div className="relative shrink-0 size-[16px] opacity-50">
-                        <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 16 16">
-                          <path d="M4 6L8 10L12 6" stroke="#D4D4D8" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
+                        <svg
+                          className="block size-full"
+                          fill="none"
+                          preserveAspectRatio="none"
+                          viewBox="0 0 16 16"
+                        >
+                          <path
+                            d="M4 6L8 10L12 6"
+                            stroke="#D4D4D8"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="1.33333"
+                          />
                         </svg>
                       </div>
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent 
-                    className="p-0 bg-zinc-900 border-zinc-800" 
+                  <PopoverContent
+                    className="p-0 bg-zinc-900 border-zinc-800"
                     align="start"
-                    style={{ width: 'var(--radix-popover-trigger-width)' }}
+                    style={{ width: "var(--radix-popover-trigger-width)" }}
                   >
                     <Command className="bg-transparent">
-                      <CommandInput 
-                        placeholder="Search or create category..." 
+                      <CommandInput
+                        placeholder="Search or create category..."
                         className="h-9 font-['Poppins',_sans-serif] text-[13px]"
                         value={categorySearch}
                         onValueChange={setCategorySearch}
@@ -354,8 +467,10 @@ export function TaskDialog({
                           <button
                             type="button"
                             onClick={() => {
-                              if (categorySearch.trim()) {
-                                setSelectedLabel(categorySearch.trim());
+                              const normalized =
+                                normalizeCategory(categorySearch);
+                              if (normalized) {
+                                setSelectedLabel(normalized);
                                 setCategoryOpen(false);
                                 setCategorySearch("");
                               }
@@ -384,7 +499,9 @@ export function TaskDialog({
                             <span className="text-zinc-400">None</span>
                           </CommandItem>
                           {availableCategories.map((cat) => {
-                            const config = getCategoryConfig(cat) || getDefaultCategoryColor();
+                            const config =
+                              getCategoryConfig(cat) ||
+                              getDefaultCategoryColor();
                             return (
                               <CommandItem
                                 key={cat}
@@ -398,32 +515,45 @@ export function TaskDialog({
                               >
                                 <Check
                                   className={`mr-2 h-4 w-4 ${
-                                    selectedLabel === cat ? "opacity-100" : "opacity-0"
+                                    selectedLabel === cat
+                                      ? "opacity-100"
+                                      : "opacity-0"
                                   }`}
                                 />
                                 <div className="flex items-center gap-[6px]">
-                                  <span className={`size-[6px] rounded-full ${config.dotColor}`} />
+                                  <span
+                                    className={`size-[6px] rounded-full ${config.dotColor}`}
+                                  />
                                   <span className="text-zinc-300">{cat}</span>
                                 </div>
                               </CommandItem>
                             );
                           })}
-                          {categorySearch && !availableCategories.some(cat => cat.toLowerCase() === categorySearch.toLowerCase()) && (
-                            <CommandItem
-                              value={`__create__${categorySearch}`}
-                              onSelect={() => {
-                                if (categorySearch.trim()) {
-                                  setSelectedLabel(categorySearch.trim());
-                                  setCategoryOpen(false);
-                                  setCategorySearch("");
-                                }
-                              }}
-                              className="font-['Poppins',_sans-serif] text-[13px] border-t border-zinc-800 mt-1"
-                            >
-                              <Plus className="mr-2 h-4 w-4 text-sky-400" />
-                              <span className="text-sky-400">Add category: "{categorySearch}"</span>
-                            </CommandItem>
-                          )}
+                          {categorySearch &&
+                            !availableCategories.some(
+                              (cat) =>
+                                cat.toLowerCase() ===
+                                categorySearch.toLowerCase(),
+                            ) && (
+                              <CommandItem
+                                value={`__create__${categorySearch}`}
+                                onSelect={() => {
+                                  const normalized =
+                                    normalizeCategory(categorySearch);
+                                  if (normalized) {
+                                    setSelectedLabel(normalized);
+                                    setCategoryOpen(false);
+                                    setCategorySearch("");
+                                  }
+                                }}
+                                className="font-['Poppins',_sans-serif] text-[13px] border-t border-zinc-800 mt-1"
+                              >
+                                <Plus className="mr-2 h-4 w-4 text-sky-400" />
+                                <span className="text-sky-400">
+                                  Add category: "{categorySearch}"
+                                </span>
+                              </CommandItem>
+                            )}
                         </CommandGroup>
                       </CommandList>
                     </Command>
@@ -440,11 +570,24 @@ export function TaskDialog({
                   className="h-[32px] px-[16px] rounded-[8px] border border-[#ff6467] bg-transparent hover:bg-[#ff6467]/10 transition-colors flex items-center gap-[6px]"
                 >
                   <div className="relative size-[14px]">
-                    <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 14 14">
-                      <path d={svgPaths.p1e33adf8} stroke="#FF6467" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.16667" />
+                    <svg
+                      className="block size-full"
+                      fill="none"
+                      preserveAspectRatio="none"
+                      viewBox="0 0 14 14"
+                    >
+                      <path
+                        d={svgPaths.p1e33adf8}
+                        stroke="#FF6467"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="1.16667"
+                      />
                     </svg>
                   </div>
-                  <span className="font-['Poppins',_sans-serif] text-[#ff6467] text-[13px]">Delete</span>
+                  <span className="font-['Poppins',_sans-serif] text-[#ff6467] text-[13px]">
+                    Delete
+                  </span>
                 </button>
               )}
               <button

@@ -37,3 +37,16 @@ export const getCurrentDate = () => {
 
   return today;
 };
+
+export const getAdjacentDay = (delta: number) => {
+  const date = new Date();
+  date.setDate(date.getDate() + delta);
+
+  return (
+    date.getFullYear() +
+    "-" +
+    (date.getMonth() + 1).toString().padStart(2, "0") +
+    "-" +
+    date.getDate().toString().padStart(2, "0")
+  );
+};

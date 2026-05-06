@@ -9,6 +9,7 @@ import {
   LogOut,
   Moon,
   Search,
+  Settings,
   Sun,
   User,
   X,
@@ -24,6 +25,7 @@ export interface ProfileMenuProps {
   onOpenSearch?: () => void;
   onViewQuickView?: () => void;
   onViewStatistics?: () => void;
+  onViewSettings?: () => void;
   isDark?: boolean;
   onToggleTheme?: () => void;
   advancedMode?: boolean;
@@ -66,6 +68,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
   onOpenSearch,
   onViewQuickView,
   onViewStatistics,
+  onViewSettings,
   isDark,
   onToggleTheme,
   advancedMode,
@@ -167,6 +170,19 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
               </button>
 
               <button
+                onClick={closeAndRun(onViewSettings)}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-transparent text-left text-zinc-900 dark:text-zinc-100 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition"
+              >
+                <div className="size-9 rounded-full border border-[#bfdbfe] bg-[#dbeafe] flex items-center justify-center">
+                  <Settings className="size-4 text-sky-600" />
+                </div>
+                <span className="flex-1 font-['Poppins',_sans-serif] text-[15px] text-zinc-900 dark:text-zinc-100">
+                  Settings
+                </span>
+                <ChevronRight className="size-4 text-zinc-400 dark:text-zinc-500" />
+              </button>
+
+              <button
                 onClick={closeAndRun(onToggleTheme)}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-transparent text-left text-zinc-900 dark:text-zinc-100 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition"
               >
@@ -237,7 +253,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
               </span>
             </button>
             <p className="mt-4 text-center font-['Poppins',_sans-serif] text-[11px] text-zinc-400 dark:text-zinc-500">
-              offtasks mobile v1.0.0
+              offtasks v1.0.5.1
             </p>
           </div>
         </div>

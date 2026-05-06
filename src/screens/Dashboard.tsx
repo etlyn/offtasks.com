@@ -12,17 +12,27 @@ import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { ArrowLeft, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Task } from "@/types/task";
-import type { SupabaseTask, TaskGroup } from "@/types/supabase";
+import type { TaskGroup } from "@/types/supabase";
 import { useAuth } from "@/providers/auth";
 import {
   createTask,
   deleteTask as deleteTaskFromSupabase,
   fetchAllTasks,
+  fetchUserPreferences,
   supabaseClient,
   updateTask,
+  upsertUserPreferences,
 } from "@/lib/supabase";
-import { fromSupabaseTask, priorityLabelToNumber } from "@/utils/taskMapping";
+import {
+  fromSupabaseTask,
+  getDefaultDateForGroup,
+  getTargetGroupForDate,
+  normalizeScheduledDate,
+  priorityLabelToNumber,
+  shouldAutoMoveTaskToToday,
+} from "@/utils/taskMapping";
 import { getCurrentDate } from "@/hooks/useDate";
+import { normalizeCategory } from "@/utils/categoryConfig";
 
 const CATEGORIES_STORAGE_KEY = "offtasks-categories";
 const THEME_STORAGE_KEY = "offtasks-theme";
@@ -70,7 +80,14 @@ export const DashboardScreen = () => {
         try {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length) {
-            return parsed;
+            return Array.from(
+              new Set(
+                parsed
+                  .filter((value) => typeof value === "string")
+                  .map(normalizeCategory)
+                  .filter(Boolean),
+              ),
+            ).sort((left, right) => left.localeCompare(right));
           }
         } catch (error) {
           console.warn("Failed to parse stored categories", error);
@@ -107,6 +124,7 @@ export const DashboardScreen = () => {
     const saved = localStorage.getItem(AUTO_ARRANGE_STORAGE_KEY);
     return saved ? saved === "true" : false;
   });
+  const [preferencesHydrated, setPreferencesHydrated] = useState(false);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -127,45 +145,15 @@ export const DashboardScreen = () => {
       const data = await fetchAllTasks();
       const today = getCurrentDate();
 
-      const isSupabaseComplete = (task: SupabaseTask): boolean => {
-        if (typeof task.isComplete === "boolean") {
-          return task.isComplete;
-        }
-        const snake = (task as { is_complete?: boolean | null }).is_complete;
-        return typeof snake === "boolean" ? snake : false;
-      };
-
-      const applyAutoOverdue = (mappedTasks: Task[]) => {
-        if (!autoArrange) {
-          return mappedTasks;
-        }
-
-        return mappedTasks.map((task) => {
-          const rawDate = task.raw?.date;
-          if (
-            !task.completed &&
-            task.category === "today" &&
-            rawDate &&
-            rawDate !== today
-          ) {
-            return { ...task, overdue: true };
-          }
-          return task;
-        });
-      };
-
       let needsRefresh = false;
 
       if (autoArrange) {
         for (const task of data) {
-          if (isSupabaseComplete(task)) {
-            continue;
-          }
-
-          if (task.target_group === "tomorrow" && task.date <= today) {
+          if (shouldAutoMoveTaskToToday(task)) {
             needsRefresh = true;
             await updateTask(task.id, {
               targetGroup: "today",
+              date: today,
             });
           }
         }
@@ -174,7 +162,7 @@ export const DashboardScreen = () => {
       const mapped = (needsRefresh ? await fetchAllTasks() : data).map(
         fromSupabaseTask,
       );
-      setTasks(applyAutoOverdue(mapped));
+      setTasks(mapped);
 
       const labels = new Set<string>();
       mapped.forEach((task) => {
@@ -185,7 +173,11 @@ export const DashboardScreen = () => {
 
       if (labels.size) {
         setAvailableCategories((prev: string[]) => {
-          const merged = Array.from(new Set([...prev, ...labels]));
+          const merged = Array.from(
+            new Set(
+              [...prev, ...labels].map(normalizeCategory).filter(Boolean),
+            ),
+          ).sort((left, right) => left.localeCompare(right));
           localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(merged));
           return merged;
         });
@@ -200,6 +192,45 @@ export const DashboardScreen = () => {
   useEffect(() => {
     refreshTasks();
   }, [refreshTasks]);
+
+  useEffect(() => {
+    let active = true;
+
+    const hydratePreferences = async () => {
+      if (!user?.id) {
+        setPreferencesHydrated(false);
+        return;
+      }
+
+      setPreferencesHydrated(false);
+
+      const preferences = await fetchUserPreferences(user.id);
+
+      if (!active) {
+        return;
+      }
+
+      if (preferences) {
+        setHideCompleted(!!preferences.hide_completed);
+        setAdvancedMode(!!preferences.advanced_mode);
+        setAutoArrange(!!preferences.auto_arrange);
+        if (
+          preferences.theme_mode === "Dark" ||
+          preferences.theme_mode === "Light"
+        ) {
+          setIsDark(preferences.theme_mode === "Dark");
+        }
+      }
+
+      setPreferencesHydrated(true);
+    };
+
+    hydratePreferences();
+
+    return () => {
+      active = false;
+    };
+  }, [user?.id]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -234,6 +265,29 @@ export const DashboardScreen = () => {
     }
     localStorage.setItem(AUTO_ARRANGE_STORAGE_KEY, autoArrange.toString());
   }, [autoArrange]);
+
+  useEffect(() => {
+    if (!user?.id || !preferencesHydrated) {
+      return;
+    }
+
+    upsertUserPreferences({
+      user_id: user.id,
+      hide_completed: hideCompleted,
+      advanced_mode: advancedMode,
+      theme_mode: isDark ? "Dark" : "Light",
+      auto_arrange: autoArrange,
+    }).catch((error) => {
+      console.warn("Failed to sync preferences", error);
+    });
+  }, [
+    advancedMode,
+    autoArrange,
+    hideCompleted,
+    isDark,
+    preferencesHydrated,
+    user?.id,
+  ]);
 
   const handleAddTask = useCallback((category: DialogCategory) => {
     setEditingTask(null);
@@ -281,13 +335,20 @@ export const DashboardScreen = () => {
     category: string,
     priority?: "low" | "medium" | "high",
     label?: string,
+    scheduledDate?: string | null,
   ) => {
     if (!user) {
       return;
     }
 
-    const targetGroup = (category as TaskGroup) ?? "today";
+    const normalizedDate = normalizeScheduledDate(
+      typeof scheduledDate === "undefined"
+        ? getDefaultDateForGroup(category as DialogCategory)
+        : scheduledDate,
+    );
+    const targetGroup = getTargetGroupForDate(normalizedDate) as TaskGroup;
     const priorityValue = priorityLabelToNumber(priority);
+    const normalizedLabel = label ? normalizeCategory(label) : undefined;
 
     try {
       if (editingTask) {
@@ -296,20 +357,24 @@ export const DashboardScreen = () => {
           targetGroup,
           priority: priorityValue,
           isComplete: editingTask.completed,
-          label: label ?? null,
+          date: normalizedDate,
+          label: normalizedLabel ?? null,
         });
       } else {
         await createTask({
           content: text,
           targetGroup,
           priority: priorityValue,
-          label: label ?? null,
+          date: normalizedDate,
+          label: normalizedLabel ?? null,
         });
       }
 
-      if (label && !availableCategories.includes(label)) {
+      if (normalizedLabel && !availableCategories.includes(normalizedLabel)) {
         setAvailableCategories((prev: string[]) => {
-          const next = [...prev, label];
+          const next = Array.from(new Set([...prev, normalizedLabel])).sort(
+            (left, right) => left.localeCompare(right),
+          );
           localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(next));
           return next;
         });
@@ -333,6 +398,8 @@ export const DashboardScreen = () => {
       await updateTask(task.id, {
         isComplete: nextCompleted,
         completedAt: nextCompleted ? getCurrentDate() : null,
+        targetGroup: nextCompleted ? "today" : (task.category as TaskGroup),
+        date: nextCompleted ? getCurrentDate() : (task.raw?.date ?? null),
       });
       await refreshTasks();
     } catch (error) {
@@ -516,6 +583,12 @@ export const DashboardScreen = () => {
           initialCategory={dialogCategory}
           initialPriority={editingTask?.priority}
           initialLabel={editingTask?.label}
+          initialDate={
+            editingTask
+              ? (editingTask.raw?.date ??
+                getDefaultDateForGroup(editingTask.category as DialogCategory))
+              : getDefaultDateForGroup(dialogCategory)
+          }
           availableCategories={availableCategories}
           isEditing={!!editingTask}
         />
@@ -538,6 +611,10 @@ export const DashboardScreen = () => {
           onClose={() => setSettingsSheetOpen(false)}
           isDark={isDark}
           onToggleTheme={() => setIsDark((prev: boolean) => !prev)}
+          tasks={tasks}
+          onToggleTask={handleToggleTask}
+          onLogout={handleLogout}
+          userEmail={user?.email ?? undefined}
         />
       </div>
     </div>

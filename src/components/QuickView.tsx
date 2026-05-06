@@ -100,11 +100,11 @@ export function QuickView({
     if (!advancedMode || !prioritySortDirection) return filteredTasks;
 
     const sorted = [...filteredTasks];
-    const priorityOrder = { high: 0, medium: 1, low: 2 };
+    const priorityOrder = { high: 3, medium: 2, low: 1 };
     sorted.sort((a, b) => {
       const aPriority = a.priority || "low";
       const bPriority = b.priority || "low";
-      const comparison = priorityOrder[aPriority] - priorityOrder[bPriority];
+      const comparison = priorityOrder[bPriority] - priorityOrder[aPriority];
       return prioritySortDirection === "desc" ? comparison : -comparison;
     });
 
@@ -112,7 +112,7 @@ export function QuickView({
   }, [filteredTasks, prioritySortDirection, advancedMode]);
 
   // Group by category (Today, Tomorrow, Upcoming)
-  const displayTasks = advancedMode ? sortedTasks : tasks;
+  const displayTasks = advancedMode ? sortedTasks : filteredTasks;
   const todayTasks = displayTasks.filter((t) => t.category === "today");
   const tomorrowTasks = displayTasks.filter((t) => t.category === "tomorrow");
   const upcomingTasks = displayTasks.filter((t) => t.category === "upcoming");
@@ -120,6 +120,7 @@ export function QuickView({
   const activeFilterCount =
     (searchQuery ? 1 : 0) +
     selectedLabels.length +
+    (prioritySortDirection ? 1 : 0) +
     (!effectiveShowCompleted ? 1 : 0);
 
   const clearAllFilters = () => {
@@ -224,12 +225,12 @@ export function QuickView({
 
             {/* Hide Completed Toggle */}
             <Button
-              variant={showCompleted ? "outline" : "secondary"}
+              variant={effectiveShowCompleted ? "outline" : "secondary"}
               size="sm"
-              onClick={() => setShowCompleted(!showCompleted)}
+              onClick={toggleShowCompleted}
               className="h-9 gap-2 font-['Poppins',_sans-serif] text-[13px] bg-white dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600 shadow-none dark:shadow-sm hover:bg-zinc-50 dark:hover:bg-zinc-700"
             >
-              {showCompleted ? "Hide" : "Show"} Completed
+              {effectiveShowCompleted ? "Hide" : "Show"} Completed
             </Button>
 
             {/* Clear Filters */}

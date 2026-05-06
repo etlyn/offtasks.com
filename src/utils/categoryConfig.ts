@@ -7,6 +7,12 @@ export interface CategoryConfig {
   dotColor: string;
 }
 
+export const normalizeCategory = (value: string) =>
+  value
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/(^|\s)\w/g, (match) => match.toUpperCase());
+
 export const categoryColors: Record<string, CategoryConfig> = {
   Work: {
     name: "Work",

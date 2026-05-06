@@ -15,6 +15,15 @@ if (!SUPABASE_ANON_KEY) {
 
 export const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+export interface UserPreferences {
+  user_id: string;
+  hide_completed: boolean;
+  advanced_mode: boolean;
+  theme_mode: "Light" | "Dark";
+  auto_arrange: boolean;
+  updated_at?: string;
+}
+
 type CompletionColumn = "isComplete" | "is_complete";
 
 const COMPLETION_COLUMNS: CompletionColumn[] = ["isComplete", "is_complete"];
@@ -336,7 +345,7 @@ interface UpdateTaskInput {
   isComplete?: boolean;
   priority?: number;
   targetGroup?: TaskGroup;
-  date?: string;
+  date?: string | null;
   label?: string | null;
   completedAt?: string | null;
 }
@@ -369,7 +378,7 @@ export const updateTask = async (taskID: string, updates: UpdateTaskInput): Prom
       payload.target_group = updates.targetGroup;
     }
 
-    if (typeof updates.date === "string") {
+    if (typeof updates.date !== "undefined") {
       payload.date = updates.date;
     }
 
@@ -436,7 +445,7 @@ interface CreateTaskInput {
   content: string;
   targetGroup: TaskGroup;
   priority?: number;
-  date?: string;
+  date?: string | null;
   label?: string | null;
 }
 
@@ -453,7 +462,7 @@ export const createTask = async ({
     throw new Error("Cannot create task without an authenticated user.");
   }
 
-  const taskDate = date ?? getCurrentDate();
+  const taskDate = typeof date === "undefined" ? getCurrentDate() : date;
 
   const attemptCreate = async (completionColumn: CompletionColumn): Promise<void> => {
     const payload: Record<string, unknown> = {
@@ -540,6 +549,40 @@ export const submitContactMessage = async ({
 
   if (error) {
     console.error("Error submitting contact message", error);
+    throw error;
+  }
+};
+
+export const fetchUserPreferences = async (
+  userId: string,
+): Promise<UserPreferences | null> => {
+  const { data, error } = await supabaseClient
+    .from<UserPreferences>("user_preferences")
+    .select("*")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Error fetching user preferences", error);
+    return null;
+  }
+
+  return data ?? null;
+};
+
+export const upsertUserPreferences = async (
+  prefs: UserPreferences,
+): Promise<void> => {
+  const { error } = await supabaseClient.from<UserPreferences>("user_preferences").upsert(
+    {
+      ...prefs,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id" },
+  );
+
+  if (error) {
+    console.error("Error updating user preferences", error);
     throw error;
   }
 };

@@ -3,6 +3,7 @@ import { Task } from "../types/task";
 import { motion } from "motion/react";
 import { Inbox } from "lucide-react";
 import { EmptyState } from "./EmptyState";
+import { formatTaskScheduleBadge } from "../utils/taskMapping";
 
 interface TaskColumnProps {
   title: string;
@@ -60,6 +61,11 @@ export function TaskColumn({
               onClick={onEditTask}
               priority={task.priority}
               label={task.label}
+              scheduleLabel={
+                task.raw
+                  ? formatTaskScheduleBadge(task.raw, "Backlog")
+                  : undefined
+              }
               showMetadata={showMetadata}
             />
           ))
