@@ -13,14 +13,16 @@ export const ContactForm = ({ source = "landing" }: ContactFormProps) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
-  const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "success" | "validation-error" | "submit-error">(
+    "idle",
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!name.trim() || !email.trim() || !message.trim()) {
-      setStatus("error");
+      setStatus("validation-error");
       return;
     }
 
@@ -34,7 +36,7 @@ export const ContactForm = ({ source = "landing" }: ContactFormProps) => {
       setMessage("");
       setStatus("success");
     } catch {
-      setStatus("error");
+      setStatus("submit-error");
     } finally {
       setIsSubmitting(false);
     }
@@ -98,9 +100,11 @@ export const ContactForm = ({ source = "landing" }: ContactFormProps) => {
 
         {status === "success" ? (
           <p className="text-sm font-semibold text-[#009689]">Message sent.</p>
-        ) : status === "error" ? (
+        ) : status === "validation-error" || status === "submit-error" ? (
           <p className="text-sm font-semibold text-[#b42318]">
-            Check the fields and try again.
+            {status === "validation-error"
+              ? "Fill out every field and try again."
+              : "We couldn't send that message. Please try again."}
           </p>
         ) : null}
       </div>

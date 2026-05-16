@@ -545,7 +545,7 @@ export const submitContactMessage = async ({
 
   const { error } = await supabaseClient
     .from("contact_messages")
-    .insert([payload]);
+    .insert([payload], { returning: "minimal" });
 
   if (error) {
     console.error("Error submitting contact message", error);
