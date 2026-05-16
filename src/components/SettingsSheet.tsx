@@ -220,7 +220,7 @@ export function SettingsSheet({
                 A simple and elegant task management app
               </p>
               <p className="font-['Poppins',_sans-serif] text-[12px] text-zinc-500 dark:text-zinc-400">
-                Version 1.0.5.1
+                Version 1.0.5.2
               </p>
             </div>
           </div>

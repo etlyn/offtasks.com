@@ -4,15 +4,18 @@ import { LandingIllustration } from "@/components/public/LandingIllustration";
 import { PublicFooter } from "@/components/public/PublicFooter";
 import { PublicSiteShell } from "@/components/public/PublicSiteShell";
 import { Button } from "@/components/ui/button";
-import { IOS_APP_STORE_URL } from "@/config/publicSite";
+import {
+  IOS_APP_STORE_URL,
+  SHOW_IOS_APP_STORE_DOWNLOAD,
+} from "@/config/publicSite";
 import { useAuth } from "@/providers/auth";
 
 const features = [
-  "Quick add",
+  "Quick capture",
+  "Check tasks off",
   "Today / Tomorrow / Later",
   "Priorities",
   "Labels",
-  "Search",
   "Stats",
 ];
 
@@ -48,15 +51,16 @@ export const LandingScreen = () => {
         <section className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-12">
           <div className="animate-[rise-in_700ms_ease-out_both]">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#009689]">
-              Web + iOS
+              Get tasks off your mind
             </p>
 
             <h1 className="mt-5 max-w-2xl font-['Sora',_sans-serif] text-5xl font-semibold leading-[0.96] tracking-[-0.065em] text-[#0f172a] sm:text-6xl lg:text-[5.2rem]">
-              Tasks, without noise.
+              To-Do, without noise
             </h1>
 
             <p className="mt-5 max-w-lg text-base leading-7 text-[#64748b] sm:text-lg sm:leading-8">
-              Add, plan, and finish daily tasks in a calm workspace.
+              Capture tasks as soon as they appear, keep today focused, and feel
+              the simple relief of checking each one off.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
@@ -70,21 +74,23 @@ export const LandingScreen = () => {
                   <ArrowRight className="size-4" />
                 </Link>
               </Button>
-              <Button
-                asChild
-                size="lg"
-                className="h-12 rounded-full bg-[#09090b] px-5 text-sm font-semibold text-white shadow-[0_20px_44px_-30px_rgba(15,23,42,0.5)] hover:bg-[#18181b]"
-              >
-                <a
-                  href={IOS_APP_STORE_URL}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label="Download Offtasks on the App Store"
+              {SHOW_IOS_APP_STORE_DOWNLOAD ? (
+                <Button
+                  asChild
+                  size="lg"
+                  className="h-12 rounded-full bg-[#09090b] px-5 text-sm font-semibold text-white shadow-[0_20px_44px_-30px_rgba(15,23,42,0.5)] hover:bg-[#18181b]"
                 >
-                  <Apple className="size-4.5" />
-                  App Store
-                </a>
-              </Button>
+                  <a
+                    href={IOS_APP_STORE_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="Download Offtasks on the App Store"
+                  >
+                    <Apple className="size-4.5" />
+                    App Store
+                  </a>
+                </Button>
+              ) : null}
             </div>
           </div>
 
@@ -99,11 +105,12 @@ export const LandingScreen = () => {
                   Features
                 </p>
                 <h2 className="mt-2 font-['Sora',_sans-serif] text-3xl font-semibold tracking-[-0.055em] text-[#0f172a]">
-                  Everything essential.
+                  Built for that check-off feeling.
                 </h2>
               </div>
               <p className="max-w-sm text-sm leading-6 text-[#64748b]">
-                The task app stays small, even when your day gets busy.
+                Move tasks from your head to done without feeds, clutter, or a
+                system that gets in the way.
               </p>
             </div>
 

@@ -13,5 +13,7 @@ export const IOS_APP_STORE_URL = readPublicEnv(
   "https://apps.apple.com/search?term=Offtasks",
 );
 
+export const SHOW_IOS_APP_STORE_DOWNLOAD = false;
+
 export const PRIVACY_URL = `${SITE_URL}/privacy`;
 export const SUPPORT_URL = `${SITE_URL}/support`;
