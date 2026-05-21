@@ -5,6 +5,7 @@ import { TaskDialog } from "@/components/TaskDialog";
 import { TaskHistorySheet } from "@/components/TaskHistorySheet";
 import { StatsSheet } from "@/components/StatsSheet";
 import { SettingsSheet } from "@/components/SettingsSheet";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { QuickView } from "@/components/QuickView";
 import { StatisticsView } from "@/components/StatisticsView";
 import { EmptyState } from "@/components/EmptyState";
@@ -16,6 +17,7 @@ import type { TaskGroup } from "@/types/supabase";
 import { useAuth } from "@/providers/auth";
 import {
   createTask,
+  deleteAccount,
   deleteTask as deleteTaskFromSupabase,
   fetchAllTasks,
   fetchUserPreferences,
@@ -132,6 +134,8 @@ export const DashboardScreen = () => {
   const [historySheetOpen, setHistorySheetOpen] = useState(false);
   const [statsSheetOpen, setStatsSheetOpen] = useState(false);
   const [settingsSheetOpen, setSettingsSheetOpen] = useState(false);
+  const [deleteAccountDialogOpen, setDeleteAccountDialogOpen] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [currentTab, setCurrentTab] = useState<TabId>("quick-view");
 
   const refreshTasks = useCallback(async () => {
@@ -426,6 +430,38 @@ export const DashboardScreen = () => {
     navigate("/login");
   };
 
+  const handleDeleteAccount = async () => {
+    if (isDeletingAccount) {
+      return;
+    }
+
+    setIsDeletingAccount(true);
+
+    try {
+      await deleteAccount();
+      const { error } = await supabaseClient.auth.signOut();
+
+      if (error) {
+        console.warn(
+          "Account deleted, but local sign out reported an error",
+          error,
+        );
+      }
+
+      setTasks([]);
+      navigate("/login", { replace: true });
+    } catch (error) {
+      console.error("Failed to delete account", error);
+      window.alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to delete account right now. Please try again.",
+      );
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  };
+
   const totalCompleted = useMemo(
     () => tasks.filter((t: Task) => t.completed).length,
     [tasks],
@@ -506,6 +542,8 @@ export const DashboardScreen = () => {
           isDark={isDark}
           onToggleTheme={() => setIsDark((prev: boolean) => !prev)}
           onLogout={handleLogout}
+          onDeleteAccount={() => setDeleteAccountDialogOpen(true)}
+          isDeletingAccount={isDeletingAccount}
           advancedMode={advancedMode}
           hideCompleted={hideCompleted}
           onToggleAdvancedMode={() => setAdvancedMode((prev: boolean) => !prev)}
@@ -615,6 +653,16 @@ export const DashboardScreen = () => {
           onToggleTask={handleToggleTask}
           onLogout={handleLogout}
           userEmail={user?.email ?? undefined}
+        />
+
+        <ConfirmDialog
+          isOpen={deleteAccountDialogOpen}
+          onClose={() => setDeleteAccountDialogOpen(false)}
+          onConfirm={handleDeleteAccount}
+          title="Delete account?"
+          message="This permanently deletes your account and all synced tasks. This cannot be undone."
+          confirmText={isDeletingAccount ? "Deleting" : "Delete Account"}
+          isDangerous
         />
       </div>
     </div>

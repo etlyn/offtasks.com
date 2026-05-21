@@ -1,5 +1,6 @@
 {
     "name": "offtasks-web-app",
+    "version": "1.06",
     "private": true,
     "type": "module",
     "scripts": {
@@ -7,14 +8,22 @@
         "build": "vite build",
         "postbuild": "node scripts/create-spa-route-copies.mjs",
         "preview": "vite preview",
-        "manual:test:list": "node manual-tests/scripts/run-manual-gherkin.mjs list",
-        "manual:test:all": "node manual-tests/scripts/run-manual-gherkin.mjs run",
-        "manual:test:web": "node manual-tests/scripts/run-manual-gherkin.mjs run --platform web",
-        "manual:test:web:feature": "node manual-tests/scripts/run-manual-gherkin.mjs run --platform web",
-        "manual:test:mobile": "node manual-tests/scripts/run-manual-gherkin.mjs run --platform mobile",
-        "manual:test:mobile:feature": "node manual-tests/scripts/run-manual-gherkin.mjs run --platform mobile",
-        "manual:report:open": "node manual-tests/scripts/open-report.mjs",
-        "manual:report:preview": "node manual-tests/scripts/preview-report.mjs"
+        "e2e:test:list": "node end-to-end-testing/scripts/run-e2e-gherkin.mjs list",
+        "e2e:test:all": "node end-to-end-testing/scripts/run-e2e-gherkin.mjs run",
+        "e2e:test:web": "node end-to-end-testing/scripts/run-e2e-gherkin.mjs run --platform web",
+        "e2e:test:web:feature": "node end-to-end-testing/scripts/run-e2e-gherkin.mjs run --platform web",
+        "e2e:test:mobile": "node end-to-end-testing/scripts/run-e2e-gherkin.mjs run --platform mobile",
+        "e2e:test:mobile:feature": "node end-to-end-testing/scripts/run-e2e-gherkin.mjs run --platform mobile",
+        "e2e:report:open": "node end-to-end-testing/scripts/open-report.mjs",
+        "e2e:report:preview": "node end-to-end-testing/scripts/preview-report.mjs",
+        "manual:test:list": "node end-to-end-testing/scripts/run-e2e-gherkin.mjs list",
+        "manual:test:all": "node end-to-end-testing/scripts/run-e2e-gherkin.mjs run",
+        "manual:test:web": "node end-to-end-testing/scripts/run-e2e-gherkin.mjs run --platform web",
+        "manual:test:web:feature": "node end-to-end-testing/scripts/run-e2e-gherkin.mjs run --platform web",
+        "manual:test:mobile": "node end-to-end-testing/scripts/run-e2e-gherkin.mjs run --platform mobile",
+        "manual:test:mobile:feature": "node end-to-end-testing/scripts/run-e2e-gherkin.mjs run --platform mobile",
+        "manual:report:open": "node end-to-end-testing/scripts/open-report.mjs",
+        "manual:report:preview": "node end-to-end-testing/scripts/preview-report.mjs"
     },
     "dependencies": {
         "@radix-ui/react-accordion": "^1.2.3",

@@ -7,10 +7,10 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..', '..');
-const reportPath = path.resolve(repoRoot, 'manual-tests', 'reports', 'html', 'index.html');
+const reportPath = path.resolve(repoRoot, 'end-to-end-testing', 'reports', 'html', 'index.html');
 
 if (!fs.existsSync(reportPath)) {
-  console.error('No HTML report found. Run a manual test session first.');
+  console.error('No HTML report found. Run an end-to-end test session first.');
   process.exit(1);
 }
 

@@ -7,6 +7,8 @@ interface HeaderProps {
   isDark: boolean;
   onToggleTheme: () => void;
   onLogout: () => void;
+  onDeleteAccount?: () => void;
+  isDeletingAccount?: boolean;
   advancedMode?: boolean;
   hideCompleted?: boolean;
   onToggleAdvancedMode?: () => void;
@@ -29,6 +31,8 @@ export function Header({
   isDark,
   onToggleTheme,
   onLogout,
+  onDeleteAccount,
+  isDeletingAccount,
   advancedMode,
   hideCompleted,
   onToggleAdvancedMode,
@@ -154,6 +158,8 @@ export function Header({
 
         <ProfileMenu
           onLogout={onLogout}
+          onDeleteAccount={onDeleteAccount}
+          isDeletingAccount={isDeletingAccount}
           totalCompleted={totalCompleted}
           totalTasks={totalTasks}
           onViewQuickView={onViewQuickView}

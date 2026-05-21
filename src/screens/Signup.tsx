@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import { AuthLayout } from "@/components/AuthLayout";
 import { AuthNotice } from "@/components/public/AuthNotice";
 import {
@@ -21,6 +22,8 @@ export const SignupScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+
+  const navigate = useNavigate();
 
   const submitHandler = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -50,16 +53,18 @@ export const SignupScreen = () => {
     setMessage(null);
 
     try {
-      const { error: signUpError } = await supabaseClient.auth.signUp({
+      const { error: signUpError, session } = await supabaseClient.auth.signUp({
         email: normalizedEmail,
         password,
       });
 
       if (signUpError) {
         setError(mapAuthErrorMessage(signUpError.message));
+      } else if (session) {
+        navigate("/app", { replace: true });
       } else {
         setMessage(
-          `Account created. Check ${normalizedEmail} for the confirmation email, then sign in to open your workspace.`,
+          `Account created. Sign in with ${normalizedEmail} to open your workspace.`,
         );
       }
     } catch (unknownError) {

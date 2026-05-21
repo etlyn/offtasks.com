@@ -3,23 +3,25 @@
 Task planner with Today, Tomorrow, Upcoming, and Close sections. Tasks are created with a scheduled date and group, then fetched and categorized on refresh: incomplete tasks due today or earlier show in Today, future tasks stay in their group, and completed tasks show in Today only if they were completed today—otherwise they go to Close. Missed deadlines are highlighted red only if the task is still in Today; priority doesn’t affect styling.
 
 ### Prerequisites
+
 - Node.js 16.x or newer (18.x works fine)
 - npm 8+ or pnpm/yarn (examples below use npm)
 - Supabase project with email/password auth enabled
 
 ### Quick Start
+
 1. Install dependencies.
-	```bash
-	npm install
-	```
+   ```bash
+   npm install
+   ```
 2. Copy `.env.example` to `.env.local` and populate `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (find both under **Project Settings → API** in Supabase).
-	```bash
-	cp .env.example .env.local
-	```
+   ```bash
+   cp .env.example .env.local
+   ```
 3. Start the development server.
-	```bash
-	npm run dev
-	```
+   ```bash
+   npm run dev
+   ```
 4. Visit `http://localhost:3000`.
 
 ### Project Structure
@@ -39,6 +41,7 @@ src/
 Dark mode is driven by a lightweight theme switch that toggles the Tailwind `dark` class on the document root. Icons have been standardised on [`lucide-react`](https://lucide.dev/icons/).
 
 ### Supabase Schema
+
 Create the following tables in Supabase (adjust types as needed):
 
 ```sql
@@ -59,16 +62,28 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   created_at timestamp with time zone default timezone('utc', now())
 );
+
+-- Per-user UI preferences shared by web and mobile
+create table if not exists public.user_preferences (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  hide_completed boolean not null default false,
+  advanced_mode boolean not null default false,
+  theme_mode text not null default 'Light' check (theme_mode in ('Light', 'Dark')),
+  auto_arrange boolean not null default false,
+  updated_at timestamp with time zone not null default timezone('utc', now())
+);
 ```
 
-Enable Row Level Security on both tables and add policies that grant users access to rows where `user_id = auth.uid()`.
+Enable Row Level Security on these tables and add policies that grant users access to rows where `user_id = auth.uid()`.
 
 ### Available Scripts
+
 - `npm run dev` – start the Next.js dev server
 - `npm run build` – create a production build
 - `npm run start` – run the production build locally
 - `npm run lint` – run ESLint
 
 ### Troubleshooting
+
 - If you see `Missing NEXT_PUBLIC_SUPABASE_URL` (or `NEXT_PUBLIC_SUPABASE_ANON_KEY`) during startup, verify `.env.local` is present and correctly populated.
 - Guest login relies on Supabase auto-confirming email/password users. If email confirmation is enforced, either disable it for this project or manually confirm the generated guest account in Supabase Auth.

@@ -586,3 +586,40 @@ export const upsertUserPreferences = async (
     throw error;
   }
 };
+
+interface DeleteAccountResponse {
+  success?: boolean;
+  error?: string;
+}
+
+export const deleteAccount = async (): Promise<void> => {
+  const accessToken = supabaseClient.auth.session()?.access_token;
+
+  if (!accessToken) {
+    throw new Error("You need to be signed in to delete your account.");
+  }
+
+  const { data, error } = await supabaseClient.functions.invoke<DeleteAccountResponse>(
+    "delete-account",
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({}),
+    },
+  );
+
+  if (error) {
+    console.error("Error deleting account", error);
+    throw error;
+  }
+
+  if (data?.error) {
+    throw new Error(data.error);
+  }
+
+  if (!data?.success) {
+    throw new Error("Account deletion did not complete.");
+  }
+};

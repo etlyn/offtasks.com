@@ -11,6 +11,7 @@ import {
   Search,
   Settings,
   Sun,
+  Trash2,
   User,
   X,
 } from "lucide-react";
@@ -20,6 +21,8 @@ import { Switch } from "./ui/switch";
 
 export interface ProfileMenuProps {
   onLogout: () => void;
+  onDeleteAccount?: () => void;
+  isDeletingAccount?: boolean;
   totalCompleted?: number;
   totalTasks?: number;
   onOpenSearch?: () => void;
@@ -63,6 +66,8 @@ const getInitials = (email?: string, name?: string) => {
 
 export const ProfileMenu: React.FC<ProfileMenuProps> = ({
   onLogout,
+  onDeleteAccount,
+  isDeletingAccount = false,
   totalCompleted = 0,
   totalTasks = 0,
   onOpenSearch,
@@ -210,7 +215,9 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
                 </span>
                 <Switch
                   checked={!!hideCompleted}
-                  onCheckedChange={(value) => onToggleHideCompleted?.(value)}
+                  onCheckedChange={(value: boolean) =>
+                    onToggleHideCompleted?.(value)
+                  }
                 />
               </div>
 
@@ -236,13 +243,27 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
                 </span>
                 <Switch
                   checked={!!autoArrange}
-                  onCheckedChange={(value) => onToggleAutoArrange?.(value)}
+                  onCheckedChange={(value: boolean) =>
+                    onToggleAutoArrange?.(value)
+                  }
                 />
               </div>
             </div>
           </div>
 
-          <div className="border-t border-zinc-200 dark:border-zinc-800 px-5 py-6">
+          <div className="space-y-3 border-t border-zinc-200 dark:border-zinc-800 px-5 py-6">
+            {onDeleteAccount && (
+              <button
+                onClick={closeAndRun(onDeleteAccount)}
+                disabled={isDeletingAccount}
+                className="w-full flex items-center justify-center gap-2 rounded-xl border border-transparent bg-transparent px-4 py-2.5 transition hover:bg-red-50/70 dark:hover:bg-red-950/25 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Trash2 className="size-4 text-red-500 dark:text-red-400" />
+                <span className="font-['Poppins',_sans-serif] text-[14px] text-red-500 dark:text-red-400">
+                  {isDeletingAccount ? "Deleting Account" : "Delete Account"}
+                </span>
+              </button>
+            )}
             <button
               onClick={closeAndRun(onLogout)}
               className="w-full flex items-center justify-center gap-2 rounded-xl border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/40 px-4 py-3 shadow-[0px_1px_3px_rgba(0,0,0,0.1)] transition hover:bg-red-100 dark:hover:bg-red-900/50"
@@ -252,7 +273,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
                 Log Out
               </span>
             </button>
-            <p className="mt-4 text-center font-['Poppins',_sans-serif] text-[11px] text-zinc-400 dark:text-zinc-500">
+            <p className="pt-1 text-center font-['Poppins',_sans-serif] text-[11px] text-zinc-400 dark:text-zinc-500">
               offtasks v1.0.5.1
             </p>
           </div>
