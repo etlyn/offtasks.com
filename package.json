@@ -2,6 +2,7 @@
     "name": "offtasks-web-app",
     "version": "1.06",
     "private": true,
+    "packageManager": "yarn@1.22.22",
     "type": "module",
     "scripts": {
         "dev": "vite",
