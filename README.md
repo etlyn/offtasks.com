@@ -24,8 +24,8 @@ removed here. From an `etlyn-e2e` checkout, use `yarn e2e:test:offtasks:web` or
 
 1. Install dependencies.
    ```bash
-  nvm use
-  npx --yes yarn@1.22.22 install --frozen-lockfile
+   nvm use
+   npx --yes yarn@1.22.22 install --frozen-lockfile
    ```
 2. Copy `.env.example` to `.env.local` and populate `VITE_PUBLIC_SUPABASE_URL` and `VITE_PUBLIC_SUPABASE_ANON_KEY` (find both under **Project Settings → API** in Supabase). Use the public anonymous key, never a service-role key.
    ```bash
