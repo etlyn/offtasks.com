@@ -8,23 +8,7 @@
         "dev": "vite",
         "build": "vite build",
         "postbuild": "node scripts/create-spa-route-copies.mjs",
-        "preview": "vite preview",
-        "e2e:test:list": "node end-to-end-testing/scripts/run-e2e-gherkin.mjs list",
-        "e2e:test:all": "node end-to-end-testing/scripts/run-e2e-gherkin.mjs run",
-        "e2e:test:web": "node end-to-end-testing/scripts/run-e2e-gherkin.mjs run --platform web",
-        "e2e:test:web:feature": "node end-to-end-testing/scripts/run-e2e-gherkin.mjs run --platform web",
-        "e2e:test:mobile": "node end-to-end-testing/scripts/run-e2e-gherkin.mjs run --platform mobile",
-        "e2e:test:mobile:feature": "node end-to-end-testing/scripts/run-e2e-gherkin.mjs run --platform mobile",
-        "e2e:report:open": "node end-to-end-testing/scripts/open-report.mjs",
-        "e2e:report:preview": "node end-to-end-testing/scripts/preview-report.mjs",
-        "manual:test:list": "node end-to-end-testing/scripts/run-e2e-gherkin.mjs list",
-        "manual:test:all": "node end-to-end-testing/scripts/run-e2e-gherkin.mjs run",
-        "manual:test:web": "node end-to-end-testing/scripts/run-e2e-gherkin.mjs run --platform web",
-        "manual:test:web:feature": "node end-to-end-testing/scripts/run-e2e-gherkin.mjs run --platform web",
-        "manual:test:mobile": "node end-to-end-testing/scripts/run-e2e-gherkin.mjs run --platform mobile",
-        "manual:test:mobile:feature": "node end-to-end-testing/scripts/run-e2e-gherkin.mjs run --platform mobile",
-        "manual:report:open": "node end-to-end-testing/scripts/open-report.mjs",
-        "manual:report:preview": "node end-to-end-testing/scripts/preview-report.mjs"
+        "preview": "vite preview"
     },
     "dependencies": {
         "@radix-ui/react-accordion": "^1.2.3",
@@ -75,16 +59,12 @@
         "vaul": "^1.1.2"
     },
     "devDependencies": {
-        "@cucumber/gherkin": "^37.0.0",
-        "@cucumber/messages": "^31.0.0",
         "@tailwindcss/postcss": "^4.1.14",
         "@types/node": "^20.10.0",
         "@types/react": "^18.3.3",
         "@types/react-dom": "^18.3.0",
         "@vitejs/plugin-react-swc": "^3.10.2",
         "autoprefixer": "^10.4.21",
-        "cucumber-html-reporter": "^7.2.0",
-        "glob": "^11.0.3",
         "tailwindcss": "^4.1.14",
         "typescript": "^5.4.5",
         "vite": "6.3.5"

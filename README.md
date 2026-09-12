@@ -1,20 +1,33 @@
-## Offtasks Web App
+## Offtasks Website and Web App
 
-Task planner with Today, Tomorrow, Upcoming, and Close sections. Tasks are created with a scheduled date and group, then fetched and categorized on refresh: incomplete tasks due today or earlier show in Today, future tasks stay in their group, and completed tasks show in Today only if they were completed today—otherwise they go to Close. Missed deadlines are highlighted red only if the task is still in Today; priority doesn’t affect styling.
+The Offtasks public landing, legal, and support pages, plus the existing
+authenticated task planner, built with React and Vite and maintained by Etlyn.
+
+The native iOS and Android app now lives in
+[etlyn/offtasks-mobile](https://github.com/etlyn/offtasks-mobile), with its own
+Git history, dependencies, native projects, and CI. Mobile releases no longer
+build from this repository.
+
+Manual web and mobile acceptance scenarios live in
+[etlyn-e2e/offtasks](https://github.com/etlyn/etlyn-e2e/tree/main/offtasks).
+The old `end-to-end-testing` directory and `e2e:*` / `manual:*` scripts have been
+removed here. From an `etlyn-e2e` checkout, use `yarn e2e:test:offtasks:web` or
+`yarn e2e:test:offtasks:mobile`; no sibling checkout is needed to build this site.
 
 ### Prerequisites
 
-- Node.js 16.x or newer (18.x works fine)
-- npm 8+ or pnpm/yarn (examples below use npm)
+- Node.js 24 (`nvm use`)
+- Yarn 1.22.22 (via `npx yarn@1.22.22` or an existing installation)
 - Supabase project with email/password auth enabled
 
 ### Quick Start
 
 1. Install dependencies.
    ```bash
-   npm install
+  nvm use
+  npx --yes yarn@1.22.22 install --frozen-lockfile
    ```
-2. Copy `.env.example` to `.env.local` and populate `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (find both under **Project Settings → API** in Supabase).
+2. Copy `.env.example` to `.env.local` and populate `VITE_PUBLIC_SUPABASE_URL` and `VITE_PUBLIC_SUPABASE_ANON_KEY` (find both under **Project Settings → API** in Supabase). Use the public anonymous key, never a service-role key.
    ```bash
    cp .env.example .env.local
    ```
@@ -22,25 +35,29 @@ Task planner with Today, Tomorrow, Upcoming, and Close sections. Tasks are creat
    ```bash
    npm run dev
    ```
-4. Visit `http://localhost:3000`.
+4. Open the URL printed by Vite.
 
 ### Project Structure
 
 ```
 src/
-  components/        # Reusable UI building blocks (Task modal, lists, layout, etc.)
-  features/tasks/    # Task-specific orchestration such as the Supabase initialiser
-  hooks/             # Shared client-side hooks (date helpers)
-  lib/               # Supabase client + data helpers
-  pages/             # Next.js routes (includes API routes)
-  providers/         # React context providers (App state)
-  styles/            # Global Tailwind entrypoint
-  types/             # Shared TypeScript contracts
+  App.tsx            # Public, guest, and authenticated routes
+  components/        # Reusable UI building blocks
+  screens/           # Landing, legal, account, and dashboard screens
+  lib/               # Supabase client and data helpers
+  providers/         # React context providers
+scripts/             # Static SPA route copies for deployment
+supabase/            # Shared Offtasks migrations and Edge Functions
 ```
 
 Dark mode is driven by a lightweight theme switch that toggles the Tailwind `dark` class on the document root. Icons have been standardised on [`lucide-react`](https://lucide.dev/icons/).
 
 ### Supabase Schema
+
+Both clients continue using the same Supabase contracts. This repository owns
+the migrations and Edge Functions in `supabase/`, including `delete-account`.
+Coordinate backend changes with `etlyn/offtasks-mobile`; extracting the native
+app does not migrate or change the live Supabase project.
 
 Create the following tables in Supabase (adjust types as needed):
 
@@ -78,12 +95,17 @@ Enable Row Level Security on these tables and add policies that grant users acce
 
 ### Available Scripts
 
-- `npm run dev` – start the Next.js dev server
+- `npm run dev` – start the Vite dev server
 - `npm run build` – create a production build
-- `npm run start` – run the production build locally
-- `npm run lint` – run ESLint
+- `npm run preview` – preview the production build locally
+
+The existing GitHub Pages workflow builds `main` and publishes `build/` to the
+`public` branch. Its existing `NEXT_PUBLIC_SUPABASE_URL` and
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` secret names are retained and mapped to Vite
+variables. Domain and Vercel configuration remain unchanged. The native Xcode
+Cloud workflow must be reconnected to the new mobile repository separately.
 
 ### Troubleshooting
 
-- If you see `Missing NEXT_PUBLIC_SUPABASE_URL` (or `NEXT_PUBLIC_SUPABASE_ANON_KEY`) during startup, verify `.env.local` is present and correctly populated.
+- If Supabase configuration is missing during startup, verify `.env.local` contains `VITE_PUBLIC_SUPABASE_URL` and `VITE_PUBLIC_SUPABASE_ANON_KEY`.
 - Guest login relies on Supabase auto-confirming email/password users. If email confirmation is enforced, either disable it for this project or manually confirm the generated guest account in Supabase Auth.
