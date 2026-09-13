@@ -8,11 +8,9 @@ The native iOS and Android app now lives in
 Git history, dependencies, native projects, and CI. Mobile releases no longer
 build from this repository.
 
-Manual web and mobile acceptance scenarios live in
-[etlyn-e2e/offtasks](https://github.com/etlyn/etlyn-e2e/tree/main/offtasks).
-The old `end-to-end-testing` directory and `e2e:*` / `manual:*` scripts have been
-removed here. From an `etlyn-e2e` checkout, use `yarn e2e:test:offtasks:web` or
-`yarn e2e:test:offtasks:mobile`; no sibling checkout is needed to build this site.
+Acceptance suites are product-owned in [qa/manifest.json](qa/manifest.json).
+Use the standalone E2E website to import a branch snapshot, perform tests and
+generate reports. See [QA ownership and import instructions](qa/README.md).
 
 ### Prerequisites
 
