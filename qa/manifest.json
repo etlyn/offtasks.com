@@ -1,0 +1,1747 @@
+{
+  "$schema": "https://e2e.etlyn.com/schema/manifest.schema.json",
+  "schemaVersion": 1,
+  "app": {
+    "id": "offtasks-web",
+    "name": "Offtasks Web",
+    "platform": "web"
+  },
+  "suites": [
+    {
+      "id": "accessibility-and-resilience",
+      "title": "Web accessibility, loading, and resilience states",
+      "description": "The web app should remain usable with keyboard navigation, responsive layouts, loading states, and retryable errors.",
+      "cases": [
+        {
+          "id": "accessibility-and-resilience-navigate-primary-controls-with-the-keyboard",
+          "title": "Navigate primary controls with the keyboard",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@accessibility",
+            "@resilience"
+          ],
+          "preconditions": [
+            "Given the tester can run the web app in desktop and narrow browser viewports"
+          ],
+          "steps": [
+            {
+              "action": "Given the tester is signed in to the web app"
+            },
+            {
+              "action": "When the tester tabs through the header, profile menu, task dialog, and settings sheet"
+            },
+            {
+              "action": "Then focus should move through interactive controls in a logical order"
+            },
+            {
+              "action": "And Escape should close open dialogs or sheets without saving unintended changes"
+            }
+          ]
+        },
+        {
+          "id": "accessibility-and-resilience-save-a-task-with-the-dialog-keyboard-shortcut",
+          "title": "Save a task with the dialog keyboard shortcut",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@accessibility",
+            "@resilience"
+          ],
+          "preconditions": [
+            "Given the tester can run the web app in desktop and narrow browser viewports"
+          ],
+          "steps": [
+            {
+              "action": "Given the new task dialog is open"
+            },
+            {
+              "action": "And the tester has entered valid task content"
+            },
+            {
+              "action": "When the tester presses the dialog save shortcut"
+            },
+            {
+              "action": "Then the task should be saved once"
+            },
+            {
+              "action": "And the dialog should close without leaving duplicate entries"
+            }
+          ]
+        },
+        {
+          "id": "accessibility-and-resilience-preserve-layout-on-a-narrow-browser-viewport",
+          "title": "Preserve layout on a narrow browser viewport",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@accessibility",
+            "@resilience"
+          ],
+          "preconditions": [
+            "Given the tester can run the web app in desktop and narrow browser viewports"
+          ],
+          "steps": [
+            {
+              "action": "Given the tester opens the dashboard on a mobile-width browser viewport"
+            },
+            {
+              "action": "When the quick view, profile sheet, task dialog, and settings sheet are opened"
+            },
+            {
+              "action": "Then controls and text should remain visible without overlapping"
+            },
+            {
+              "action": "And the tester should be able to create, edit, and close a task"
+            }
+          ]
+        },
+        {
+          "id": "accessibility-and-resilience-keep-the-dashboard-shell-stable-while-tasks-load",
+          "title": "Keep the dashboard shell stable while tasks load",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@accessibility",
+            "@resilience"
+          ],
+          "preconditions": [
+            "Given the tester can run the web app in desktop and narrow browser viewports"
+          ],
+          "steps": [
+            {
+              "action": "Given the tester opens the protected dashboard with a slow task fetch"
+            },
+            {
+              "action": "When the app is loading tasks"
+            },
+            {
+              "action": "Then the header and loading or empty state should remain coherent"
+            },
+            {
+              "action": "And the app should not redirect away from the protected workspace for an authenticated user"
+            }
+          ]
+        },
+        {
+          "id": "accessibility-and-resilience-recover-from-a-failed-task-save-attempt",
+          "title": "Recover from a failed task save attempt",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@accessibility",
+            "@resilience"
+          ],
+          "preconditions": [
+            "Given the tester can run the web app in desktop and narrow browser viewports"
+          ],
+          "steps": [
+            {
+              "action": "Given the tester is signed in and the task dialog is open"
+            },
+            {
+              "action": "When a task create or update request fails"
+            },
+            {
+              "action": "Then the app should leave the tester in a recoverable state"
+            },
+            {
+              "action": "And a subsequent successful save should refresh the board without duplicate tasks"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "advanced-mode",
+      "title": "Web advanced mode and filters",
+      "description": "Advanced controls should help a tester search, filter, and organize work without losing state.",
+      "cases": [
+        {
+          "id": "advanced-mode-enable-advanced-mode-from-the-profile-menu",
+          "title": "Enable advanced mode from the profile menu",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@advanced-mode"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the dashboard contains a mix of labels, priorities, and completed tasks"
+          ],
+          "steps": [
+            {
+              "action": "When the tester opens the profile menu"
+            },
+            {
+              "action": "And the tester enables Advanced Mode"
+            },
+            {
+              "action": "Then extra filtering controls should appear in quick view"
+            },
+            {
+              "action": "And the choice should persist after a page refresh"
+            }
+          ]
+        },
+        {
+          "id": "advanced-mode-search-and-filter-quick-view-tasks",
+          "title": "Search and filter quick view tasks",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@advanced-mode"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the dashboard contains a mix of labels, priorities, and completed tasks"
+          ],
+          "steps": [
+            {
+              "action": "Given advanced mode is enabled"
+            },
+            {
+              "action": "When the tester searches for a known task keyword"
+            },
+            {
+              "action": "And the tester filters by one or more category labels"
+            },
+            {
+              "action": "Then only matching tasks should remain visible in the task columns"
+            }
+          ]
+        },
+        {
+          "id": "advanced-mode-sort-tasks-by-priority-and-clear-filters",
+          "title": "Sort tasks by priority and clear filters",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@advanced-mode"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the dashboard contains a mix of labels, priorities, and completed tasks"
+          ],
+          "steps": [
+            {
+              "action": "Given advanced mode is enabled"
+            },
+            {
+              "action": "When the tester toggles the priority sort control"
+            },
+            {
+              "action": "Then tasks in the active view should reorder by priority"
+            },
+            {
+              "action": "When the tester clears the active filters"
+            },
+            {
+              "action": "Then the default unfiltered board should return"
+            }
+          ]
+        },
+        {
+          "id": "advanced-mode-use-profile-menu-preferences-that-affect-board-visibility",
+          "title": "Use profile menu preferences that affect board visibility",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@advanced-mode"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the dashboard contains a mix of labels, priorities, and completed tasks"
+          ],
+          "steps": [
+            {
+              "action": "When the tester opens the profile menu"
+            },
+            {
+              "action": "And the tester toggles Hide Completed Tasks or Auto-move due tasks"
+            },
+            {
+              "action": "Then the board should update to reflect the new preference"
+            },
+            {
+              "action": "And the preference should still be applied after a reload"
+            }
+          ]
+        },
+        {
+          "id": "advanced-mode-auto-move-due-tomorrow-tasks-into-today",
+          "title": "Auto-move due Tomorrow tasks into Today",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@advanced-mode"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the dashboard contains a mix of labels, priorities, and completed tasks"
+          ],
+          "steps": [
+            {
+              "action": "Given Auto-move due tasks is enabled"
+            },
+            {
+              "action": "And the tester has an open Tomorrow task whose scheduled date is today or earlier"
+            },
+            {
+              "action": "When the dashboard refreshes task data"
+            },
+            {
+              "action": "Then the task should move into Today"
+            },
+            {
+              "action": "And it should keep its content, priority, and category label"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "auth-validation",
+      "title": "Web authentication validation and route guards",
+      "description": "Authentication forms should block incomplete input, explain auth failures, and route users to the correct surface.",
+      "cases": [
+        {
+          "id": "auth-validation-block-sign-in-with-missing-fields",
+          "title": "Block sign in with missing fields",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@authentication",
+            "@validation"
+          ],
+          "preconditions": [
+            "Given the tester knows which Supabase environment is connected to the web app"
+          ],
+          "steps": [
+            {
+              "action": "Given the tester opens the login page"
+            },
+            {
+              "action": "When the tester submits the sign in form without an email address"
+            },
+            {
+              "action": "Then the app should ask for the email used with Offtasks"
+            },
+            {
+              "action": "When the tester enters an email address without a password"
+            },
+            {
+              "action": "Then the app should ask for a password before continuing"
+            }
+          ]
+        },
+        {
+          "id": "auth-validation-show-a-mapped-auth-error-for-invalid-credentials",
+          "title": "Show a mapped auth error for invalid credentials",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@authentication",
+            "@validation"
+          ],
+          "preconditions": [
+            "Given the tester knows which Supabase environment is connected to the web app"
+          ],
+          "steps": [
+            {
+              "action": "Given the tester opens the login page"
+            },
+            {
+              "action": "When the tester enters an existing email address with an invalid password"
+            },
+            {
+              "action": "And the tester submits the sign in form"
+            },
+            {
+              "action": "Then the app should show a friendly authentication error"
+            },
+            {
+              "action": "And the tester should remain on the login page with the form usable"
+            }
+          ]
+        },
+        {
+          "id": "auth-validation-enforce-signup-password-and-confirmation-rules",
+          "title": "Enforce signup password and confirmation rules",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@authentication",
+            "@validation"
+          ],
+          "preconditions": [
+            "Given the tester knows which Supabase environment is connected to the web app"
+          ],
+          "steps": [
+            {
+              "action": "Given the tester opens the signup page"
+            },
+            {
+              "action": "When the tester submits incomplete signup fields"
+            },
+            {
+              "action": "Then the app should ask the tester to fill in all fields"
+            },
+            {
+              "action": "When the tester enters a weak password or mismatched confirmation"
+            },
+            {
+              "action": "Then the password checklist or mismatch error should explain what to fix"
+            }
+          ]
+        },
+        {
+          "id": "auth-validation-reject-password-reset-without-an-account-email",
+          "title": "Reject password reset without an account email",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@authentication",
+            "@validation"
+          ],
+          "preconditions": [
+            "Given the tester knows which Supabase environment is connected to the web app"
+          ],
+          "steps": [
+            {
+              "action": "Given the tester opens the forgot password page"
+            },
+            {
+              "action": "When the tester submits the form without an email address"
+            },
+            {
+              "action": "Then the app should ask for the email tied to the Offtasks account"
+            },
+            {
+              "action": "And no reset email confirmation should appear"
+            }
+          ]
+        },
+        {
+          "id": "auth-validation-handle-invalid-or-expired-reset-links",
+          "title": "Handle invalid or expired reset links",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@authentication",
+            "@validation"
+          ],
+          "preconditions": [
+            "Given the tester knows which Supabase environment is connected to the web app"
+          ],
+          "steps": [
+            {
+              "action": "Given the tester opens the reset password page without a valid recovery token"
+            },
+            {
+              "action": "When the tester attempts to save a new password"
+            },
+            {
+              "action": "Then the app should explain that the reset link is invalid or expired"
+            },
+            {
+              "action": "And the tester should be able to return to login and request a new link"
+            }
+          ]
+        },
+        {
+          "id": "auth-validation-apply-guest-and-protected-route-guards",
+          "title": "Apply guest and protected route guards",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@authentication",
+            "@validation"
+          ],
+          "preconditions": [
+            "Given the tester knows which Supabase environment is connected to the web app"
+          ],
+          "steps": [
+            {
+              "action": "Given the tester is signed out"
+            },
+            {
+              "action": "When the tester opens the protected /app route directly"
+            },
+            {
+              "action": "Then the app should redirect to the login page"
+            },
+            {
+              "action": "Given the tester is signed in"
+            },
+            {
+              "action": "When the tester opens login, signup, or forgot password directly"
+            },
+            {
+              "action": "Then the app should redirect to the protected dashboard"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "authentication",
+      "title": "Web authentication",
+      "description": "The web app should let a user sign in, register, and recover access without leaving the browser flow.",
+      "cases": [
+        {
+          "id": "authentication-sign-in-with-a-confirmed-account",
+          "title": "Sign in with a confirmed account",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@authentication"
+          ],
+          "preconditions": [
+            "Given the tester knows which Supabase environment is connected to the web app",
+            "And the tester has a valid browser session or test account ready"
+          ],
+          "steps": [
+            {
+              "action": "Given the tester opens the login page"
+            },
+            {
+              "action": "When the tester enters a confirmed email address and valid password"
+            },
+            {
+              "action": "And the tester submits the sign in form"
+            },
+            {
+              "action": "Then the app should show the welcome back confirmation state"
+            },
+            {
+              "action": "And the tester should be redirected to the dashboard"
+            }
+          ]
+        },
+        {
+          "id": "authentication-create-a-new-account-from-the-signup-screen",
+          "title": "Create a new account from the signup screen",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@authentication"
+          ],
+          "preconditions": [
+            "Given the tester knows which Supabase environment is connected to the web app",
+            "And the tester has a valid browser session or test account ready"
+          ],
+          "steps": [
+            {
+              "action": "Given the tester is on the login page"
+            },
+            {
+              "action": "When the tester opens the create account flow"
+            },
+            {
+              "action": "And the tester enters a new email address and matching passwords"
+            },
+            {
+              "action": "And the tester submits the signup form"
+            },
+            {
+              "action": "Then the app should confirm that an account was created"
+            },
+            {
+              "action": "And the tester should be able to open the dashboard without confirming email first"
+            }
+          ]
+        },
+        {
+          "id": "authentication-request-a-password-reset-email-from-login",
+          "title": "Request a password reset email from login",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@authentication"
+          ],
+          "preconditions": [
+            "Given the tester knows which Supabase environment is connected to the web app",
+            "And the tester has a valid browser session or test account ready"
+          ],
+          "steps": [
+            {
+              "action": "Given the tester is on the login page"
+            },
+            {
+              "action": "When the tester enters an existing account email address"
+            },
+            {
+              "action": "And the tester triggers the forgot password action"
+            },
+            {
+              "action": "Then the app should confirm that a reset link was sent"
+            },
+            {
+              "action": "And no unexpected validation or transport error should appear"
+            }
+          ]
+        },
+        {
+          "id": "authentication-complete-the-password-reset-screen-from-the-email-link",
+          "title": "Complete the password reset screen from the email link",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@authentication"
+          ],
+          "preconditions": [
+            "Given the tester knows which Supabase environment is connected to the web app",
+            "And the tester has a valid browser session or test account ready"
+          ],
+          "steps": [
+            {
+              "action": "Given the tester has opened the reset password page from a valid reset link"
+            },
+            {
+              "action": "When the tester enters matching replacement passwords"
+            },
+            {
+              "action": "And the tester saves the new password"
+            },
+            {
+              "action": "Then the app should confirm that the password was updated"
+            },
+            {
+              "action": "And the tester should be redirected back to the login screen"
+            }
+          ]
+        },
+        {
+          "id": "authentication-delete-a-disposable-account-from-the-profile-menu",
+          "title": "Delete a disposable account from the profile menu",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@authentication"
+          ],
+          "preconditions": [
+            "Given the tester knows which Supabase environment is connected to the web app",
+            "And the tester has a valid browser session or test account ready"
+          ],
+          "steps": [
+            {
+              "action": "Given the tester is signed in with a disposable account that has at least one synced task"
+            },
+            {
+              "action": "When the tester opens the profile menu and chooses Delete Account"
+            },
+            {
+              "action": "And the tester confirms the delete account dialog"
+            },
+            {
+              "action": "Then the app should redirect to the login page"
+            },
+            {
+              "action": "And signing in again with the deleted account should fail"
+            },
+            {
+              "action": "And the Supabase project should no longer contain that user's auth row, tasks, or preferences"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "history-and-profile",
+      "title": "Web history and profile controls",
+      "description": "The profile menu and history sheet should expose account controls and completed-task context.",
+      "cases": [
+        {
+          "id": "history-and-profile-inspect-profile-menu-account-controls",
+          "title": "Inspect profile menu account controls",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@history",
+            "@profile"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the account has at least one completed task"
+          ],
+          "steps": [
+            {
+              "action": "When the tester opens the profile menu"
+            },
+            {
+              "action": "Then the menu should show the user summary and completion count"
+            },
+            {
+              "action": "And the menu should expose actions for search, statistics, theme, and logout"
+            }
+          ]
+        },
+        {
+          "id": "history-and-profile-toggle-the-web-theme-from-the-profile-menu",
+          "title": "Toggle the web theme from the profile menu",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@history",
+            "@profile"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the account has at least one completed task"
+          ],
+          "steps": [
+            {
+              "action": "Given the profile menu is open"
+            },
+            {
+              "action": "When the tester switches the theme mode"
+            },
+            {
+              "action": "Then the app shell should update between light and dark appearance"
+            },
+            {
+              "action": "And the chosen theme should remain applied after refresh"
+            }
+          ]
+        },
+        {
+          "id": "history-and-profile-review-completed-task-history-by-relative-date",
+          "title": "Review completed task history by relative date",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@history",
+            "@profile"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the account has at least one completed task"
+          ],
+          "steps": [
+            {
+              "action": "When the tester opens the task history sheet"
+            },
+            {
+              "action": "Then completed tasks should be grouped under relative date headings such as Today or Yesterday"
+            },
+            {
+              "action": "And each history item should still show its original board label such as Today, Tomorrow, or Later"
+            }
+          ]
+        },
+        {
+          "id": "history-and-profile-sign-out-from-the-profile-menu",
+          "title": "Sign out from the profile menu",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@history",
+            "@profile"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the account has at least one completed task"
+          ],
+          "steps": [
+            {
+              "action": "Given the profile menu is open"
+            },
+            {
+              "action": "When the tester logs out"
+            },
+            {
+              "action": "Then the current session should end"
+            },
+            {
+              "action": "And the app should return to the login route"
+            }
+          ]
+        },
+        {
+          "id": "history-and-profile-review-web-settings-sheet-account-and-data-controls",
+          "title": "Review web settings sheet account and data controls",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@history",
+            "@profile"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the account has at least one completed task"
+          ],
+          "steps": [
+            {
+              "action": "When the tester opens the profile menu"
+            },
+            {
+              "action": "And the tester opens Settings"
+            },
+            {
+              "action": "Then the settings sheet should show the account email and Supabase sync status"
+            },
+            {
+              "action": "And the settings sheet should expose search, appearance, keyboard shortcut, about, and data sections"
+            }
+          ]
+        },
+        {
+          "id": "history-and-profile-search-all-tasks-from-the-settings-sheet",
+          "title": "Search all tasks from the settings sheet",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@history",
+            "@profile"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the account has at least one completed task"
+          ],
+          "steps": [
+            {
+              "action": "Given the settings sheet is open"
+            },
+            {
+              "action": "When the tester searches for a known task keyword"
+            },
+            {
+              "action": "Then matching open and completed tasks should appear in the settings results area"
+            },
+            {
+              "action": "And the tester should be able to complete or reopen a result from the sheet"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "public-site",
+      "title": "Web public site and legal routes",
+      "description": "The public web experience should introduce Offtasks, link visitors into auth, and support legal or support requests.",
+      "cases": [
+        {
+          "id": "public-site-review-the-public-landing-page-calls-to-action",
+          "title": "Review the public landing page calls to action",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@public-site"
+          ],
+          "preconditions": [
+            "Given the tester is using a desktop or mobile browser"
+          ],
+          "steps": [
+            {
+              "action": "Given the tester opens the public home page"
+            },
+            {
+              "action": "When the landing page finishes rendering"
+            },
+            {
+              "action": "Then the page should show the Offtasks value proposition and feature list"
+            },
+            {
+              "action": "And the primary action should lead a signed-out visitor to signup"
+            },
+            {
+              "action": "And the sign in action should lead to login"
+            }
+          ]
+        },
+        {
+          "id": "public-site-open-the-workspace-from-the-landing-page-when-already-signed-in",
+          "title": "Open the workspace from the landing page when already signed in",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@public-site"
+          ],
+          "preconditions": [
+            "Given the tester is using a desktop or mobile browser"
+          ],
+          "steps": [
+            {
+              "action": "Given the tester has an authenticated web session"
+            },
+            {
+              "action": "When the tester opens the public home page"
+            },
+            {
+              "action": "Then the primary action should offer to open the workspace"
+            },
+            {
+              "action": "When the tester follows that action"
+            },
+            {
+              "action": "Then the protected dashboard should load without an extra login step"
+            }
+          ]
+        },
+        {
+          "id": "public-site-navigate-privacy-terms-support-and-contact-routes",
+          "title": "Navigate privacy, terms, support, and contact routes",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@public-site"
+          ],
+          "preconditions": [
+            "Given the tester is using a desktop or mobile browser"
+          ],
+          "steps": [
+            {
+              "action": "Given the tester opens the public home page"
+            },
+            {
+              "action": "When the tester follows the footer or direct links for Privacy, Terms, Support, and Contact"
+            },
+            {
+              "action": "Then each legal or support page should render the expected title and updated date"
+            },
+            {
+              "action": "And each page should provide a path back to the home page"
+            }
+          ]
+        },
+        {
+          "id": "public-site-validate-the-support-contact-form",
+          "title": "Validate the support contact form",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@public-site"
+          ],
+          "preconditions": [
+            "Given the tester is using a desktop or mobile browser"
+          ],
+          "steps": [
+            {
+              "action": "Given the tester opens the support contact form"
+            },
+            {
+              "action": "When the tester submits the form with a missing name, email, or message"
+            },
+            {
+              "action": "Then the form should show a validation error"
+            },
+            {
+              "action": "And no success state should be shown"
+            }
+          ]
+        },
+        {
+          "id": "public-site-submit-a-support-contact-message",
+          "title": "Submit a support contact message",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@public-site"
+          ],
+          "preconditions": [
+            "Given the tester is using a desktop or mobile browser"
+          ],
+          "steps": [
+            {
+              "action": "Given the tester opens the support contact form"
+            },
+            {
+              "action": "When the tester enters a name, email, and support message"
+            },
+            {
+              "action": "And the tester submits the form"
+            },
+            {
+              "action": "Then the form should show the sending state while the request is in flight"
+            },
+            {
+              "action": "And the form should either show Message sent or a retryable submit error"
+            }
+          ]
+        },
+        {
+          "id": "public-site-redirect-unknown-public-routes-to-the-landing-page",
+          "title": "Redirect unknown public routes to the landing page",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@public-site"
+          ],
+          "preconditions": [
+            "Given the tester is using a desktop or mobile browser"
+          ],
+          "steps": [
+            {
+              "action": "Given the tester opens an unknown public route"
+            },
+            {
+              "action": "When the app router handles the route"
+            },
+            {
+              "action": "Then the tester should land on the public home page"
+            },
+            {
+              "action": "And the browser should not show the protected dashboard unless the route is /app"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quick-view",
+      "title": "Web quick view dashboard",
+      "description": "The quick view should keep the active task board readable across Today, Tomorrow, and Later.",
+      "cases": [
+        {
+          "id": "quick-view-load-the-protected-dashboard-workspace",
+          "title": "Load the protected dashboard workspace",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@quick-view"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the dashboard is open on the quick view tab"
+          ],
+          "steps": [
+            {
+              "action": "When the page finishes loading"
+            },
+            {
+              "action": "Then the header should render without redirecting back to login"
+            },
+            {
+              "action": "And the quick view should show task columns for Today, Tomorrow, and Later"
+            }
+          ]
+        },
+        {
+          "id": "quick-view-review-task-placement-across-the-board",
+          "title": "Review task placement across the board",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@quick-view"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the dashboard is open on the quick view tab"
+          ],
+          "steps": [
+            {
+              "action": "Given there are tasks scheduled for Today, Tomorrow, and Later"
+            },
+            {
+              "action": "When the tester reviews the board columns"
+            },
+            {
+              "action": "Then each task should appear in the correct column for its target group"
+            },
+            {
+              "action": "And completed items should follow the current completed visibility setting"
+            }
+          ]
+        },
+        {
+          "id": "quick-view-open-a-task-for-editing-from-the-board",
+          "title": "Open a task for editing from the board",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@quick-view"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the dashboard is open on the quick view tab"
+          ],
+          "steps": [
+            {
+              "action": "Given at least one task is visible in quick view"
+            },
+            {
+              "action": "When the tester opens the edit action for that task"
+            },
+            {
+              "action": "Then the task dialog should open with the current task values prefilled"
+            },
+            {
+              "action": "And the tester should be able to cancel without mutating the task"
+            }
+          ]
+        },
+        {
+          "id": "quick-view-use-the-keyboard-shortcut-for-fast-task-entry",
+          "title": "Use the keyboard shortcut for fast task entry",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@quick-view"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the dashboard is open on the quick view tab"
+          ],
+          "steps": [
+            {
+              "action": "Given the tester is focused outside any input field"
+            },
+            {
+              "action": "When the tester presses the quick add shortcut for a new task"
+            },
+            {
+              "action": "Then the task dialog should open in create mode"
+            },
+            {
+              "action": "And the default target group should be Today"
+            }
+          ]
+        },
+        {
+          "id": "quick-view-show-the-first-task-empty-state-for-a-new-account",
+          "title": "Show the first-task empty state for a new account",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@quick-view"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the dashboard is open on the quick view tab"
+          ],
+          "steps": [
+            {
+              "action": "Given the signed-in account has no tasks"
+            },
+            {
+              "action": "When the dashboard finishes loading"
+            },
+            {
+              "action": "Then the app should show the no-tasks empty state"
+            },
+            {
+              "action": "And the empty-state action should open a new Today task dialog"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "scheduling-and-categories",
+      "title": "Web scheduling and category lifecycle",
+      "description": "Task dates, board placement, priority, and category labels should stay consistent across create and edit flows.",
+      "cases": [
+        {
+          "id": "scheduling-and-categories-schedule-tasks-into-today-tomorrow-later-and-backlog",
+          "title": "Schedule tasks into Today, Tomorrow, Later, and backlog",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@scheduling",
+            "@categories"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the dashboard contains tasks that can be safely edited or removed"
+          ],
+          "steps": [
+            {
+              "action": "When the tester creates tasks with Today, Tomorrow, a future Later date, and no scheduled date"
+            },
+            {
+              "action": "Then each task should appear in the expected board column"
+            },
+            {
+              "action": "And the no-date task should remain in Later as backlog work"
+            }
+          ]
+        },
+        {
+          "id": "scheduling-and-categories-normalize-a-past-scheduled-date-to-today",
+          "title": "Normalize a past scheduled date to Today",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@scheduling",
+            "@categories"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the dashboard contains tasks that can be safely edited or removed"
+          ],
+          "steps": [
+            {
+              "action": "When the tester creates or edits a task with a date before today"
+            },
+            {
+              "action": "And the tester saves the task"
+            },
+            {
+              "action": "Then the task should be corrected into Today"
+            },
+            {
+              "action": "And the saved task should not keep an impossible past target group"
+            }
+          ]
+        },
+        {
+          "id": "scheduling-and-categories-create-and-reuse-a-custom-category-from-the-task-dialog",
+          "title": "Create and reuse a custom category from the task dialog",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@scheduling",
+            "@categories"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the dashboard contains tasks that can be safely edited or removed"
+          ],
+          "steps": [
+            {
+              "action": "When the tester opens the category selector in the task dialog"
+            },
+            {
+              "action": "And the tester searches for a category that does not exist"
+            },
+            {
+              "action": "And the tester adds that category to a task"
+            },
+            {
+              "action": "Then the category should be visible on the saved task"
+            },
+            {
+              "action": "When the tester opens another task dialog"
+            },
+            {
+              "action": "Then the custom category should be available for reuse"
+            }
+          ]
+        },
+        {
+          "id": "scheduling-and-categories-clear-optional-category-and-priority-values-while-editing",
+          "title": "Clear optional category and priority values while editing",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@scheduling",
+            "@categories"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the dashboard contains tasks that can be safely edited or removed"
+          ],
+          "steps": [
+            {
+              "action": "Given a task has a category label and non-default priority"
+            },
+            {
+              "action": "When the tester edits the task and clears the category and priority"
+            },
+            {
+              "action": "And the tester saves the change"
+            },
+            {
+              "action": "Then the board should show the task without the old label or priority marker"
+            }
+          ]
+        },
+        {
+          "id": "scheduling-and-categories-preserve-category-list-after-reload",
+          "title": "Preserve category list after reload",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@scheduling",
+            "@categories"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the dashboard contains tasks that can be safely edited or removed"
+          ],
+          "steps": [
+            {
+              "action": "Given the tester has added a custom category through the task dialog"
+            },
+            {
+              "action": "When the tester reloads the dashboard"
+            },
+            {
+              "action": "Then the custom category should remain available in the category selector"
+            },
+            {
+              "action": "And tasks using that category should keep their label styling"
+            }
+          ]
+        },
+        {
+          "id": "scheduling-and-categories-keep-priority-ordering-stable-for-equal-priorities",
+          "title": "Keep priority ordering stable for equal priorities",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@scheduling",
+            "@categories"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the dashboard contains tasks that can be safely edited or removed"
+          ],
+          "steps": [
+            {
+              "action": "Given advanced mode is enabled"
+            },
+            {
+              "action": "And the current view contains multiple tasks with the same priority"
+            },
+            {
+              "action": "When the tester toggles priority sorting"
+            },
+            {
+              "action": "Then tasks should group by priority without losing any tasks"
+            },
+            {
+              "action": "And tasks with equal priority should remain readable and selectable"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "settings-sync",
+      "title": "Web settings, persistence, and cross-platform sync",
+      "description": "Web preferences and task data should persist locally, sync through Supabase, and reflect changes made by mobile.",
+      "cases": [
+        {
+          "id": "settings-sync-review-settings-sheet-account-about-and-data-sections",
+          "title": "Review settings sheet account, about, and data sections",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@settings",
+            "@sync"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app with a reusable test account"
+          ],
+          "steps": [
+            {
+              "action": "When the tester opens the profile menu"
+            },
+            {
+              "action": "And the tester opens Settings"
+            },
+            {
+              "action": "Then the settings sheet should show the account email and Supabase sync status"
+            },
+            {
+              "action": "And the sheet should show appearance, keyboard shortcut, about, and data information"
+            }
+          ]
+        },
+        {
+          "id": "settings-sync-search-and-update-tasks-from-settings",
+          "title": "Search and update tasks from settings",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@settings",
+            "@sync"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app with a reusable test account"
+          ],
+          "steps": [
+            {
+              "action": "Given the settings sheet is open"
+            },
+            {
+              "action": "When the tester searches for a known task keyword"
+            },
+            {
+              "action": "Then matching tasks should appear in the settings search results"
+            },
+            {
+              "action": "When the tester completes or reopens a matching result"
+            },
+            {
+              "action": "Then the same state should be reflected on the dashboard after the sheet closes"
+            }
+          ]
+        },
+        {
+          "id": "settings-sync-persist-web-preferences-across-reload-and-sign-in-cycles",
+          "title": "Persist web preferences across reload and sign-in cycles",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@settings",
+            "@sync"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app with a reusable test account"
+          ],
+          "steps": [
+            {
+              "action": "When the tester changes theme, Advanced Mode, Hide Completed Tasks, and Auto-move due tasks"
+            },
+            {
+              "action": "And the tester reloads the page"
+            },
+            {
+              "action": "Then each preference should still be applied"
+            },
+            {
+              "action": "When the tester signs out and signs back in with the same account"
+            },
+            {
+              "action": "Then synced preferences should be restored from Supabase"
+            }
+          ]
+        },
+        {
+          "id": "settings-sync-reflect-a-mobile-created-task-on-the-web-dashboard",
+          "title": "Reflect a mobile-created task on the web dashboard",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@settings",
+            "@sync"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app with a reusable test account"
+          ],
+          "steps": [
+            {
+              "action": "Given the tester creates a uniquely named task in the mobile app with the same account"
+            },
+            {
+              "action": "When the tester refreshes the web dashboard"
+            },
+            {
+              "action": "Then the mobile-created task should appear in the matching Today, Tomorrow, or Later column"
+            },
+            {
+              "action": "And its priority, date, completion state, and category should match mobile"
+            }
+          ]
+        },
+        {
+          "id": "settings-sync-reflect-a-web-edit-in-the-mobile-app",
+          "title": "Reflect a web edit in the mobile app",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@settings",
+            "@sync"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app with a reusable test account"
+          ],
+          "steps": [
+            {
+              "action": "Given a shared task is visible on web and mobile"
+            },
+            {
+              "action": "When the tester edits the task content, date, priority, category, or completion state on web"
+            },
+            {
+              "action": "And the tester refreshes the mobile app"
+            },
+            {
+              "action": "Then mobile should show the web edit without creating a duplicate task"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "statistics",
+      "title": "Web statistics workspace",
+      "description": "The statistics tab should summarize wins, open issues, and task health in one place.",
+      "cases": [
+        {
+          "id": "statistics-open-the-statistics-tab-from-the-dashboard-shell",
+          "title": "Open the statistics tab from the dashboard shell",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@statistics"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the account contains a mix of open, overdue, and completed tasks"
+          ],
+          "steps": [
+            {
+              "action": "When the tester opens the statistics view from the header or profile menu"
+            },
+            {
+              "action": "Then the statistics workspace should replace the quick view content"
+            },
+            {
+              "action": "And the page should show summary cards for closed issues, open issues, and wins today"
+            }
+          ]
+        },
+        {
+          "id": "statistics-review-recent-wins-and-open-issue-spotlight-content",
+          "title": "Review recent wins and open issue spotlight content",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@statistics"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the account contains a mix of open, overdue, and completed tasks"
+          ],
+          "steps": [
+            {
+              "action": "Given the statistics view is open"
+            },
+            {
+              "action": "When the tester scrolls through the analytics sections"
+            },
+            {
+              "action": "Then recent completed tasks should appear in the wins area"
+            },
+            {
+              "action": "And high priority or overdue open tasks should appear in the open issues sections"
+            }
+          ]
+        },
+        {
+          "id": "statistics-jump-from-statistics-into-task-search",
+          "title": "Jump from statistics into task search",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@statistics"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the account contains a mix of open, overdue, and completed tasks"
+          ],
+          "steps": [
+            {
+              "action": "Given the statistics view is open"
+            },
+            {
+              "action": "When the tester uses the search action inside statistics"
+            },
+            {
+              "action": "Then the app should return to a quick view context that supports task search"
+            },
+            {
+              "action": "And the tester should be able to locate a task without leaving the dashboard"
+            }
+          ]
+        },
+        {
+          "id": "statistics-open-the-compact-stats-sheet-from-the-profile-menu",
+          "title": "Open the compact stats sheet from the profile menu",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@statistics"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the account contains a mix of open, overdue, and completed tasks"
+          ],
+          "steps": [
+            {
+              "action": "When the tester opens the profile menu"
+            },
+            {
+              "action": "And the tester opens the stats summary sheet"
+            },
+            {
+              "action": "Then the sheet should show completion totals for today, this week, and this month"
+            },
+            {
+              "action": "And category completion counts should match the current task data"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "task-management",
+      "title": "Web task management",
+      "description": "The task dialog and board interactions should support the full task lifecycle.",
+      "cases": [
+        {
+          "id": "task-management-create-a-task-with-category-and-priority",
+          "title": "Create a task with category and priority",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@task-management"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the dashboard contains at least one editable task"
+          ],
+          "steps": [
+            {
+              "action": "When the tester opens the new task dialog"
+            },
+            {
+              "action": "And the tester enters task content"
+            },
+            {
+              "action": "And the tester selects a target group, priority, and optional category label"
+            },
+            {
+              "action": "And the tester saves the task"
+            },
+            {
+              "action": "Then the new task should appear in the expected board column"
+            },
+            {
+              "action": "And the selected label or category should be visible on the saved task"
+            }
+          ]
+        },
+        {
+          "id": "task-management-update-an-existing-task",
+          "title": "Update an existing task",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@task-management"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the dashboard contains at least one editable task"
+          ],
+          "steps": [
+            {
+              "action": "Given an existing task is visible on the board"
+            },
+            {
+              "action": "When the tester edits the task content, priority, or category label"
+            },
+            {
+              "action": "And the tester saves the changes"
+            },
+            {
+              "action": "Then the updated task should reflect the new values on the board"
+            }
+          ]
+        },
+        {
+          "id": "task-management-toggle-a-task-between-open-and-completed",
+          "title": "Toggle a task between open and completed",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@task-management"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the dashboard contains at least one editable task"
+          ],
+          "steps": [
+            {
+              "action": "Given an open task is visible on the board"
+            },
+            {
+              "action": "When the tester marks the task as completed"
+            },
+            {
+              "action": "Then the task should visually reflect the completed state"
+            },
+            {
+              "action": "When the tester reopens the same task"
+            },
+            {
+              "action": "Then the task should return to the open state without disappearing unexpectedly"
+            }
+          ]
+        },
+        {
+          "id": "task-management-delete-a-task-from-the-board",
+          "title": "Delete a task from the board",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@task-management"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the dashboard contains at least one editable task"
+          ],
+          "steps": [
+            {
+              "action": "Given an existing task is visible on the board"
+            },
+            {
+              "action": "When the tester deletes the task and confirms the action if prompted"
+            },
+            {
+              "action": "Then the task should no longer appear in the board list after refresh"
+            }
+          ]
+        },
+        {
+          "id": "task-management-prevent-saving-an-empty-task",
+          "title": "Prevent saving an empty task",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@task-management"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the dashboard contains at least one editable task"
+          ],
+          "steps": [
+            {
+              "action": "When the tester opens the new task dialog"
+            },
+            {
+              "action": "And the tester leaves the task content blank"
+            },
+            {
+              "action": "Then the save action should remain unavailable"
+            },
+            {
+              "action": "And no empty task should be added to Today, Tomorrow, or Later"
+            }
+          ]
+        },
+        {
+          "id": "task-management-persist-task-edits-after-a-browser-reload",
+          "title": "Persist task edits after a browser reload",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@task-management"
+          ],
+          "preconditions": [
+            "Given the tester is signed in to the web app",
+            "And the dashboard contains at least one editable task"
+          ],
+          "steps": [
+            {
+              "action": "Given an existing task is visible on the board"
+            },
+            {
+              "action": "When the tester changes its content, priority, date, or category label"
+            },
+            {
+              "action": "And the tester reloads the dashboard after the save completes"
+            },
+            {
+              "action": "Then the edited values should still be visible on the same task"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
