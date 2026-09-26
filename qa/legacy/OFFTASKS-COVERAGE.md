@@ -17,7 +17,9 @@ Tomorrow tabs, mandatory-login and device-only account notes descriptions are
 not current behavior or execution evidence. Other legacy scenarios require
 revalidation against the new app before being marked passed.
 
-Updated: May 21, 2026
+Historical report date: May 21, 2026
+
+**Preserved source snapshot:** this file was imported from `etlyn-e2e` on September 13, 2026 and includes the September 12 device-first update below. Old repository/path references describe that historical ownership; current web acceptance belongs to `offtasks.com/qa/manifest.json`, mobile acceptance to `offtasks-mobile/qa/manifest.json`, and E2E imports immutable product revisions. This inventory does not establish executed acceptance.
 
 Relocated in September 2026 to `etlyn/etlyn-e2e/offtasks`. Web source paths
 below refer to `etlyn/offtasks.com`; mobile source paths refer to
