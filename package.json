@@ -56,7 +56,8 @@
     "recharts": "^2.15.2",
     "sonner": "^2.0.3",
     "tailwind-merge": "*",
-    "vaul": "^1.1.2"
+    "vaul": "^1.1.2",
+    "@etlyn/analytics": "file:vendor/etlyn-analytics-0.5.0-alpha.0.tgz"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.14",

@@ -1,3 +1,4 @@
+import { recordConversion } from "@/analytics";
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { submitContactMessage } from "@/lib/supabase";
@@ -31,6 +32,7 @@ export const ContactForm = ({ source = "landing" }: ContactFormProps) => {
 
     try {
       await submitContactMessage({ name, email, message, source });
+      recordConversion("contact_submit");
       setName("");
       setEmail("");
       setMessage("");

@@ -81,6 +81,7 @@ export const LandingScreen = () => {
                   className="h-12 rounded-full bg-[#09090b] px-5 text-sm font-semibold text-white shadow-[0_20px_44px_-30px_rgba(15,23,42,0.5)] hover:bg-[#18181b]"
                 >
                   <a
+                    data-analytics-target="download_ios"
                     href={IOS_APP_STORE_URL}
                     target="_blank"
                     rel="noreferrer"
