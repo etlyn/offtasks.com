@@ -107,3 +107,9 @@ Cloud workflow must be reconnected to the new mobile repository separately.
 
 - If Supabase configuration is missing during startup, verify `.env.local` contains `VITE_PUBLIC_SUPABASE_URL` and `VITE_PUBLIC_SUPABASE_ANON_KEY`.
 - Guest login relies on Supabase auto-confirming email/password users. If email confirmation is enforced, either disable it for this project or manually confirm the generated guest account in Supabase Auth.
+
+### Isolated planner database validation
+
+Run `yarn test:database` for PostgreSQL migration/RLS/import tests in an ephemeral PGlite database. The harness reproduces the documented pre-existing tasks table and `auth.uid()` role contract, then applies the real planner migrations. It checks tenant isolation, anonymous denial, atomic rollback, duplicate retry, edit preservation and embedded note-task persistence. It does not exercise hosted Supabase/PostgREST, mobile networking or production policies.
+
+Migration `20260927000000_validate_device_import.sql` rejects null/non-object payloads and missing/non-array collections before writes. Apply it through the normal migration flow after isolated validation; it has not been applied to a hosted database by these tests.
