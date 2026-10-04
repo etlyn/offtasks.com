@@ -260,7 +260,7 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
               >
                 <Trash2 className="size-4 text-red-500 dark:text-red-400" />
                 <span className="font-['Poppins',_sans-serif] text-[14px] text-red-500 dark:text-red-400">
-                  {isDeletingAccount ? "Deleting Account" : "Delete Account"}
+                  {isDeletingAccount ? "Deleting Offtasks Data" : "Delete Offtasks Data"}
                 </span>
               </button>
             )}

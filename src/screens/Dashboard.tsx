@@ -26,6 +26,10 @@ import {
   upsertUserPreferences,
 } from "@/lib/supabase";
 import {
+  clearLocalOfftasksState,
+  OFFTASKS_STORAGE_KEYS,
+} from "@/lib/offtasksLocalState";
+import {
   fromSupabaseTask,
   getDefaultDateForGroup,
   getTargetGroupForDate,
@@ -35,12 +39,6 @@ import {
 } from "@/utils/taskMapping";
 import { getCurrentDate } from "@/hooks/useDate";
 import { normalizeCategory } from "@/utils/categoryConfig";
-
-const CATEGORIES_STORAGE_KEY = "offtasks-categories";
-const THEME_STORAGE_KEY = "offtasks-theme";
-const ADVANCED_STORAGE_KEY = "offtasks-advanced-mode";
-const HIDE_COMPLETED_STORAGE_KEY = "offtasks-hide-completed";
-const AUTO_ARRANGE_STORAGE_KEY = "offtasks-auto-arrange";
 
 const DEFAULT_CATEGORIES = [
   "Work",
@@ -67,7 +65,7 @@ export const DashboardScreen = () => {
       return true;
     }
 
-    const saved = localStorage.getItem(THEME_STORAGE_KEY);
+    const saved = localStorage.getItem(OFFTASKS_STORAGE_KEYS.theme);
     return saved ? saved === "dark" : true;
   });
 
@@ -77,7 +75,7 @@ export const DashboardScreen = () => {
         return DEFAULT_CATEGORIES;
       }
 
-      const saved = localStorage.getItem(CATEGORIES_STORAGE_KEY);
+      const saved = localStorage.getItem(OFFTASKS_STORAGE_KEYS.categories);
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
@@ -105,7 +103,7 @@ export const DashboardScreen = () => {
       return false;
     }
 
-    const saved = localStorage.getItem(ADVANCED_STORAGE_KEY);
+    const saved = localStorage.getItem(OFFTASKS_STORAGE_KEYS.advancedMode);
     return saved ? saved === "true" : false;
   });
 
@@ -114,7 +112,7 @@ export const DashboardScreen = () => {
       return false;
     }
 
-    const saved = localStorage.getItem(HIDE_COMPLETED_STORAGE_KEY);
+    const saved = localStorage.getItem(OFFTASKS_STORAGE_KEYS.hideCompleted);
     return saved ? saved === "true" : false;
   });
 
@@ -123,7 +121,7 @@ export const DashboardScreen = () => {
       return false;
     }
 
-    const saved = localStorage.getItem(AUTO_ARRANGE_STORAGE_KEY);
+    const saved = localStorage.getItem(OFFTASKS_STORAGE_KEYS.autoArrange);
     return saved ? saved === "true" : false;
   });
   const [preferencesHydrated, setPreferencesHydrated] = useState(false);
@@ -182,7 +180,10 @@ export const DashboardScreen = () => {
               [...prev, ...labels].map(normalizeCategory).filter(Boolean),
             ),
           ).sort((left, right) => left.localeCompare(right));
-          localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(merged));
+          localStorage.setItem(
+            OFFTASKS_STORAGE_KEYS.categories,
+            JSON.stringify(merged),
+          );
           return merged;
         });
       }
@@ -241,7 +242,10 @@ export const DashboardScreen = () => {
       return;
     }
 
-    localStorage.setItem(THEME_STORAGE_KEY, isDark ? "dark" : "light");
+    localStorage.setItem(
+      OFFTASKS_STORAGE_KEYS.theme,
+      isDark ? "dark" : "light",
+    );
     if (isDark) {
       document.documentElement.classList.add("dark");
     } else {
@@ -253,21 +257,30 @@ export const DashboardScreen = () => {
     if (typeof window === "undefined") {
       return;
     }
-    localStorage.setItem(ADVANCED_STORAGE_KEY, advancedMode.toString());
+    localStorage.setItem(
+      OFFTASKS_STORAGE_KEYS.advancedMode,
+      advancedMode.toString(),
+    );
   }, [advancedMode]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
-    localStorage.setItem(HIDE_COMPLETED_STORAGE_KEY, hideCompleted.toString());
+    localStorage.setItem(
+      OFFTASKS_STORAGE_KEYS.hideCompleted,
+      hideCompleted.toString(),
+    );
   }, [hideCompleted]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
-    localStorage.setItem(AUTO_ARRANGE_STORAGE_KEY, autoArrange.toString());
+    localStorage.setItem(
+      OFFTASKS_STORAGE_KEYS.autoArrange,
+      autoArrange.toString(),
+    );
   }, [autoArrange]);
 
   useEffect(() => {
@@ -379,7 +392,10 @@ export const DashboardScreen = () => {
           const next = Array.from(new Set([...prev, normalizedLabel])).sort(
             (left, right) => left.localeCompare(right),
           );
-          localStorage.setItem(CATEGORIES_STORAGE_KEY, JSON.stringify(next));
+          localStorage.setItem(
+            OFFTASKS_STORAGE_KEYS.categories,
+            JSON.stringify(next),
+          );
           return next;
         });
       }
@@ -448,14 +464,18 @@ export const DashboardScreen = () => {
         );
       }
 
+      clearLocalOfftasksState();
       setTasks([]);
-      navigate("/login", { replace: true });
+      navigate("/login", {
+        replace: true,
+        state: { accountDeleted: true },
+      });
     } catch (error) {
       console.error("Failed to delete account", error);
       window.alert(
         error instanceof Error
           ? error.message
-          : "Unable to delete account right now. Please try again.",
+          : "Unable to delete Offtasks data right now. Please try again.",
       );
     } finally {
       setIsDeletingAccount(false);
@@ -659,9 +679,9 @@ export const DashboardScreen = () => {
           isOpen={deleteAccountDialogOpen}
           onClose={() => setDeleteAccountDialogOpen(false)}
           onConfirm={handleDeleteAccount}
-          title="Delete account?"
-          message="This permanently deletes your account and all synced tasks. This cannot be undone."
-          confirmText={isDeletingAccount ? "Deleting" : "Delete Account"}
+          title="Delete Offtasks data?"
+          message="This permanently deletes your Offtasks tasks, notes, goals, and synced settings. Your Etlyn sign-in stays available for other apps, and this device signs out of Offtasks after deletion."
+          confirmText={isDeletingAccount ? "Deleting" : "Delete Offtasks Data"}
           isDangerous
         />
       </div>

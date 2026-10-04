@@ -140,20 +140,32 @@ const customColorPalette: Omit<CategoryConfig, 'name'>[] = [
 
 // Store for custom category colors
 let customCategoryColors: Record<string, CategoryConfig> = {};
+const CUSTOM_CATEGORY_COLORS_STORAGE_KEY = "offtasks-custom-category-colors";
 
 // Load custom colors from localStorage
-if (typeof window !== 'undefined') {
-  const saved = localStorage.getItem('offtasks-custom-category-colors');
+if (typeof window !== "undefined") {
+  const saved = localStorage.getItem(CUSTOM_CATEGORY_COLORS_STORAGE_KEY);
   if (saved) {
-    customCategoryColors = JSON.parse(saved);
+    try {
+      customCategoryColors = JSON.parse(saved);
+    } catch {
+      customCategoryColors = {};
+    }
   }
 }
 
 // Save custom colors to localStorage
 const saveCustomColors = () => {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('offtasks-custom-category-colors', JSON.stringify(customCategoryColors));
+  if (typeof window !== "undefined") {
+    localStorage.setItem(
+      CUSTOM_CATEGORY_COLORS_STORAGE_KEY,
+      JSON.stringify(customCategoryColors),
+    );
   }
+};
+
+export const resetCustomCategoryColors = () => {
+  customCategoryColors = {};
 };
 
 export const getCategoryConfig = (categoryName?: string): CategoryConfig | null => {

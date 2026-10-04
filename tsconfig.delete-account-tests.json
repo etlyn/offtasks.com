@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "rootDir": "supabase/functions/delete-account",
+    "outDir": ".test-dist/delete-account",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "types": ["node"],
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true
+  },
+  "include": [
+    "supabase/functions/delete-account/delete-account.ts",
+    "supabase/functions/delete-account/delete-account.test.ts"
+  ]
+}
