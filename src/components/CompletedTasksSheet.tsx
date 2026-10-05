@@ -98,7 +98,7 @@ export function CompletedTasksSheet({
                           width="24"
                         />
                         <path
-                          d={svgPaths.p2c7d1f00}
+                          d="M6 12L10 16L18 8"
                           stroke="#FFFFFF"
                           strokeLinecap="round"
                           strokeLinejoin="round"

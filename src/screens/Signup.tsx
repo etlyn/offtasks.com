@@ -53,9 +53,10 @@ export const SignupScreen = () => {
     setMessage(null);
 
     try {
-      const { error: signUpError, session } = await supabaseClient.auth.signUp({
+      const { error: signUpError, data: { session } } = await supabaseClient.auth.signUp({
         email: normalizedEmail,
         password,
+        options: { emailRedirectTo: `${window.location.origin}/app` },
       });
 
       if (signUpError) {
@@ -64,7 +65,7 @@ export const SignupScreen = () => {
         navigate("/app", { replace: true });
       } else {
         setMessage(
-          `Account created. Sign in with ${normalizedEmail} to open your workspace.`,
+          `Check ${normalizedEmail} for a verification link, then sign in to open your workspace.`,
         );
       }
     } catch (unknownError) {

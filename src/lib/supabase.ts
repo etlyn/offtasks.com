@@ -13,7 +13,7 @@ if (!SUPABASE_ANON_KEY) {
   throw new Error("Missing VITE_PUBLIC_SUPABASE_ANON_KEY. Check your environment variables.");
 }
 
-export const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+export const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { flowType: "pkce", detectSessionInUrl: true, persistSession: true, autoRefreshToken: true } });
 
 export interface UserPreferences {
   user_id: string;
@@ -126,7 +126,8 @@ const ensureCompletionColumn = async (): Promise<CompletionColumn> => {
     return detectedCompletionColumn;
   }
 
-  const user = supabaseClient.auth.user();
+  const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+  if (authError) throw authError;
 
   if (!user) {
     throw new Error("Cannot determine completion column without an authenticated user.");
@@ -134,7 +135,7 @@ const ensureCompletionColumn = async (): Promise<CompletionColumn> => {
 
   for (const column of COMPLETION_COLUMNS) {
     const { error, data } = await supabaseClient
-      .from<Record<string, unknown>>("tasks")
+      .from("tasks")
       .select(column)
       .eq("user_id", user.id)
       .limit(1);
@@ -164,7 +165,8 @@ const ensureCompletedAtColumn = async (): Promise<boolean> => {
     return hasCompletedAtColumn;
   }
 
-  const user = supabaseClient.auth.user();
+  const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+  if (authError) throw authError;
 
   if (!user) {
     hasCompletedAtColumn = false;
@@ -172,7 +174,7 @@ const ensureCompletedAtColumn = async (): Promise<boolean> => {
   }
 
   const { data, error } = await supabaseClient
-    .from<Record<string, unknown>>("tasks")
+    .from("tasks")
     .select("completed_at")
     .eq("user_id", user.id)
     .limit(1);
@@ -199,7 +201,8 @@ const ensureLabelColumn = async (): Promise<boolean> => {
     return hasLabelColumn;
   }
 
-  const user = supabaseClient.auth.user();
+  const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+  if (authError) throw authError;
 
   if (!user) {
     hasLabelColumn = false;
@@ -207,7 +210,7 @@ const ensureLabelColumn = async (): Promise<boolean> => {
   }
 
   const { data, error } = await supabaseClient
-    .from<Record<string, unknown>>("tasks")
+    .from("tasks")
     .select(LABEL_COLUMN)
     .eq("user_id", user.id)
     .limit(1);
@@ -234,7 +237,8 @@ const ensureCategoryColumn = async (): Promise<boolean> => {
     return hasCategoryColumn;
   }
 
-  const user = supabaseClient.auth.user();
+  const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+  if (authError) throw authError;
 
   if (!user) {
     hasCategoryColumn = false;
@@ -242,7 +246,7 @@ const ensureCategoryColumn = async (): Promise<boolean> => {
   }
 
   const { data, error } = await supabaseClient
-    .from<Record<string, unknown>>("tasks")
+    .from("tasks")
     .select(CATEGORY_COLUMN)
     .eq("user_id", user.id)
     .limit(1);
@@ -265,14 +269,15 @@ const ensureCategoryColumn = async (): Promise<boolean> => {
 };
 
 const fetchTasksByGroup = async (group: TaskGroup): Promise<SupabaseTask[]> => {
-  const user = supabaseClient.auth.user();
+  const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+  if (authError) throw authError;
 
   if (!user) {
     return [];
   }
 
   const { data, error } = await supabaseClient
-    .from<SupabaseTask>("tasks")
+    .from("tasks")
     .select("*")
     .eq("user_id", user.id)
     .eq("target_group", group)
@@ -291,14 +296,15 @@ const fetchTasksByGroup = async (group: TaskGroup): Promise<SupabaseTask[]> => {
 };
 
 export const fetchAllTasks = async (): Promise<SupabaseTask[]> => {
-  const user = supabaseClient.auth.user();
+  const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+  if (authError) throw authError;
 
   if (!user) {
     return [];
   }
 
   const { data, error } = await supabaseClient
-    .from<SupabaseTask>("tasks")
+    .from("tasks")
     .select("*")
     .eq("user_id", user.id)
     .order("target_group", { ascending: true })
@@ -322,14 +328,15 @@ export const fetchUpcomingTasks = (): Promise<SupabaseTask[]> => fetchTasksByGro
 export const fetchClosedTasks = (): Promise<SupabaseTask[]> => fetchTasksByGroup("close");
 
 export const deleteTask = async (taskID: string): Promise<void> => {
-  const user = supabaseClient.auth.user();
+  const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+  if (authError) throw authError;
 
   if (!user) {
     throw new Error("Cannot delete task without an authenticated user.");
   }
 
   const { error } = await supabaseClient
-    .from<SupabaseTask>("tasks")
+    .from("tasks")
     .delete()
     .eq("id", taskID)
     .eq("user_id", user.id);
@@ -351,7 +358,8 @@ interface UpdateTaskInput {
 }
 
 export const updateTask = async (taskID: string, updates: UpdateTaskInput): Promise<void> => {
-  const user = supabaseClient.auth.user();
+  const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+  if (authError) throw authError;
 
   if (!user) {
     throw new Error("Cannot update task without an authenticated user.");
@@ -397,7 +405,7 @@ export const updateTask = async (taskID: string, updates: UpdateTaskInput): Prom
     }
 
     const { error } = await supabaseClient
-      .from<SupabaseTask>("tasks")
+      .from("tasks")
       .update(payload)
       .eq("id", taskID)
       .eq("user_id", user.id);
@@ -456,7 +464,8 @@ export const createTask = async ({
   date,
   label,
 }: CreateTaskInput): Promise<void> => {
-  const user = supabaseClient.auth.user();
+  const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+  if (authError) throw authError;
 
   if (!user) {
     throw new Error("Cannot create task without an authenticated user.");
@@ -482,7 +491,7 @@ export const createTask = async ({
       }
     }
 
-    const { error } = await supabaseClient.from<SupabaseTask>("tasks").insert([payload]);
+    const { error } = await supabaseClient.from("tasks").insert([payload]);
 
     if (error) {
       console.error("Error creating task", error);
@@ -545,7 +554,7 @@ export const submitContactMessage = async ({
 
   const { error } = await supabaseClient
     .from("contact_messages")
-    .insert([payload], { returning: "minimal" });
+    .insert([payload]);
 
   if (error) {
     console.error("Error submitting contact message", error);
@@ -557,7 +566,7 @@ export const fetchUserPreferences = async (
   userId: string,
 ): Promise<UserPreferences | null> => {
   const { data, error } = await supabaseClient
-    .from<UserPreferences>("user_preferences")
+    .from("user_preferences")
     .select("*")
     .eq("user_id", userId)
     .maybeSingle();
@@ -573,7 +582,7 @@ export const fetchUserPreferences = async (
 export const upsertUserPreferences = async (
   prefs: UserPreferences,
 ): Promise<void> => {
-  const { error } = await supabaseClient.from<UserPreferences>("user_preferences").upsert(
+  const { error } = await supabaseClient.from("user_preferences").upsert(
     {
       ...prefs,
       updated_at: new Date().toISOString(),
@@ -595,7 +604,9 @@ interface DeleteAccountResponse {
 }
 
 export const deleteAccount = async (): Promise<DeleteAccountResponse> => {
-  const accessToken = supabaseClient.auth.session()?.access_token;
+  const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+  if (sessionError) throw sessionError;
+  const accessToken = sessionData.session?.access_token;
 
   if (!accessToken) {
     throw new Error("You need to be signed in to delete your Offtasks data.");

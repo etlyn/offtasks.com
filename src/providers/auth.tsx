@@ -16,13 +16,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const currentSession = supabaseClient.auth.session();
-    setSession(currentSession);
-    setUser(currentSession?.user ?? null);
-    setLoading(false);
+    let mounted = true;
+    let revision = 0;
+    const restoringRevision = revision;
+    void supabaseClient.auth.getSession().then(({data, error}) => {
+      if (!mounted || revision !== restoringRevision) return;
+      setSession(error ? null : data.session);
+      setUser(error ? null : data.session?.user ?? null);
+      setLoading(false);
+    });
 
-    const { data: listener } = supabaseClient.auth.onAuthStateChange(
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
       (_event: AuthChangeEvent, nextSession: Session | null) => {
+        ++revision;
         setSession(nextSession);
         setUser(nextSession?.user ?? null);
         setLoading(false);
@@ -30,7 +36,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
 
     return () => {
-      listener?.unsubscribe();
+      mounted = false;
+      subscription.unsubscribe();
     };
   }, []);
 

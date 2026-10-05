@@ -130,6 +130,7 @@ test("deletes Offtasks-owned data, retains identity, and never deletes the auth 
 
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), {
+    success: true,
     deleted: "app-data",
     identityRetained: true,
     signedOutScope: "client-local",
@@ -142,7 +143,7 @@ test("deletes Offtasks-owned data, retains identity, and never deletes the auth 
   assert.deepEqual([...adminClient.rows.tasks], [foreignUserId]);
   assert.deepEqual([...adminClient.rows.planner_items], [foreignUserId]);
   assert.deepEqual([...adminClient.rows.user_preferences], [foreignUserId]);
-  assert.deepEqual([...adminClient.rows.profiles], [foreignUserId]);
+  assert.deepEqual([...adminClient.rows.profiles], [testUserId, foreignUserId]);
 });
 
 test("retry after a partial failure is safe and completes cleanup", async () => {
@@ -173,6 +174,7 @@ test("retry after a partial failure is safe and completes cleanup", async () => 
   );
   assert.equal(secondResponse.status, 200);
   assert.deepEqual(await secondResponse.json(), {
+    success: true,
     deleted: "app-data",
     identityRetained: true,
     signedOutScope: "client-local",
@@ -180,7 +182,7 @@ test("retry after a partial failure is safe and completes cleanup", async () => 
   assert.deepEqual([...adminClient.rows.tasks], []);
   assert.deepEqual([...adminClient.rows.planner_items], []);
   assert.deepEqual([...adminClient.rows.user_preferences], []);
-  assert.deepEqual([...adminClient.rows.profiles], []);
+  assert.deepEqual([...adminClient.rows.profiles], [testUserId]);
 });
 
 test("rejects unauthenticated requests", async () => {

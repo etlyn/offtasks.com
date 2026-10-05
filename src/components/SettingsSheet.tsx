@@ -53,7 +53,7 @@ export function SettingsSheet({
   }, [searchQuery, tasks]);
 
   return (
-    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Sheet open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>
       <SheetContent className="w-full sm:max-w-[500px] overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Settings</SheetTitle>
@@ -85,6 +85,7 @@ export function SettingsSheet({
                   Connected to Supabase
                 </p>
               </div>
+              <a href="https://etlyn.com/auth/account" className="text-sm text-sky-600 underline">Manage shared Etlyn account</a>
               {onLogout && (
                 <button
                   onClick={onLogout}

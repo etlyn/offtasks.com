@@ -40,7 +40,7 @@ export const LoginScreen = () => {
     setError(null);
 
     try {
-      const { error: signInError } = await supabaseClient.auth.signIn({
+      const { error: signInError } = await supabaseClient.auth.signInWithPassword({
         email: normalizedEmail,
         password,
       });

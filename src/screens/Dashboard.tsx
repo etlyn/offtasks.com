@@ -441,7 +441,7 @@ export const DashboardScreen = () => {
   };
 
   const handleLogout = async () => {
-    await supabaseClient.auth.signOut();
+    await supabaseClient.auth.signOut({ scope: "local" });
     setTasks([]);
     navigate("/login");
   };
@@ -455,7 +455,7 @@ export const DashboardScreen = () => {
 
     try {
       await deleteAccount();
-      const { error } = await supabaseClient.auth.signOut();
+      const { error } = await supabaseClient.auth.signOut({ scope: "local" });
 
       if (error) {
         console.warn(

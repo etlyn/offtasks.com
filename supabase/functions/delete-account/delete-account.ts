@@ -69,6 +69,7 @@ export interface DeleteAccountHandlerDependencies {
 }
 
 export interface DeleteAccountSuccessResponse {
+  success: true;
   deleted: "app-data";
   identityRetained: true;
   signedOutScope: "client-local";
@@ -80,8 +81,6 @@ export const cleanupTargets: CleanupTarget[] = [
   { table: "tasks", column: "user_id" },
   { table: "planner_items", column: "user_id", optional: true },
   { table: "user_preferences", column: "user_id", optional: true },
-  { table: "profiles", column: "id", optional: true },
-  { table: "profiles", column: "user_id", optional: true },
 ];
 
 const jsonResponse = (body: Record<string, unknown>, status = 200) =>
@@ -249,6 +248,7 @@ export const handleDeleteAccountRequest = async (
     await deleteOfftasksData(adminClient, user.id, logger);
 
     return jsonResponse({
+      success: true,
       deleted: "app-data",
       identityRetained: true,
       signedOutScope: "client-local",

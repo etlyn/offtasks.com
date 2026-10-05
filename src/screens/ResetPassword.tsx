@@ -34,11 +34,11 @@ export const ResetPasswordScreen = () => {
   useEffect(() => {
     const params = getAuthUrlParams();
     const sessionToken = session?.access_token ?? null;
-    const nextToken = params.accessToken ?? sessionToken;
+    const nextToken = sessionToken;
 
     setAccessToken(nextToken);
     setIsRecoveryFlow(
-      Boolean(params.accessToken) || params.type === "recovery",
+      Boolean(sessionToken) || params.type === "recovery",
     );
 
     if (params.errorDescription) {
@@ -75,8 +75,7 @@ export const ResetPasswordScreen = () => {
     setMessage(null);
 
     try {
-      const { error: updateError } = await supabaseClient.auth.api.updateUser(
-        accessToken,
+      const { error: updateError } = await supabaseClient.auth.updateUser(
         {
           password,
         },
@@ -86,7 +85,7 @@ export const ResetPasswordScreen = () => {
         setError(mapAuthErrorMessage(updateError.message));
       } else {
         if (isRecoveryFlow) {
-          await supabaseClient.auth.signOut();
+          await supabaseClient.auth.signOut({ scope: "local" });
           setMessage("Password updated. Sign in with your new password.");
           setTimeout(() => {
             navigate("/login", { replace: true });

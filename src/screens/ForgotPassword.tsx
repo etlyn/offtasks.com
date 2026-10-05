@@ -29,7 +29,7 @@ export const ForgotPasswordScreen = () => {
     try {
       const redirectTo = `${window.location.origin}/reset-password`;
       const { error: resetError } =
-        await supabaseClient.auth.api.resetPasswordForEmail(normalizedEmail, {
+        await supabaseClient.auth.resetPasswordForEmail(normalizedEmail, {
           redirectTo,
         });
 
