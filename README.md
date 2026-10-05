@@ -8,11 +8,9 @@ The native iOS and Android app now lives in
 Git history, dependencies, native projects, and CI. Mobile releases no longer
 build from this repository.
 
-Manual web and mobile acceptance scenarios live in
-[etlyn-e2e/offtasks](https://github.com/etlyn/etlyn-e2e/tree/main/offtasks).
-The old `end-to-end-testing` directory and `e2e:*` / `manual:*` scripts have been
-removed here. From an `etlyn-e2e` checkout, use `yarn e2e:test:offtasks:web` or
-`yarn e2e:test:offtasks:mobile`; no sibling checkout is needed to build this site.
+Acceptance suites are product-owned in [qa/manifest.json](qa/manifest.json).
+Use the standalone E2E website to import a branch snapshot, perform tests and
+generate reports. See [QA ownership and import instructions](qa/README.md).
 
 ### Prerequisites
 
@@ -125,4 +123,10 @@ Cloud workflow must be reconnected to the new mobile repository separately.
 ### Troubleshooting
 
 - If Supabase configuration is missing during startup, verify `.env.local` contains `VITE_PUBLIC_SUPABASE_URL` and `VITE_PUBLIC_SUPABASE_ANON_KEY`.
-- Guest login relies on Supabase auto-confirming email/password users. If email confirmation is enforced, either disable it for this project or manually confirm the generated guest account in Supabase Auth.
+- Managed sign-in and recovery use the shared Etlyn Apps provider with email confirmation enabled; verify the configured callback when testing recovery.
+
+### Isolated planner database validation
+
+Run `yarn test:database` for PostgreSQL migration/RLS/import tests in an ephemeral PGlite database. The harness reproduces the documented pre-existing tasks table and `auth.uid()` role contract, then applies the real planner migrations. It checks tenant isolation, anonymous denial, atomic rollback, duplicate retry, edit preservation and embedded note-task persistence. It does not exercise hosted Supabase/PostgREST, mobile networking or production policies.
+
+Migration `20260927000000_validate_device_import.sql` rejects null/non-object payloads and missing/non-array collections before writes. Apply it through the normal migration flow after isolated validation; it has not been applied to a hosted database by these tests.

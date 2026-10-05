@@ -1,3 +1,4 @@
+import { AnalyticsPreference } from "@/components/public/AnalyticsPreference";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ContactForm } from "@/components/public/ContactForm";
@@ -18,7 +19,7 @@ interface LegalPageProps {
   sections: LegalSection[];
 }
 
-const updatedLabel = "Updated April 28, 2026";
+const updatedLabel = "Updated September 26, 2026";
 
 const LegalPage = ({
   eyebrow,
@@ -91,6 +92,8 @@ const LegalPage = ({
           ))}
         </section>
 
+        {eyebrow === "Privacy" && <AnalyticsPreference />}
+
         <section
           id="contact"
           className="mt-5 rounded-[28px] border border-white/70 bg-white/72 p-6 shadow-[0_24px_64px_-48px_rgba(15,23,42,0.26)] backdrop-blur-2xl"
@@ -117,6 +120,7 @@ const privacySections: LegalSection[] = [
       "Account email and authentication details needed to sign in.",
       "Task content, dates, labels, priorities, completion state, and preferences you save.",
       "Basic technical data for security, sync, diagnostics, and abuse prevention.",
+      "When configured, public-site analytics measures page visits, selected links and confirmed contact submissions without analytics cookies. Authentication/planner pages and form content are excluded. You can opt out below; browser Do Not Track and Global Privacy Control are respected.",
     ],
   },
   {
