@@ -588,15 +588,17 @@ export const upsertUserPreferences = async (
 };
 
 interface DeleteAccountResponse {
-  success?: boolean;
+  deleted?: "app-data";
+  identityRetained?: boolean;
+  signedOutScope?: "client-local";
   error?: string;
 }
 
-export const deleteAccount = async (): Promise<void> => {
+export const deleteAccount = async (): Promise<DeleteAccountResponse> => {
   const accessToken = supabaseClient.auth.session()?.access_token;
 
   if (!accessToken) {
-    throw new Error("You need to be signed in to delete your account.");
+    throw new Error("You need to be signed in to delete your Offtasks data.");
   }
 
   const { data, error } = await supabaseClient.functions.invoke<DeleteAccountResponse>(
@@ -619,7 +621,9 @@ export const deleteAccount = async (): Promise<void> => {
     throw new Error(data.error);
   }
 
-  if (!data?.success) {
-    throw new Error("Account deletion did not complete.");
+  if (data?.deleted !== "app-data" || data.identityRetained !== true) {
+    throw new Error("Offtasks data deletion did not complete.");
   }
+
+  return data;
 };

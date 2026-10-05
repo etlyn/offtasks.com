@@ -139,8 +139,8 @@ const privacySections: LegalSection[] = [
     title: "Your choices",
     items: [
       "You can edit or delete tasks in the app.",
-      "Request account or data deletion through the support form.",
-      "Deletion requests are reviewed and completed within a reasonable period unless retention is legally required.",
+      "Signed-in users can delete their Offtasks data in the app without deleting their shared Etlyn sign-in identity.",
+      "Global Etlyn identity deletion is separate shared-backend work and is not triggered by Offtasks data deletion.",
     ],
   },
 ];
@@ -156,9 +156,9 @@ const supportSections: LegalSection[] = [
   {
     title: "Account deletion",
     items: [
-      "Send an account deletion request through the support form.",
-      "Use the email address tied to your Offtasks account so ownership can be verified.",
-      "Account and task data will be removed unless retention is required for security or legal reasons.",
+      "Signed-in users can delete their Offtasks data directly in the app.",
+      "This removes Offtasks-owned tasks, notes, goals, profile rows, and synced preferences, then signs this device out of Offtasks.",
+      "Your shared Etlyn sign-in identity is retained for other apps; global identity deletion remains separate shared-backend work.",
     ],
   },
   {
@@ -184,7 +184,7 @@ const termsSections: LegalSection[] = [
     title: "Account",
     items: [
       "Keep your sign-in details secure.",
-      "You can stop using Offtasks at any time and request account deletion through support.",
+      "You can stop using Offtasks at any time and delete your Offtasks data without deleting your shared Etlyn sign-in identity.",
     ],
   },
   {

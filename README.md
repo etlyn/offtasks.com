@@ -59,6 +59,13 @@ the migrations and Edge Functions in `supabase/`, including `delete-account`.
 Coordinate backend changes with `etlyn/offtasks-mobile`; extracting the native
 app does not migrate or change the live Supabase project.
 
+`delete-account` is an **app-only deletion** flow. It deletes Offtasks-owned
+rows for the signed-in user, returns a success payload describing retained
+identity, and expects the client to sign out locally afterward. It does **not**
+delete the shared Supabase Auth user, because Auth is shared across Etlyn apps.
+Global identity deletion remains future shared-backend work and requires a
+separate, explicitly re-authenticated flow.
+
 Create the following tables in Supabase (adjust types as needed):
 
 ```sql
@@ -88,6 +95,16 @@ create table if not exists public.user_preferences (
   theme_mode text not null default 'Light' check (theme_mode in ('Light', 'Dark')),
   auto_arrange boolean not null default false,
   updated_at timestamp with time zone not null default timezone('utc', now())
+);
+
+-- Device-synced notes and goals shared by web and mobile
+create table if not exists public.planner_items (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  kind text not null check (kind in ('note', 'goal')),
+  id text not null,
+  value jsonb not null,
+  deleted boolean not null default false,
+  primary key (user_id, kind, id)
 );
 ```
 

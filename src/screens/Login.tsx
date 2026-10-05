@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AuthLayout } from "@/components/AuthLayout";
 import { AuthNotice } from "@/components/public/AuthNotice";
 import {
@@ -16,7 +16,11 @@ export const LoginScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const location = useLocation();
   const navigate = useNavigate();
+  const accountDeleted =
+    (location.state as { accountDeleted?: boolean } | null)?.accountDeleted ===
+    true;
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -69,6 +73,13 @@ export const LoginScreen = () => {
       switchLabel="Create account"
       switchPrompt="New here?"
     >
+      {accountDeleted ? (
+        <AuthNotice tone="success">
+          Your Offtasks data was deleted and this device was signed out. Your
+          Etlyn sign-in identity is still available for other shared Etlyn apps.
+        </AuthNotice>
+      ) : null}
+
       {error ? <AuthNotice tone="error">{error}</AuthNotice> : null}
 
       <form className="space-y-5" onSubmit={handleLogin} noValidate>
