@@ -30,6 +30,11 @@ jobs:
             npm i
           fi
 
+      - name: Check password recovery
+        run: |
+          yarn typecheck
+          yarn test:password-recovery
+
       - name: Build
         run: |
           if [ -e yarn.lock ]; then

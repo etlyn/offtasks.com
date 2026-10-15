@@ -31,7 +31,7 @@ export const AuthLayout = ({
         <Button
           asChild
           variant="ghost"
-          className="rounded-full px-4 text-[#0f172a] hover:bg-white/70 hover:text-[#009689]"
+          className="hidden rounded-full px-4 text-[#0f172a] hover:bg-white/70 hover:text-[#009689] sm:inline-flex"
         >
           <Link to="/">Home</Link>
         </Button>

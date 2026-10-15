@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
     "test:delete-account": "rm -rf .test-dist/delete-account && tsc -p tsconfig.delete-account-tests.json && node --test .test-dist/delete-account/delete-account.test.js",
+    "test:password-recovery": "rm -rf .test-dist/password-recovery && tsc -p tsconfig.password-recovery-tests.json && node --test .test-dist/password-recovery/test/password-recovery.test.js",
     "test:database": "node --test test/planner-database.test.mjs",
     "test:analytics": "node --test test/analytics-routes.test.mjs"
   },

@@ -5,6 +5,15 @@ export const normalizeEmail = (value: string) => value.trim().toLowerCase();
 export const mapAuthErrorMessage = (raw: string): string => {
   const normalized = raw.toLowerCase();
 
+  if (normalized.includes("aal2") || normalized.includes("insufficient_aal")) {
+    return "Verify your identity with your authenticator or registered phone before changing your password.";
+  }
+
+  if (normalized.includes("invalid totp") || normalized.includes("invalid mfa") ||
+      normalized.includes("verification failed") || normalized.includes("mfa_verification_failed")) {
+    return "That verification code is invalid or has expired. Enter a fresh code and try again.";
+  }
+
   if (normalized.includes("email not confirmed")) {
     return "Confirm your email from the signup message before signing in.";
   }

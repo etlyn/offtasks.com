@@ -124,6 +124,8 @@ Cloud workflow must be reconnected to the new mobile repository separately.
 
 - If Supabase configuration is missing during startup, verify `.env.local` contains `VITE_PUBLIC_SUPABASE_URL` and `VITE_PUBLIC_SUPABASE_ANON_KEY`.
 - Managed sign-in and recovery use the shared Etlyn Apps provider with email confirmation enabled; verify the configured callback when testing recovery.
+- Password resets for accounts with two-factor authentication require a code from a verified authenticator or registered phone before saving. The reset page offers a security-check retry and support link when verification is unavailable; an email reset link does not disable MFA.
+- Run `yarn test:password-recovery` for recovery-session and MFA-gating regression checks.
 
 ### Isolated planner database validation
 
