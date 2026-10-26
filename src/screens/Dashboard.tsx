@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { GoalsWorkbench } from "@/components/GoalsWorkbench";
+import type { FeatureGoal } from "@/lib/goalWorkbench";
 import { Header } from "@/components/Header";
 import { TaskDialog } from "@/components/TaskDialog";
 import { TaskHistorySheet } from "@/components/TaskHistorySheet";
@@ -56,6 +58,26 @@ type TabId = "quick-view" | "statistics";
 export const DashboardScreen = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const goalsView =
+    searchParams.get("view") === "goals" ||
+    searchParams.has("goal") ||
+    searchParams.has("task");
+  const [goalsVisited, setGoalsVisited] = useState(goalsView);
+  const [featureGoals, setFeatureGoals] = useState<{
+    owner: string;
+    goals: FeatureGoal[];
+  }>({ owner: "", goals: [] });
+  useEffect(() => {
+    if (goalsView) setGoalsVisited(true);
+  }, [goalsView]);
+  const noteGoals = useCallback(
+    (goals: FeatureGoal[]) => {
+      if (!user) return;
+      setFeatureGoals({ owner: user.id, goals });
+    },
+    [user?.id],
+  );
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
@@ -355,7 +377,7 @@ export const DashboardScreen = () => {
     scheduledDate?: string | null,
   ) => {
     if (!user) {
-      return;
+      throw new Error("Sign in before saving a task.");
     }
 
     const normalizedDate = normalizeScheduledDate(
@@ -403,6 +425,7 @@ export const DashboardScreen = () => {
       await refreshTasks();
     } catch (error) {
       console.error("Failed to save task", error);
+      throw error;
     }
   };
 
@@ -419,7 +442,7 @@ export const DashboardScreen = () => {
         isComplete: nextCompleted,
         completedAt: nextCompleted ? getCurrentDate() : null,
         targetGroup: nextCompleted ? "today" : (task.category as TaskGroup),
-        date: nextCompleted ? getCurrentDate() : (task.raw?.date ?? null),
+        date: nextCompleted ? getCurrentDate() : task.raw?.date ?? null,
       });
       await refreshTasks();
     } catch (error) {
@@ -437,6 +460,7 @@ export const DashboardScreen = () => {
       await refreshTasks();
     } catch (error) {
       console.error("Failed to delete task", error);
+      throw error;
     }
   };
 
@@ -523,6 +547,7 @@ export const DashboardScreen = () => {
         <StatisticsView
           tasks={tasks}
           onOpenSearch={() => {
+            setSearchParams({});
             setCurrentTab("quick-view");
             setAdvancedMode(true);
           }}
@@ -571,11 +596,18 @@ export const DashboardScreen = () => {
           autoArrange={autoArrange}
           onToggleAutoArrange={setAutoArrange}
           onOpenSearch={() => {
+            setSearchParams({});
             setCurrentTab("quick-view");
             setAdvancedMode(true);
           }}
-          onViewQuickView={() => setCurrentTab("quick-view")}
-          onViewStatistics={() => setCurrentTab("statistics")}
+          onViewQuickView={() => {
+            setSearchParams({});
+            setCurrentTab("quick-view");
+          }}
+          onViewStatistics={() => {
+            setSearchParams({});
+            setCurrentTab("statistics");
+          }}
           onViewHistory={() => setHistorySheetOpen(true)}
           onViewStats={() => setStatsSheetOpen(true)}
           onViewSettings={() => setSettingsSheetOpen(true)}
@@ -586,27 +618,77 @@ export const DashboardScreen = () => {
         />
 
         <div className="px-[40px] md:px-[80px] py-[32px] pb-[120px]">
-          {tasks.length === 0 && !isLoadingTasks
-            ? renderEmptyState()
-            : renderTabs()}
+          <nav
+            aria-label="Planner sections"
+            className="mb-6 flex gap-6 border-b border-border"
+          >
+            <button
+              type="button"
+              aria-pressed={!goalsView}
+              onClick={() => setSearchParams({})}
+              className={`min-h-11 border-b-2 px-1 text-sm transition-colors duration-200 ease-in-out ${
+                !goalsView
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground"
+              }`}
+            >
+              Tasks
+            </button>
+            <button
+              type="button"
+              aria-pressed={goalsView}
+              onClick={() => {
+                setGoalsVisited(true);
+                setSearchParams({ view: "goals" });
+              }}
+              className={`min-h-11 border-b-2 px-1 text-sm transition-colors duration-200 ease-in-out ${
+                goalsView
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground"
+              }`}
+            >
+              Goals
+            </button>
+          </nav>
+          {goalsVisited && user ? (
+            <div hidden={!goalsView}>
+              <GoalsWorkbench
+                key={user.id}
+                ownerId={user.id}
+                onChanged={() => {
+                  void refreshTasks();
+                }}
+                onGoalsLoaded={noteGoals}
+              />
+            </div>
+          ) : null}
+          {!goalsView &&
+            (tasks.length === 0 && !isLoadingTasks
+              ? renderEmptyState()
+              : renderTabs())}
         </div>
 
         <button
-          onClick={() => handleAddTask("today")}
-          className="fixed bottom-[100px] right-[40px] md:right-[80px] px-[24px] py-[14px] bg-sky-600 hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-600 rounded-full shadow-md hover:shadow-lg dark:shadow-lg dark:hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-[10px] group z-50"
+          onClick={() => handleAddTask(goalsView ? "upcoming" : "today")}
+          className={
+            goalsView
+              ? "goal-workbench-fab"
+              : "fixed bottom-[100px] right-[40px] md:right-[80px] px-[24px] py-[14px] bg-sky-600 hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-600 rounded-full shadow-md hover:shadow-lg dark:shadow-lg dark:hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-[10px] group z-50"
+          }
+          aria-label="Add new task"
           title="Add new task (⌘+)"
         >
           <svg className="size-[20px]" fill="none" viewBox="0 0 24 24">
             <path
               d="M12 5V19"
-              stroke="white"
+              stroke={goalsView ? "currentColor" : "white"}
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth="2.5"
             />
             <path
               d="M5 12H19"
-              stroke="white"
+              stroke={goalsView ? "currentColor" : "white"}
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth="2.5"
@@ -640,14 +722,28 @@ export const DashboardScreen = () => {
           initialText={editingTask?.text}
           initialCategory={dialogCategory}
           initialPriority={editingTask?.priority}
-          initialLabel={editingTask?.label}
+          initialLabel={
+            editingTask?.label ??
+            (goalsView && featureGoals.owner === user?.id
+              ? featureGoals.goals.find(
+                  (goal) => goal.id === searchParams.get("goal"),
+                )?.title
+              : undefined)
+          }
           initialDate={
             editingTask
-              ? (editingTask.raw?.date ??
-                getDefaultDateForGroup(editingTask.category as DialogCategory))
+              ? editingTask.raw?.date ??
+                getDefaultDateForGroup(editingTask.category as DialogCategory)
               : getDefaultDateForGroup(dialogCategory)
           }
-          availableCategories={availableCategories}
+          availableCategories={Array.from(
+            new Set([
+              ...availableCategories,
+              ...(featureGoals.owner === user?.id
+                ? featureGoals.goals.map((goal) => goal.title)
+                : []),
+            ]),
+          )}
           isEditing={!!editingTask}
         />
 

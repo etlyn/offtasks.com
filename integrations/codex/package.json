@@ -1,0 +1,27 @@
+{
+  "name": "@etlyn/offtasks-codex-integration",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "yarn@1.22.22",
+  "engines": { "node": ">=24 <25" },
+  "files": ["dist", "public", "docs", "plugin.json", "mcp.json", ".env.example", "yarn.lock", "README.md"],
+  "scripts": {
+    "build": "node scripts/build-widget.mjs && tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc -p tsconfig.test.json",
+    "test": "tsx --test test/*.test.ts",
+    "start": "node dist/start.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/ext-apps": "1.7.5",
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "jose": "6.2.13",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "esbuild": "0.28.2",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3"
+  }
+}

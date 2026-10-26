@@ -5,8 +5,14 @@ import { AuthTextInput } from "@/components/public/AuthFields";
 import { Button } from "@/components/ui/button";
 import { supabaseClient } from "@/lib/supabase";
 import { mapAuthErrorMessage, normalizeEmail } from "@/utils/auth";
+import { useLocation } from "react-router-dom";
+import { authReturnRoute, safePlannerReturn } from "@/lib/goalWorkbench";
 
 export const ForgotPasswordScreen = () => {
+  const location = useLocation();
+  const returnTo = safePlannerReturn(
+    new URLSearchParams(location.search).get("next"),
+  );
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,7 +70,7 @@ export const ForgotPasswordScreen = () => {
         "Open the email on this device to land directly in the new-password step.",
         "Request another link anytime if the previous one expires.",
       ]}
-      switchHref="/login"
+      switchHref={authReturnRoute("/login", returnTo)}
       switchLabel="Back to sign in"
       switchPrompt="Remembered it instead?"
     >

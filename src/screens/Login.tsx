@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { supabaseClient } from "@/lib/supabase";
 import { mapAuthErrorMessage, normalizeEmail } from "@/utils/auth";
+import { authReturnRoute, safePlannerReturn } from "@/lib/goalWorkbench";
 
 export const LoginScreen = () => {
   const [email, setEmail] = useState("");
@@ -18,6 +19,9 @@ export const LoginScreen = () => {
 
   const location = useLocation();
   const navigate = useNavigate();
+  const returnTo = safePlannerReturn(
+    new URLSearchParams(location.search).get("next"),
+  );
   const accountDeleted =
     (location.state as { accountDeleted?: boolean } | null)?.accountDeleted ===
     true;
@@ -40,15 +44,16 @@ export const LoginScreen = () => {
     setError(null);
 
     try {
-      const { error: signInError } = await supabaseClient.auth.signInWithPassword({
-        email: normalizedEmail,
-        password,
-      });
+      const { error: signInError } =
+        await supabaseClient.auth.signInWithPassword({
+          email: normalizedEmail,
+          password,
+        });
 
       if (signInError) {
         setError(mapAuthErrorMessage(signInError.message));
       } else {
-        navigate("/app", { replace: true });
+        navigate(returnTo, { replace: true });
       }
     } catch (unknownError) {
       const fallback =
@@ -69,7 +74,7 @@ export const LoginScreen = () => {
       heroTitle=""
       heroDescription=""
       heroBullets={[]}
-      switchHref="/signup"
+      switchHref={authReturnRoute("/signup", returnTo)}
       switchLabel="Create account"
       switchPrompt="New here?"
     >
@@ -102,7 +107,7 @@ export const LoginScreen = () => {
           label="Password"
           labelAction={
             <Link
-              to="/forgot-password"
+              to={authReturnRoute("/forgot-password", returnTo)}
               className="font-medium text-[#134E4A] transition hover:text-[#0f3f3b]"
             >
               Forgot password?

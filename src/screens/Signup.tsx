@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { authReturnRoute, safePlannerReturn } from "@/lib/goalWorkbench";
 import { AuthLayout } from "@/components/AuthLayout";
 import { AuthNotice } from "@/components/public/AuthNotice";
 import {
@@ -24,6 +25,10 @@ export const SignupScreen = () => {
   const [message, setMessage] = useState<string | null>(null);
 
   const navigate = useNavigate();
+  const location = useLocation();
+  const returnTo = safePlannerReturn(
+    new URLSearchParams(location.search).get("next"),
+  );
 
   const submitHandler = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -53,7 +58,10 @@ export const SignupScreen = () => {
     setMessage(null);
 
     try {
-      const { error: signUpError, data: { session } } = await supabaseClient.auth.signUp({
+      const {
+        error: signUpError,
+        data: { session },
+      } = await supabaseClient.auth.signUp({
         email: normalizedEmail,
         password,
         options: { emailRedirectTo: `${window.location.origin}/app` },
@@ -62,7 +70,7 @@ export const SignupScreen = () => {
       if (signUpError) {
         setError(mapAuthErrorMessage(signUpError.message));
       } else if (session) {
-        navigate("/app", { replace: true });
+        navigate(returnTo, { replace: true });
       } else {
         setMessage(
           `Check ${normalizedEmail} for a verification link, then sign in to open your workspace.`,
@@ -87,7 +95,7 @@ export const SignupScreen = () => {
       heroTitle=""
       heroDescription=""
       heroBullets={[]}
-      switchHref="/login"
+      switchHref={authReturnRoute("/login", returnTo)}
       switchLabel="Sign in"
       switchPrompt="Already joined?"
     >

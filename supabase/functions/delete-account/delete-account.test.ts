@@ -16,6 +16,7 @@ type DeleteCall = {
 
 const testUserId = "2ef7d910-2293-4dbf-b3f7-9fb7b080ca19";
 const foreignUserId = "8eb55f9c-9ef6-41d0-95fd-e5fd9eb1b4f7";
+const oauthToken = `header.${Buffer.from(JSON.stringify({sub:testUserId,client_id:"oauth-test-client"})).toString("base64url")}.verified-by-fixture`;
 
 class FakeAdminClient implements AdminClient {
   readonly calls: DeleteCall[] = [];
@@ -76,7 +77,7 @@ class FakeAdminClient implements AdminClient {
 const createUserClient = (userId: string | null): UserClient => ({
   auth: {
     getUser: async (accessToken: string) => {
-      if (accessToken !== "valid-token" || !userId) {
+      if (!["valid-token", oauthToken].includes(accessToken) || !userId) {
         return {
           data: { user: null },
           error: { message: "invalid token" },
@@ -119,6 +120,12 @@ test("deletes Offtasks-owned data, retains identity, and never deletes the auth 
       tasks: [testUserId, foreignUserId],
       planner_items: [testUserId, foreignUserId],
       user_preferences: [testUserId, foreignUserId],
+      offtask_task_results: [testUserId, foreignUserId],
+      offtask_oauth_grants: [testUserId, foreignUserId],
+      offtask_integration_requests: [testUserId, foreignUserId],
+      offtask_integration_audit: [testUserId, foreignUserId],
+      offtask_plans: [testUserId, foreignUserId],
+      offtask_goals: [testUserId, foreignUserId],
       profiles: [testUserId, foreignUserId],
     },
   });
@@ -143,6 +150,9 @@ test("deletes Offtasks-owned data, retains identity, and never deletes the auth 
   assert.deepEqual([...adminClient.rows.tasks], [foreignUserId]);
   assert.deepEqual([...adminClient.rows.planner_items], [foreignUserId]);
   assert.deepEqual([...adminClient.rows.user_preferences], [foreignUserId]);
+  for (const table of ["offtask_oauth_grants", "offtask_task_results", "offtask_integration_requests", "offtask_integration_audit", "offtask_plans", "offtask_goals"]) {
+    assert.deepEqual([...adminClient.rows[table]], [foreignUserId]);
+  }
   assert.deepEqual([...adminClient.rows.profiles], [testUserId, foreignUserId]);
 });
 
@@ -217,4 +227,14 @@ test("rejects forged body user identifiers and does not trust caller-supplied id
   });
   assert.equal(adminClient.calls.length, 0);
   assert.equal(adminClient.deleteUserCalls.length, 0);
+});
+
+test("a provider-validated OAuth client token cannot escalate through app-only deletion", async () => {
+  const adminClient = new FakeAdminClient({rows:{tasks:[testUserId]}});
+  const request = new Request("https://example.com/functions/v1/delete-account", {
+    method:"POST",headers:{Authorization:`Bearer ${oauthToken}`,"Content-Type":"application/json"},body:"{}",
+  });
+  const response = await handleDeleteAccountRequest(request,createDependencies(adminClient));
+  assert.equal(response.status,403);assert.equal(adminClient.calls.length,0);
+  assert.deepEqual([...adminClient.rows.tasks],[testUserId]);assert.equal(adminClient.deleteUserCalls.length,0);
 });

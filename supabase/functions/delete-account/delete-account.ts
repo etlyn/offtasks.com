@@ -78,7 +78,17 @@ export interface DeleteAccountSuccessResponse {
 type JsonRecord = Record<string, unknown>;
 
 export const cleanupTargets: CleanupTarget[] = [
+  // Revoke app-specific access first; shared provider sessions/identity and the
+  // operator's global client policy are not Offtasks-owned user records.
+  { table: "offtask_oauth_grants", column: "user_id", optional: true },
+  { table: "offtask_task_results", column: "user_id", optional: true },
+  { table: "offtask_integration_requests", column: "user_id", optional: true },
+  { table: "offtask_integration_audit", column: "user_id", optional: true },
+  // Remove referencing tasks first: plan/goal FK SET NULL updates must not run
+  // task transition guards while deleting an archived/in-progress workspace.
   { table: "tasks", column: "user_id" },
+  { table: "offtask_plans", column: "user_id", optional: true },
+  { table: "offtask_goals", column: "user_id", optional: true },
   { table: "planner_items", column: "user_id", optional: true },
   { table: "user_preferences", column: "user_id", optional: true },
 ];
@@ -148,6 +158,20 @@ const readJsonBody = async (request: Request): Promise<JsonRecord> => {
 
 const containsForbiddenUserIdentifier = (body: JsonRecord): boolean =>
   "userId" in body || "user_id" in body || "id" in body;
+
+// Only inspect claims after getUser has validated the credential. An MCP OAuth
+// token must not gain first-party destructive privileges through this endpoint.
+const containsOAuthClient = (validatedToken: string): boolean => {
+  try {
+    const encoded = validatedToken.split(".")[1];
+    if (!encoded) return false;
+    const claims: unknown = JSON.parse(atob(encoded.replace(/-/g, "+").replace(/_/g, "/")));
+    return !!claims && typeof claims === "object" &&
+      ("client_id" in claims || "oauth_client_id" in claims);
+  } catch {
+    return false; // malformed credentials are rejected by the preceding provider verification
+  }
+};
 
 export const deleteOfftasksData = async (
   adminClient: AdminClient,
@@ -240,6 +264,10 @@ export const handleDeleteAccountRequest = async (
 
   if (userError || !user) {
     return jsonResponse({ error: "Invalid authorization token." }, 401);
+  }
+
+  if (containsOAuthClient(accessToken)) {
+    return jsonResponse({ error: "Use the Offtasks app to delete app data. OAuth integrations cannot call this endpoint." }, 403);
   }
 
   const adminClient = createAdminClient(supabaseUrl, supabaseServiceRoleKey);

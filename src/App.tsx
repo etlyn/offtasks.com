@@ -1,5 +1,12 @@
 import type { ReactNode } from "react";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import {
+  BrowserRouter,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+} from "react-router-dom";
+import { authReturnRoute, safePlannerReturn } from "@/lib/goalWorkbench";
 import { AuthProvider, useAuth } from "@/providers/auth";
 import { DashboardScreen } from "@/screens/Dashboard";
 import { ForgotPasswordScreen } from "@/screens/ForgotPassword";
@@ -8,6 +15,7 @@ import { PrivacyScreen, SupportScreen, TermsScreen } from "@/screens/Legal";
 import { LoginScreen } from "@/screens/Login";
 import { SignupScreen } from "@/screens/Signup";
 import { ResetPasswordScreen } from "@/screens/ResetPassword";
+import { OAuthConsentScreen } from "@/screens/OAuthConsent";
 
 const LoadingView = () => (
   <div className="flex min-h-screen items-center justify-center bg-[#f3fbf8] px-6 text-[#123532]">
@@ -21,13 +29,19 @@ const LoadingView = () => (
 
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return <LoadingView />;
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return (
+      <Navigate
+        to={authReturnRoute("/login", location.pathname + location.search)}
+        replace
+      />
+    );
   }
 
   return <>{children}</>;
@@ -35,13 +49,19 @@ const ProtectedRoute = ({ children }: { children: ReactNode }) => {
 
 const GuestRoute = ({ children }: { children: ReactNode }) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return <LoadingView />;
   }
 
   if (user) {
-    return <Navigate to="/app" replace />;
+    return (
+      <Navigate
+        to={safePlannerReturn(new URLSearchParams(location.search).get("next"))}
+        replace
+      />
+    );
   }
 
   return <>{children}</>;
@@ -65,6 +85,7 @@ const AppRoutes = () => (
     <Route path="/support" element={<SupportScreen />} />
     <Route path="/contact" element={<SupportScreen />} />
     <Route path="/terms" element={<TermsScreen />} />
+    <Route path="/oauth/consent" element={<OAuthConsentScreen />} />
     <Route
       path="/app"
       element={

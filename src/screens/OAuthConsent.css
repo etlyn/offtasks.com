@@ -1,0 +1,194 @@
+.oauth-consent-page {
+  min-height: 100dvh;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 14px;
+  line-height: 1.55;
+  color-scheme: light;
+}
+.dark .oauth-consent-page {
+  color-scheme: dark;
+}
+.oauth-consent-page header svg text {
+  fill: var(--foreground);
+}
+.oauth-consent-page header {
+  padding: 24px;
+}
+.oauth-consent-page header a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+}
+.oauth-consent-page main {
+  width: min(100% - 48px, 440px);
+  margin: 28px auto;
+  padding-bottom: 32px;
+}
+.oauth-consent-panel h1 {
+  font-size: 22px;
+  line-height: 1.35;
+  font-weight: 500;
+  margin: 16px 0 8px;
+  overflow-wrap: anywhere;
+}
+.oauth-consent-panel p {
+  margin: 8px 0 20px;
+  color: var(--muted-foreground);
+  overflow-wrap: anywhere;
+}
+.oauth-consent-panel a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.oauth-consent-identity {
+  margin: 24px 0;
+  padding: 16px 0;
+  border-block: 1px solid var(--border);
+}
+.oauth-consent-identity div {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr);
+  gap: 12px;
+  margin: 8px 0;
+}
+.oauth-consent-identity dt,
+.oauth-consent-identity span {
+  color: var(--muted-foreground);
+}
+.oauth-consent-identity dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.oauth-consent-identity span {
+  display: block;
+  font-size: 12px;
+  margin-top: 3px;
+}
+.oauth-consent-panel fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.oauth-consent-panel legend {
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+.oauth-consent-option {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  min-height: 44px;
+  padding: 12px 0;
+  cursor: pointer;
+}
+.oauth-consent-option input {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--primary);
+  flex-shrink: 0;
+}
+.oauth-consent-option small {
+  display: block;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted-foreground);
+  margin-top: 3px;
+}
+.oauth-consent-scopes {
+  margin-top: 20px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+.oauth-consent-scopes p {
+  margin-top: 4px;
+}
+.oauth-consent-panel .oauth-consent-disclosure {
+  font-size: 12px;
+  margin: 20px 0;
+}
+.oauth-consent-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+.oauth-consent-primary,
+.oauth-consent-secondary {
+  min-height: 44px;
+  padding: 11px 18px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  transition:
+    opacity 200ms ease-in-out,
+    background-color 200ms ease-in-out;
+}
+.oauth-consent-panel .oauth-consent-primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: 1px solid transparent;
+  text-decoration: none;
+  flex: 1;
+}
+.oauth-consent-secondary {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--foreground);
+}
+.oauth-consent-primary:hover,
+.oauth-consent-secondary:hover {
+  opacity: 0.85;
+}
+.oauth-consent-panel button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.oauth-consent-panel .oauth-consent-error {
+  color: var(--foreground);
+  border-left: 2px solid var(--primary);
+  padding-left: 12px;
+}
+.oauth-consent-panel .oauth-consent-quiet {
+  display: flex;
+  width: fit-content;
+  min-height: 44px;
+  align-items: center;
+  color: var(--muted-foreground);
+  margin-top: 12px;
+}
+.oauth-consent-page :is(button, a, input):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+.oauth-consent-enter {
+  animation: consent-enter 240ms ease-in-out both;
+}
+@keyframes consent-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .oauth-consent-enter {
+    animation: none;
+  }
+  .oauth-consent-page * {
+    transition: none;
+  }
+}
+@media (max-width: 480px) {
+  .oauth-consent-page main {
+    margin-top: 12px;
+  }
+}

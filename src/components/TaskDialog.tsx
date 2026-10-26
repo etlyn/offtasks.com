@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Plus, Check, ChevronDown } from "lucide-react";
 import {
@@ -30,8 +30,8 @@ interface TaskDialogProps {
     priority?: "low" | "medium" | "high",
     label?: string,
     scheduledDate?: string | null,
-  ) => void;
-  onDelete?: () => void;
+  ) => void | Promise<void>;
+  onDelete?: () => void | Promise<void>;
   initialText?: string;
   initialCategory?: string;
   initialPriority?: "low" | "medium" | "high";
@@ -69,6 +69,12 @@ export function TaskDialog({
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [categorySearch, setCategorySearch] = useState("");
   const [priorityOpen, setPriorityOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const savingLock = useRef(false);
+  const requestClose = () => {
+    if (!savingLock.current) onClose();
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -83,6 +89,7 @@ export function TaskDialog({
       setCategoryOpen(false);
       setCategorySearch("");
       setPriorityOpen(false);
+      setSaveError("");
     }
   }, [
     isOpen,
@@ -109,7 +116,7 @@ export function TaskDialog({
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isOpen) {
-        onClose();
+        requestClose();
       }
     };
 
@@ -126,22 +133,56 @@ export function TaskDialog({
       window.removeEventListener("keydown", handleEscape);
       window.removeEventListener("keydown", handleEnter);
     };
-  }, [isOpen, text]);
+  }, [
+    isOpen,
+    text,
+    category,
+    priority,
+    selectedLabel,
+    scheduledDate,
+    onSave,
+    onClose,
+  ]);
 
-  const handleSave = () => {
-    if (text.trim()) {
-      onSave(text.trim(), category, priority, selectedLabel, scheduledDate);
-      setText("");
-      setPriority(undefined);
-      setSelectedLabel(undefined);
-      onClose();
+  const handleSave = async () => {
+    if (text.trim() && !savingLock.current) {
+      savingLock.current = true;
+      setSaving(true);
+      setSaveError("");
+      try {
+        await onSave(
+          text.trim(),
+          category,
+          priority,
+          selectedLabel,
+          scheduledDate,
+        );
+        setText("");
+        setPriority(undefined);
+        setSelectedLabel(undefined);
+        onClose();
+      } catch {
+        setSaveError("Could not save. Your draft is kept. Try again.");
+      } finally {
+        savingLock.current = false;
+        setSaving(false);
+      }
     }
   };
 
-  const handleDelete = () => {
-    if (onDelete) {
-      onDelete();
+  const handleDelete = async () => {
+    if (!onDelete || savingLock.current) return;
+    savingLock.current = true;
+    setSaving(true);
+    setSaveError("");
+    try {
+      await onDelete();
       onClose();
+    } catch {
+      setSaveError("Could not delete. Try again.");
+    } finally {
+      savingLock.current = false;
+      setSaving(false);
     }
   };
 
@@ -159,9 +200,11 @@ export function TaskDialog({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-            onClick={onClose}
+            onClick={requestClose}
           />
-          <motion.div
+          <motion.fieldset
+            disabled={saving}
+            aria-label="Task editor"
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -170,7 +213,7 @@ export function TaskDialog({
           >
             {/* Close Button */}
             <button
-              onClick={onClose}
+              onClick={requestClose}
               className="absolute right-[20px] size-[20px] top-[20px] hover:opacity-70 transition-opacity"
             >
               <svg
@@ -194,6 +237,11 @@ export function TaskDialog({
               {isEditing ? "Edit Task" : "New Task"}
             </h2>
 
+            {saveError ? (
+              <p role="alert" className="mb-4 text-sm text-zinc-200">
+                {saveError}
+              </p>
+            ) : null}
             {/* Task Field */}
             <div className="mb-[24px]">
               <label className="block font-['Inter',_sans-serif] text-[#9f9fa9] text-[12px] mb-[8px]">
@@ -592,15 +640,15 @@ export function TaskDialog({
               )}
               <button
                 onClick={handleSave}
-                disabled={!text.trim()}
+                disabled={!text.trim() || saving}
                 className="h-[32px] px-[20px] rounded-[8px] bg-[#0084d1] hover:bg-[#0084d1]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <span className="font-['Poppins',_sans-serif] text-white text-[13px]">
-                  {isEditing ? "Update" : "Save"}
+                  {saving ? "Saving…" : isEditing ? "Update" : "Save"}
                 </span>
               </button>
             </div>
-          </motion.div>
+          </motion.fieldset>
         </>
       )}
     </AnimatePresence>

@@ -35,6 +35,13 @@ jobs:
           yarn typecheck
           yarn test:password-recovery
 
+      - name: Check isolated integration and data boundaries
+        run: |
+          yarn test:codex
+          yarn test:database
+          yarn test:delete-account
+          yarn test:analytics
+
       - name: Build
         run: |
           if [ -e yarn.lock ]; then

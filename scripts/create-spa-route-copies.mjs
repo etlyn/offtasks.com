@@ -18,6 +18,7 @@ const appRoutes = [
   "signup",
   "forgot-password",
   "reset-password",
+  "oauth/consent",
 ];
 
 await copyFile(indexFile, join(buildDir, "404.html"));
