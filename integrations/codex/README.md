@@ -1,9 +1,10 @@
 # Offtasks Codex / ChatGPT integration
 
-Private local implementation, **disabled by default**. This is not an installed
-plugin, configured authorization server, hosted database rollout or public
-release. The owner chose separate staging, then deferred setup until local work
-is finished. Production data and provider settings remain unchanged.
+The MCP service is **disabled by default**. On October 28, 2026, the owner chose
+the existing shared Supabase project instead of a separate staging project. The
+additive database migrations and app-only deletion function are deployed; Cloud
+Run hosts a disabled service. OAuth server, client policy and the shared token
+hook remain unconfigured, so this is not yet a connected or usable integration.
 
 ## What is implemented
 
@@ -76,7 +77,7 @@ a secret manager with access limited to the dedicated runtime service account.
 
 Prepare a private `.env` from `.env.example` in this package, not web's Vite
 environment. Never prefix internal service/checker credentials with `VITE_`.
-With verified staging configuration later:
+After verifying a private configuration:
 
 ```sh
 node --env-file=.env dist/start.js
@@ -96,31 +97,25 @@ the hook with any existing shared-identity hook, and exercise actual consent,
 code exchange, refresh and revocation before enabling. See
 [authentication.md](docs/authentication.md).
 
-No staging project, live migration, hosted endpoint, host registration,
-ChatGPT/Codex connection or native release has been created by local tests.
-These remain provider configuration and acceptance gates, not just an API key
-to paste into a completed service.
+## Production rollout and remaining gates
 
-## Later isolated staging rollout
+The existing `nqsclqtpnosuhoobgyxc` database has the planner/import, integration,
+OAuth-policy, grant-checker and provider-approval-binding migrations. The
+`delete-account` function is deployed. The hosted service currently runs with
+`OFFTASK_MCP_ENABLED=false` at `https://offtasks-mcp-qjloputrxa-ul.a.run.app`;
+its 503 response is intentional and is not proof of provider readiness.
 
-1. Create the separate Supabase staging project. Inspect its task/auth/role
-   schema; never point development exercises at production.
-2. Apply the existing planner/import migrations and reviewed additive integration
-   migration in order through normal project tooling. Verify RLS for two real
-   owners, protected documents and OAuth API-bypass guards.
-3. Apply the OAuth policy/checker migrations, verify their provider contract,
-   configure the consent path and compose the token hook. Enable only explicitly
-   registered staging clients; configure actual issuer/JWKS, resource audience
-   and exact host callbacks. Do not create a replacement Etlyn identity issuer.
-4. Deploy the separate Node service privately behind HTTPS or a supported secure
-   tunnel. The static Vite/Vercel/Pages deployment does **not** run this service.
-5. Inspect discovery and calls with MCP Inspector, then authorize a private host
-   connection. A healthy process is not provider or host acceptance.
-6. Complete the real acceptance loop below before considering rollout.
+No separate staging database was created. Before enabling the service, register
+the actual host's exact callback and client, verify the shared site's consent
+route and allowed origins, install the compatible shared-identity token hook,
+configure restricted runtime secrets and resource/issuer/client values, and
+exercise authorization, refresh and revocation against the real provider. Use
+an explicitly disposable account or approved data for validation. Do not modify
+other users' data. A healthy process alone is not host acceptance.
 
 ## Connection and metadata refresh
 
-After the staged service works:
+After provider and host acceptance:
 
 - ChatGPT: Plugins → plus → Add custom MCP server. Enter the verified `/mcp`
   endpoint or secure tunnel, configure provider authentication, review tools and
@@ -147,7 +142,7 @@ Local tests cover genuinely signed JWTs with injected authority, actual SDK HTTP
 clients, real SQL functions in disposable PGlite and an SDK→SQL workflow.
 Mocks establish adapter/bridge behavior, not live OAuth/provider readiness.
 
-Before declaring staging complete, separately record:
+Before declaring the integration ready, separately record:
 
 - A real account reads a current goal and complete PRD through the target host.
 - Plan saves reject stale source revisions; applying twice creates tasks once.

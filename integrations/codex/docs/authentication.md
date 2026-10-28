@@ -1,16 +1,17 @@
 # Authentication and private connection setup
 
-Disabled by default. The local implementation contains the resource server,
-first-party consent UI, Supabase token hook and current-grant checker. Supabase
-remains the authorization server. No provider configuration, hosted migration,
-deployment or real ChatGPT/Codex connection has been performed.
+Disabled by default. The resource server, first-party consent UI, Supabase
+token hook and current-grant checker are implemented. Additive migrations are
+applied to the existing shared project and Cloud Run hosts a disabled service.
+Supabase remains the authorization server; provider configuration and a real
+ChatGPT/Codex connection have not yet been completed.
 
-## Isolated provider setup
+## Provider setup
 
-Use the owner's selected **separate staging project**. Verify OAuth 2.1 server
-availability, its actual Auth version and schema/session policy contract before
-applying candidate migrations or enabling clients. Preserve Etlyn's managed
-identity architecture and any existing token hook.
+The owner chose the existing shared project instead of separate staging. Verify
+OAuth 2.1, actual Auth schema/session policy, exact client callbacks and any
+existing token hook before changing shared identity settings or enabling clients.
+Preserve Etlyn's managed identity architecture.
 
 Apply the existing planner/import chain, then these migrations in order:
 
@@ -18,6 +19,8 @@ Apply the existing planner/import chain, then these migrations in order:
 - `20261026010000_codex_oauth_policy.sql`: private client policy, pending/active
   grants, consent RPCs and `offtask_mcp_access_token_hook(event jsonb)`.
 - `20261026020000_codex_oauth_grant_checker.sql`: service-only fresh grant check.
+- `20261028000000_codex_bind_provider_approval.sql`: require matching provider
+  approval before pending permissions can activate.
 
 They do not enable OAuth, seed a client, register callbacks or install the hook.
 Register the exact client/callback supplied by the host. As an operator, add its
@@ -33,8 +36,9 @@ and external URLs are discarded. The isolated REST adapter uses official Auth
 endpoints without upgrading the application's older Supabase SDK.
 
 Consent stages pending intent. Only a trusted
-`oauth_provider/authorization_code` token-hook call activates it; an old session
-refresh cannot elevate access. The UI does not blindly replay uncertain provider
+`oauth_provider/authorization_code` token-hook call with a matching, unexpired
+provider-approved owner/client authorization can activate it; an old session
+refresh or unrelated unapproved request cannot elevate access. The UI does not blindly replay uncertain provider
 decisions or claim that a connection is ready. Continue is an explicit link to
 the previously verified registered callback plus standard OAuth response fields.
 An already-consented redirect-only response cannot establish that context and
@@ -92,7 +96,7 @@ Provider storage is **not an app-owned schema**. The checker pins official Auth
 source `c3348e8f1cb31454e9783e4eb9eab1e71ad9652f` and validates expected column
 types. Verify the deployed version before rollout. Session timebox, inactivity
 and low-AAL policies also depend on provider configuration unavailable locally;
-row presence does not reproduce them. Verify their actual staging behavior and
+row presence does not reproduce them. Verify their actual deployed behavior and
 adapt the provider/checker arrangement before enabling if needed. Local schema
 fixtures and signed-token tests do not establish hosted acceptance.
 
@@ -122,7 +126,7 @@ JWKS, canonical HTTPS resource, client UUIDs, hosts/origins, internal service
 secret and at least 32 random characters for cursor signing. The default built-in
 checker needs no separate checker endpoint or credential.
 
-After verified staging setup, run `node --env-file=.env dist/start.js` behind HTTPS
+For a verified private configuration, run `node --env-file=.env dist/start.js` behind HTTPS
 or a supported private tunnel. Static Vite hosting does not run this service.
 Preserve Host/Authorization, apply rate limits and avoid authorization/body logs.
 `/health` reports configuration state, not provider readiness. Keep enablement

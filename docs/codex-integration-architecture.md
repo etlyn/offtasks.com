@@ -53,25 +53,25 @@ Current official Supabase documentation supports an OAuth 2.1 server but does
 not support arbitrary application OAuth scopes. Standard OIDC scopes are not
 write permission. Do not advertise invented scopes: configure actual provider
 scopes separately from signed Offtasks permissions, client policy and active
-grant/session verification. The local OAuth policy migration, provider token
-hook, first-party `/oauth/consent` page and service-only grant checker implement
-those boundaries without enabling the provider. Provider enablement, composition
-with an existing shared-identity hook, exact host redirects, deployed schema and
-session-policy verification, and real revocation acceptance require an approved
-isolated environment. The endpoint and client policies default to disabled.
+grant/session verification. The OAuth policy migration, provider token hook,
+first-party `/oauth/consent` page and service-only grant checker implement those
+boundaries. The October 28 provider-binding migration also requires an approved,
+matching authorization before pending permissions can activate.
 
-No staging project was found. The owner selected separate staging, then asked to
-finish locally first; production data/provider configuration is unchanged. Prior notes record
-missing hosted `planner_items`/`import_device_items`; local migration tests do
-not establish that either is now deployed. No model API key or agent scheduler
-is required. Assignment never grants repository access or starts execution.
+On October 28 the owner chose the existing shared Supabase project, rather than
+creating staging. Additive planner/import, integration and OAuth migrations and
+the app-only deletion function are deployed. A Cloud Run endpoint is deployed
+but disabled. Shared OAuth-server and token-hook configuration, exact client
+registration, real provider acceptance and host connection remain release gates.
+No model API key or agent scheduler is required. Assignment never grants
+repository access or starts execution.
 
 ## Validation and rollback
 
 Run the integration package's tests/typecheck/build, web typecheck/database/auth/
 deletion tests/build, and native typecheck/focused tests. Disposable PGlite
 checks establish SQL behavior, not hosted authorization. Real acceptance must
-read a staging goal, save a plan, materialize tasks once, append one result,
+read an authorized goal, save a plan, materialize tasks once, append one result,
 reject stale/foreign/revoked calls and observe changes in both clients. Widget
 bridge behavior must also be exercised in a supported ChatGPT host; Codex text
 support does not prove widget rendering.
