@@ -57,6 +57,23 @@ credentials or private records. `scripts/check-widget.mjs` optionally checks a
 synthetic Chrome host; set `OFFTASK_PLAYWRIGHT_MODULE` to a locally installed
 `playwright/index.mjs`. This is not actual ChatGPT acceptance.
 
+The included Dockerfile builds the widget and Node service with the package's
+pinned lockfile, prunes development dependencies, and runs as an unprivileged
+user. `.gcloudignore` and `.dockerignore` exclude live `.env` files and generated
+dependencies from uploads. A Cloud Run service can start disabled while its
+provider, restricted service account and secret references are configured:
+
+```sh
+gcloud run deploy offtasks-mcp --source . --project YOUR_PROJECT --region YOUR_REGION \
+  --service-account YOUR_DEDICATED_SERVICE_ACCOUNT --min-instances 0 \
+  --max-instances 2 --allow-unauthenticated --set-env-vars OFFTASK_MCP_ENABLED=false
+```
+
+Allowing unauthenticated network access makes OAuth discovery reachable; MCP
+requests still require verified authorization when enabled. Keep the flag false
+until the documented provider and real-host checks pass. Store internal keys in
+a secret manager with access limited to the dedicated runtime service account.
+
 Prepare a private `.env` from `.env.example` in this package, not web's Vite
 environment. Never prefix internal service/checker credentials with `VITE_`.
 With verified staging configuration later:
