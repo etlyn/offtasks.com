@@ -17,11 +17,11 @@ const page1={tasks:[{id:'1',content:'Prepare the weekly plan',date:'2026-11-24',
 const page2={tasks:[{id:'3',content:'Review the goal',date:null,isComplete:false}]};
 const result=data=>({content:[],structuredContent:{schema_version:'1',fetched_at:new Date().toISOString(),ok:true,data}});
 const frame=document.getElementById('app');
-const bridge=new AppBridge(null,{name:'Synthetic fixture',version:'1.0.0'},{serverTools:{},...(!location.search.includes('no-message')?{message:{text:{}}}:{})});
+const bridge=new AppBridge(null,{name:'Synthetic fixture',version:'1.0.0'},{...(!location.search.includes('no-server-tools')?{serverTools:{}}:{}),...(!location.search.includes('no-message')?{message:{text:{}}}:{})});
 window.fixture={calls:[],messages:[],fail:false,theme:theme=>bridge.setHostContext({theme}),disconnect:()=>bridge.sendToolResult({content:[],isError:true,structuredContent:{ok:false,error:{code:'unauthenticated',message:'Reconnect fixture'}}})};
 bridge.oncalltool=async({name,arguments:args})=>{window.fixture.calls.push({name,args});if(window.fixture.fail)return{content:[],isError:true,structuredContent:{ok:false,error:{code:'unauthenticated',message:'Reconnect fixture'}}};return result(args.cursor?page2:page1);};
 bridge.onmessage=async message=>{window.fixture.messages.push(message);return{};};
-bridge.oninitialized=async()=>{await bridge.sendToolInput({arguments:{status:'open'}});await bridge.sendToolResult(result(page1));};
+bridge.oninitialized=async()=>{const later=location.search.includes('later-page');await bridge.sendToolInput({arguments:{status:'open',...(later?{cursor:'more'}:{})}});await bridge.sendToolResult(result(later?page2:page1));};
 void bridge.connect(new PostMessageTransport(frame.contentWindow,frame.contentWindow)).then(()=>{frame.src='/widget';});
 `;
 const built = await build({ stdin: { contents: host, resolveDir: fileURLToPath(root), sourcefile: 'tasks-host.ts', loader: 'ts' }, bundle: true, write: false, format: 'iife', target: 'es2022' });
@@ -58,6 +58,16 @@ try {
   await frame.getByText('Prepare the weekly plan').waitFor();
   await frame.getByRole('button', { name: 'Plan with ChatGPT' }).click();
   assert.match(await frame.getByLabel('Copy into your conversation').inputValue(), /Ask before making any changes/);
+  await page.goto(`${base}/?later-page`);
+  await frame.getByText('Prepare the weekly plan').waitFor();
+  assert.equal(await frame.getByText('Review the goal').count(), 0);
+  assert.deepEqual(await page.evaluate(() => window.fixture.calls[0]), { name: 'list_tasks', args: { status: 'open' } });
+  await frame.getByRole('button', { name: 'Show more' }).click();
+  await frame.getByText('Review the goal').waitFor();
+  await page.goto(`${base}/?later-page&no-server-tools`);
+  await frame.getByText('Review the goal').waitFor();
+  await frame.getByText('Showing a later page. Ask ChatGPT for the first page.').waitFor();
+  assert.equal(await page.evaluate(() => window.fixture.calls.length), 0);
   await page.goto(`${base}/?preview`);
   await page.setViewportSize({ width: 390, height: 800 });
   await frame.getByText('Prepare the weekly plan').waitFor();
@@ -66,7 +76,7 @@ try {
   await frame.locator('html[data-theme="dark"]').waitFor();
   await frame.locator('body').screenshot({ path: '/tmp/offtasks-chatgpt-widget-dark.png' });
   assert.deepEqual(errors, []);
-  console.log(JSON.stringify({ fixture: 'synthetic MCP Apps host', narrowLight: true, narrowDark: true, escapedContent: true, pagination: true, messageHandoff: true, copyFallback: true, disconnectedDataCleared: true, errors }));
+  console.log(JSON.stringify({ fixture: 'synthetic MCP Apps host', narrowLight: true, narrowDark: true, escapedContent: true, pagination: true, laterPageStartsAtFirst: true, noServerToolsFallback: true, messageHandoff: true, copyFallback: true, disconnectedDataCleared: true, errors }));
 } finally {
   await browser.close();
   server.closeAllConnections();

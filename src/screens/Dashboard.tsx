@@ -769,6 +769,7 @@ export const DashboardScreen = () => {
           onToggleTask={handleToggleTask}
           onLogout={handleLogout}
           userEmail={user?.email ?? undefined}
+          ownerId={user?.id}
         />
 
         <ConfirmDialog

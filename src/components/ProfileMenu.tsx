@@ -1,6 +1,7 @@
 import * as React from "react";
 import {
   BarChart3,
+  Bot,
   CalendarClock,
   CheckCircle2,
   ChevronRight,
@@ -170,6 +171,19 @@ export const ProfileMenu: React.FC<ProfileMenuProps> = ({
                 </div>
                 <span className="flex-1 font-['Poppins',_sans-serif] text-[15px] text-zinc-900 dark:text-zinc-100">
                   Statistics
+                </span>
+                <ChevronRight className="size-4 text-zinc-400 dark:text-zinc-500" />
+              </button>
+
+              <button
+                onClick={closeAndRun(onViewSettings)}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-transparent text-left text-zinc-900 dark:text-zinc-100 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition"
+              >
+                <div className="size-9 rounded-full border border-teal-200 bg-teal-50 flex items-center justify-center dark:border-teal-800 dark:bg-teal-950">
+                  <Bot className="size-4 text-teal-700 dark:text-teal-300" />
+                </div>
+                <span className="flex-1 font-['Poppins',_sans-serif] text-[15px] text-zinc-900 dark:text-zinc-100">
+                  ChatGPT
                 </span>
                 <ChevronRight className="size-4 text-zinc-400 dark:text-zinc-500" />
               </button>

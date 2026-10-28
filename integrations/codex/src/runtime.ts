@@ -146,6 +146,35 @@ export function createMcpHttpHandler(
         });
         return;
       }
+      // Log only protocol shape for failed requests. Never log payloads, task
+      // data, tokens, identifiers or untrusted header values.
+      const method =
+        parsed && typeof parsed === "object" && !Array.isArray(parsed)
+          ? (parsed as { method?: unknown }).method
+          : undefined;
+      const knownMethod = [
+        "initialize",
+        "notifications/initialized",
+        "ping",
+        "tools/list",
+        "tools/call",
+        "resources/list",
+        "resources/read",
+      ].includes(typeof method === "string" ? method : "")
+        ? method
+        : "other";
+      res.once("finish", () => {
+        if (res.statusCode >= 400) {
+          const accept = req.headers.accept ?? "";
+          console.warn(JSON.stringify({
+            event: "mcp_request_failed",
+            method: knownMethod,
+            status: res.statusCode,
+            acceptsJson: accept.includes("application/json"),
+            acceptsEventStream: accept.includes("text/event-stream"),
+          }));
+        }
+      });
       const server = deps.createServer({
         backend: deps.createBackend(principal),
         principal,

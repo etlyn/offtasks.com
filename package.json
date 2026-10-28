@@ -15,6 +15,7 @@
     "test:password-recovery": "rm -rf .test-dist/password-recovery && tsc -p tsconfig.password-recovery-tests.json && node --test .test-dist/password-recovery/test/password-recovery.test.js",
     "test:database": "node --test test/planner-database.test.mjs",
     "test:analytics": "node --test test/analytics-routes.test.mjs",
+    "test:chatgpt-connection": "node --test test/chatgpt-connection.test.mjs",
     "test:codex": "yarn --cwd integrations/codex install --frozen-lockfile && yarn --cwd integrations/codex typecheck && yarn --cwd integrations/codex test && yarn --cwd integrations/codex build && node --test test/codex-*.test.mjs test/goal-workbench.test.mjs test/oauth-consent.test.mjs"
   },
   "dependencies": {

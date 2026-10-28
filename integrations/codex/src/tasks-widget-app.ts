@@ -22,6 +22,8 @@ let args: Data = {},
 let hasData = false,
   sequence = 0,
   busy = false;
+let needsFirstPage = false;
+let deferredResult: unknown = null;
 
 function element<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -40,6 +42,8 @@ function clear() {
   tasks = [];
   hasData = false;
   nextCursor = "";
+  needsFirstPage = false;
+  deferredResult = null;
   content.replaceChildren();
   handoff.hidden = true;
   instruction.value = "";
@@ -144,9 +148,7 @@ async function load(append = false) {
   try {
     const result = await app.callServerTool({
       name: "list_tasks",
-      arguments: append
-        ? { ...args, cursor: nextCursor }
-        : { ...args, cursor: undefined },
+      arguments: append ? { ...args, cursor: nextCursor } : { ...args },
     });
     if (current === sequence) consume(result, append);
   } catch {
@@ -160,6 +162,28 @@ async function load(append = false) {
       refreshButton.disabled = false;
       render();
     }
+  }
+}
+
+function receiveToolResult(result: unknown) {
+  if (document.hidden) return;
+  if (!needsFirstPage || object(object(result).structuredContent).ok !== true) {
+    needsFirstPage = false;
+    consume(result);
+    return;
+  }
+  // The model may follow a cursor to answer a count or summary. Each tool call
+  // can open a new widget, so a later page must not masquerade as the full list.
+  if (!connected) {
+    deferredResult = result;
+    return;
+  }
+  needsFirstPage = false;
+  if (app.getHostCapabilities()?.serverTools) {
+    void load();
+  } else {
+    consume(result);
+    status.textContent = "Showing a later page. Ask ChatGPT for the first page.";
   }
 }
 
@@ -188,10 +212,13 @@ refreshButton.onclick = () => void load();
 planButton.onclick = () => void plan();
 app.ontoolinput = ({ arguments: input }) => {
   clear();
-  args = { ...object(input) };
+  const { cursor, ...selection } = object(input);
+  args = selection;
+  needsFirstPage = string(cursor).length > 0;
+  deferredResult = null;
   status.textContent = "Loading tasks…";
 };
-app.ontoolresult = (result) => consume(result);
+app.ontoolresult = receiveToolResult;
 app.onhostcontextchanged = (context) => {
   if (context.theme) document.documentElement.dataset.theme = context.theme;
 };
@@ -211,6 +238,11 @@ app
     refreshButton.disabled = false;
     const theme = app.getHostContext()?.theme;
     if (theme) document.documentElement.dataset.theme = theme;
+    if (deferredResult !== null) {
+      const result = deferredResult;
+      deferredResult = null;
+      receiveToolResult(result);
+    }
   })
   .catch(() => {
     clear();
