@@ -1,0 +1,74 @@
+import assert from 'node:assert/strict';
+import { createServer } from 'node:http';
+import { once } from 'node:events';
+import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import { build } from 'esbuild';
+
+// A disposable synthetic host. This does not stand in for ChatGPT acceptance.
+const modulePath = process.env.OFFTASK_PLAYWRIGHT_MODULE;
+if (!modulePath) throw new Error('Set OFFTASK_PLAYWRIGHT_MODULE to playwright/index.mjs');
+const { chromium } = await import(modulePath);
+const root = new URL('../', import.meta.url);
+const html = await readFile(new URL('public/tasks-widget.html', root));
+const host = String.raw`
+import {AppBridge,PostMessageTransport} from '@modelcontextprotocol/ext-apps/app-bridge';
+const page1={tasks:[{id:'1',content:'Prepare the weekly plan',date:'2026-11-24',isComplete:false},{id:'2',content:location.search.includes('preview')?'Pick up the parcel':'A synthetic <img src=x onerror=window.__PWNED__=1>',date:null,isComplete:true}],next_cursor:'more'};
+const page2={tasks:[{id:'3',content:'Review the goal',date:null,isComplete:false}]};
+const result=data=>({content:[],structuredContent:{schema_version:'1',fetched_at:new Date().toISOString(),ok:true,data}});
+const frame=document.getElementById('app');
+const bridge=new AppBridge(null,{name:'Synthetic fixture',version:'1.0.0'},{serverTools:{},...(!location.search.includes('no-message')?{message:{text:{}}}:{})});
+window.fixture={calls:[],messages:[],fail:false,theme:theme=>bridge.setHostContext({theme}),disconnect:()=>bridge.sendToolResult({content:[],isError:true,structuredContent:{ok:false,error:{code:'unauthenticated',message:'Reconnect fixture'}}})};
+bridge.oncalltool=async({name,arguments:args})=>{window.fixture.calls.push({name,args});if(window.fixture.fail)return{content:[],isError:true,structuredContent:{ok:false,error:{code:'unauthenticated',message:'Reconnect fixture'}}};return result(args.cursor?page2:page1);};
+bridge.onmessage=async message=>{window.fixture.messages.push(message);return{};};
+bridge.oninitialized=async()=>{await bridge.sendToolInput({arguments:{status:'open'}});await bridge.sendToolResult(result(page1));};
+void bridge.connect(new PostMessageTransport(frame.contentWindow,frame.contentWindow)).then(()=>{frame.src='/widget';});
+`;
+const built = await build({ stdin: { contents: host, resolveDir: fileURLToPath(root), sourcefile: 'tasks-host.ts', loader: 'ts' }, bundle: true, write: false, format: 'iife', target: 'es2022' });
+const harness = `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0}iframe{width:100%;height:700px;border:0}</style></head><body><iframe id="app" title="Synthetic Offtasks fixture"></iframe><script>${built.outputFiles[0].text.replaceAll('</script','<\\/script')}</script></body></html>`;
+const server = createServer((req, res) => { res.setHeader('Content-Type', 'text/html'); res.end(req.url === '/widget' ? html : harness); });
+server.listen(0, '127.0.0.1');
+await once(server, 'listening');
+const base = `http://127.0.0.1:${server.address().port}`;
+const browser = await chromium.launch({ channel: 'chrome', headless: true });
+try {
+  const page = await browser.newPage({ viewport: { width: 390, height: 800 } });
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.route('**/*', route => route.request().url().startsWith(base) ? route.continue() : route.abort());
+  await page.goto(base);
+  const frame = page.frameLocator('#app');
+  await frame.getByText('Prepare the weekly plan').waitFor();
+  assert.equal(await frame.locator('img').count(), 0);
+  assert.equal(await frame.locator('html').evaluate(node => node.scrollWidth <= node.clientWidth), true);
+  await frame.getByRole('button', { name: 'Show more' }).click();
+  await frame.getByText('Review the goal').waitFor();
+  await frame.getByRole('button', { name: 'Plan with ChatGPT' }).click();
+  await page.waitForFunction(() => window.fixture.messages.length === 1);
+  assert.equal(await page.evaluate(() => window.fixture.messages.length), 1);
+  await page.evaluate(() => window.fixture.theme('dark'));
+  assert.equal(await frame.locator('html').getAttribute('data-theme'), 'dark');
+  await page.setViewportSize({ width: 320, height: 800 });
+  assert.equal(await frame.locator('html').evaluate(node => node.scrollWidth <= node.clientWidth), true);
+  await page.evaluate(() => window.fixture.disconnect());
+  await frame.getByText('Reconnect fixture').waitFor();
+  assert.equal(await frame.getByText('Prepare the weekly plan').count(), 0);
+  assert.equal(await frame.getByText('No tasks here yet.').count(), 0);
+  await page.goto(`${base}/?no-message`);
+  await frame.getByText('Prepare the weekly plan').waitFor();
+  await frame.getByRole('button', { name: 'Plan with ChatGPT' }).click();
+  assert.match(await frame.getByLabel('Copy into your conversation').inputValue(), /Ask before making any changes/);
+  await page.goto(`${base}/?preview`);
+  await page.setViewportSize({ width: 390, height: 800 });
+  await frame.getByText('Prepare the weekly plan').waitFor();
+  await frame.locator('body').screenshot({ path: '/tmp/offtasks-chatgpt-widget-light.png' });
+  await page.evaluate(() => window.fixture.theme('dark'));
+  await frame.locator('html[data-theme="dark"]').waitFor();
+  await frame.locator('body').screenshot({ path: '/tmp/offtasks-chatgpt-widget-dark.png' });
+  assert.deepEqual(errors, []);
+  console.log(JSON.stringify({ fixture: 'synthetic MCP Apps host', narrowLight: true, narrowDark: true, escapedContent: true, pagination: true, messageHandoff: true, copyFallback: true, disconnectedDataCleared: true, errors }));
+} finally {
+  await browser.close();
+  server.closeAllConnections();
+  await new Promise(resolve => server.close(resolve));
+}

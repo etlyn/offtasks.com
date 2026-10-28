@@ -24,6 +24,11 @@ test("privileged internal RPC derives actor from principal and never forwards th
   );
   await backend.read("list_goals", { actor: "forged", user_id: "forged" });
   await backend.mutate("update_task", { request_key: "retry-original" });
+  await backend.mutate("create_task", {
+    content: "New task",
+    request_key: "create-original",
+  });
+  await backend.read("list_tasks", { status: "open" });
   assert.equal(
     calls[0]?.url,
     "https://db.example/rest/v1/rpc/offtask_integration_read"
@@ -41,6 +46,22 @@ test("privileged internal RPC derives actor from principal and never forwards th
     JSON.parse(String(calls[1]?.init.body)).args.request_key,
     "retry-original"
   );
+  assert.equal(
+    calls[2]?.url,
+    "https://db.example/rest/v1/rpc/offtask_integration_create_task"
+  );
+  assert.deepEqual(JSON.parse(String(calls[2]?.init.body)), {
+    actor: principal.userId,
+    args: { content: "New task", request_key: "create-original" },
+  });
+  assert.equal(
+    calls[3]?.url,
+    "https://db.example/rest/v1/rpc/offtask_integration_list_tasks"
+  );
+  assert.deepEqual(JSON.parse(String(calls[3]?.init.body)), {
+    actor: principal.userId,
+    args: { status: "open" },
+  });
 });
 test("read-only principal cannot mutate and failures do not expose database details", async () => {
   let calls = 0;

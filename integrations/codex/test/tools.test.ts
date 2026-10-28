@@ -3,7 +3,11 @@ import { test } from "node:test";
 import { z } from "zod";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { createOfftasksServer, WIDGET_URI } from "../src/tools.js";
+import {
+  createOfftasksServer,
+  TASKS_WIDGET_URI,
+  WIDGET_URI,
+} from "../src/tools.js";
 import {
   IntegrationBackendError,
   type IntegrationBackend,
@@ -45,10 +49,10 @@ const noop: IntegrationBackend = {
   mutate: async () => ({}),
 };
 
-test("real MCP discovery exposes ten tools with wire auth policy and UI only on rendering", async (t) => {
+test("real MCP discovery exposes tools with wire auth policy and the plan and task widgets", async (t) => {
   const client = await connect(t, noop),
     { tools } = await client.listTools();
-  assert.equal(tools.length, 10);
+  assert.equal(tools.length, 12);
   for (const tool of tools) {
     assert.deepEqual(object(tool._meta).securitySchemes, [
       { type: "oauth2", scopes: ["openid"] },
@@ -56,7 +60,7 @@ test("real MCP discovery exposes ten tools with wire auth policy and UI only on 
     assert.equal(tool.inputSchema.type, "object");
     assert.equal(tool.outputSchema?.type, "object");
     assert.equal(tool.annotations?.openWorldHint, false);
-    if (tool.name !== "render_plan_widget")
+    if (!["render_plan_widget", "list_tasks"].includes(tool.name))
       assert.equal(object(tool._meta ?? {}).ui, undefined);
   }
   // The standard SDK client strips unknown extension fields in listTools().
@@ -85,6 +89,14 @@ test("real MCP discovery exposes ten tools with wire auth policy and UI only on 
     object(tools.find((x) => x.name === "render_plan_widget")?._meta?.ui)
       .resourceUri,
     WIDGET_URI
+  );
+  assert.equal(
+    object(tools.find((x) => x.name === "list_tasks")?._meta?.ui).resourceUri,
+    TASKS_WIDGET_URI
+  );
+  const resources = await client.listResources();
+  assert.ok(
+    resources.resources.some((resource) => resource.uri === TASKS_WIDGET_URI)
   );
 });
 
@@ -119,9 +131,18 @@ test("read-only permissions and ambiguous selectors cannot reach writes or leak 
     "forbidden"
   );
   assert.equal(mutations, 0);
+  const createDenied = await client.callTool({
+    name: "create_task",
+    arguments: { content: "Private task", request_key: "create-request" },
+  });
+  assert.equal(
+    object(object(createDenied.structuredContent).error).code,
+    "forbidden"
+  );
+  assert.equal(mutations, 0);
   const ambiguous = await client.callTool({
     name: "list_tasks",
-    arguments: {},
+    arguments: { project_id: owner, goal_id: goal },
   });
   assert.equal(
     object(object(ambiguous.structuredContent).error).code,
@@ -137,6 +158,125 @@ test("read-only permissions and ambiguous selectors cannot reach writes or leak 
     "upstream_unavailable"
   );
   assert.ok(!JSON.stringify(failed).includes("secret-token-and-SQL"));
+});
+
+test("existing goal writes require the selected goal revision", async (t) => {
+  let mutations = 0;
+  const client = await connect(t, {
+    read: async () => ({}),
+    mutate: async () => {
+      mutations++;
+      return { goal: { id: goal, title: "Goal", revision: "2" } };
+    },
+  });
+  const missingRevision = await client.callTool({
+    name: "save_goal",
+    arguments: {
+      goal_id: goal,
+      title: "Goal",
+      request_key: "update-goal-request",
+    },
+  });
+  assert.equal(
+    object(object(missingRevision.structuredContent).error).code,
+    "validation_failed"
+  );
+  assert.equal(mutations, 0);
+  const updated = await client.callTool({
+    name: "save_goal",
+    arguments: {
+      goal_id: goal,
+      title: "Goal",
+      expected_revision: "1",
+      request_key: "update-goal-request",
+    },
+  });
+  assert.equal(object(updated.structuredContent).ok, true);
+  assert.equal(mutations, 1);
+});
+
+test("a task list without a selector reads account tasks and scheduling preserves revision and retry keys", async (t) => {
+  const calls: Array<{ op: string; args: Record<string, unknown> }> = [];
+  const client = await connect(t, {
+    read: async (op, args) => {
+      calls.push({ op, args });
+      return {
+        tasks: [{ id: task, content: "A current task", revision: "1" }],
+        next_offset: 20,
+      };
+    },
+    mutate: async (op, args) => {
+      calls.push({ op, args });
+      return { task: { id: task, content: "A current task", revision: "2" } };
+    },
+  });
+  const listed = await client.callTool({
+    name: "list_tasks",
+    arguments: { status: "open" },
+  });
+  assert.equal(object(listed.structuredContent).ok, true);
+  assert.equal(calls[0]?.op, "list_tasks");
+  assert.equal(calls[0]?.args.status, "open");
+  assert.equal(calls[0]?.args.project_id, undefined);
+  assert.equal(calls[0]?.args.goal_id, undefined);
+  assert.ok(object(object(listed.structuredContent).data).next_cursor);
+
+  const update = {
+    task_id: task,
+    expected_revision: "1",
+    request_key: "schedule-request-1",
+  };
+  for (const date of ["2026-11-24", null]) {
+    const result = await client.callTool({
+      name: "update_task",
+      arguments: { ...update, patch: { date } },
+    });
+    assert.equal(object(result.structuredContent).ok, true);
+    assert.deepEqual(object(calls.at(-1)?.args.patch), {
+      date,
+      target_group: "upcoming",
+    });
+    assert.equal(calls.at(-1)?.args.expected_revision, "1");
+    assert.equal(calls.at(-1)?.args.request_key, "schedule-request-1");
+  }
+  const before = calls.length;
+  const invalid = await client.callTool({
+    name: "update_task",
+    arguments: { ...update, patch: { date: "2026-02-30" } },
+  });
+  assert.equal(invalid.isError, true);
+  assert.equal(calls.length, before);
+});
+
+test("note tasks are returned read-only without a misleading standalone task link", async (t) => {
+  const noteId = `note-task:${"a".repeat(64)}`;
+  const client = await connect(t, {
+    read: async () => ({ tasks: [{ id: noteId, revision: "5", content: "From a note", origin: "note", read_only: true }] }),
+    mutate: async () => ({}),
+  });
+  const result = await client.callTool({ name: "list_tasks", arguments: {} });
+  const taskFromNote = object((object(object(result.structuredContent).data).tasks as unknown[])[0]);
+  assert.equal(taskFromNote.id, noteId);
+  assert.equal(taskFromNote.read_only, true);
+  assert.equal(taskFromNote.url, undefined);
+});
+
+test("plan widget continuation keeps its standalone-task filter bound to the cursor", async (t) => {
+  const reads: Array<Record<string, unknown>> = [];
+  const client = await connect(t, {
+    read: async (operation, args) => {
+      if (operation === "render_plan_widget") return { goal: { id: goal, title: "Goal", revision: "1" } };
+      reads.push(args);
+      return { tasks: [{ id: task, content: "Task", revision: "1" }], next_offset: 20 };
+    },
+    mutate: async () => ({}),
+  });
+  const widget = await client.callTool({ name: "render_plan_widget", arguments: { project_id: owner, goal_id: goal } });
+  const cursor = object(object(widget.structuredContent).data).tasks_next_cursor;
+  const next = await client.callTool({ name: "list_tasks", arguments: { goal_id: goal, limit: 20, include_note_tasks: false, cursor } });
+  assert.equal(object(next.structuredContent).ok, true);
+  assert.equal(reads[0]?.include_note_tasks, false);
+  assert.equal(reads[1]?.include_note_tasks, false);
 });
 
 test("plan drafts keep stable request/revision contracts and never apply or complete tasks", async (t) => {

@@ -2,15 +2,19 @@
 
 The MCP service defaults to disabled in source. On October 28, 2026, the owner
 chose the existing shared Supabase project instead of separate staging. The
-additive migrations, deletion function, consent route and OAuth policy are
-deployed. Cloud Run is enabled for one pre-registered Codex client; each user
-must sign in and explicitly choose Offtasks permissions. A real user connection
-and ChatGPT/widget acceptance are separate checks.
+additive migrations through `20261028010000`, deletion function, consent route
+and OAuth policy were deployed. The later ChatGPT connection and task migrations
+require their own rollout. Cloud Run is enabled for one pre-registered Codex
+client; each user must sign in and explicitly choose Offtasks permissions. A
+real user connection and ChatGPT/widget acceptance are separate checks.
 
 ## What is implemented
 
-- Ten MCP tools: projects/goals/tasks/context, plan save, selected task creation,
-  task updates/results and an optional MCP Apps plan widget.
+- Twelve MCP tools: projects/goals/tasks/context, goal and plan save, ordinary
+  and selected plan task creation, task updates/results, and MCP Apps task and
+  plan widgets. Synced tasks embedded in notes are listed read-only; edit them
+  in Offtasks until conflict-safe note updates are supported. Undated ordinary
+  tasks go to Later. Scheduling a date does not create a reminder.
 - One personal owner-scoped project; stable goal metadata preserves existing
   category strings. PRDs reuse protected note records; ordinary Notes cannot
   silently overwrite their revision-checked edits.
@@ -53,11 +57,14 @@ yarn test
 yarn build
 ```
 
-Build creates `dist/` and `public/plan-widget.html`; neither is source-controlled.
+Build creates `dist/`, `public/plan-widget.html` and `public/tasks-widget.html`;
+these generated files are not source-controlled.
 The generated HTML bundles the official MCP Apps bridge without CDN dependencies,
 credentials or private records. `scripts/check-widget.mjs` optionally checks a
 synthetic Chrome host; set `OFFTASK_PLAYWRIGHT_MODULE` to a locally installed
 `playwright/index.mjs`. This is not actual ChatGPT acceptance.
+`scripts/check-tasks-widget.mjs` exercises the task view with the same synthetic
+host and checks narrow light/dark layout, pagination and disconnect clearing.
 
 The included Dockerfile builds the widget and Node service with the package's
 pinned lockfile, prunes development dependencies, and runs as an unprivileged
@@ -134,6 +141,20 @@ Connect each intended host separately:
 - After tool/resource changes: rebuild/restart, refresh the connection metadata
   and use a new conversation. One installation does not configure every desktop
   or mobile surface or attach this existing conversation automatically.
+
+The native Account screen can show the server's ChatGPT authorization state and
+revoke that grant. `20261028020000_chatgpt_connection_status.sql` deliberately
+does not classify or enable an existing client as ChatGPT. An operator must
+register the exact ChatGPT OAuth callback, enable the corresponding allowlisted
+client as `host_kind=chatgpt`, and set a verified public ChatGPT plugin listing
+URL before the mobile Connect action is shown. A private custom MCP connection
+is not a public listing. "Authorized" reports the Offtasks grant and provider
+session, not whether the host has retained the plugin. Reconnect when necessary.
+Guest items remain on their device unless the user explicitly imports them.
+
+Existing Offtasks reminders are scheduled locally on the phone. The MCP service
+does not yet offer reminder creation or promise delivery on a closed phone:
+shared durable reminders and a verified push-delivery path are required first.
 
 Primary references:
 [connection/testing](https://developers.openai.com/plugins/deploy/connect-chatgpt),

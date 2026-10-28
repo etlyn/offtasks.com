@@ -2,7 +2,7 @@
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "offtasks",
   "version": "0.1.0",
-  "description": "Read Offtasks requirements and save requested plans and task results in a connected session.",
+  "description": "View and organize your Offtasks tasks and goals in a connected session.",
   "author": { "name": "Etlyn", "url": "https://etlyn.com" },
   "homepage": "https://www.offtasks.com"
 }

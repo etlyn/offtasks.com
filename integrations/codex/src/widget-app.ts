@@ -349,6 +349,7 @@ async function more(kind: "goals" | "tasks", cursor: string) {
       ? { project_id: args.project_id }
       : {
           goal_id: args.goal_id,
+          include_note_tasks: false,
           ...(args.execution_target
             ? { execution_target: args.execution_target }
             : {}),

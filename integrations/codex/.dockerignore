@@ -2,6 +2,7 @@
 node_modules
 dist
 public/plan-widget.html
+public/tasks-widget.html
 .env
 .env.*
 !.env.example

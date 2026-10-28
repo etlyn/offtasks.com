@@ -78,7 +78,14 @@ export function createSupabaseBackend(
       );
     try {
       const response = await fetcher(
-        new URL(`/rest/v1/rpc/offtask_integration_${kind}`, config.supabaseUrl),
+        new URL(
+          kind === "mutate" && operation === "create_task"
+            ? "/rest/v1/rpc/offtask_integration_create_task"
+            : kind === "read" && operation === "list_tasks"
+            ? "/rest/v1/rpc/offtask_integration_list_tasks"
+            : `/rest/v1/rpc/offtask_integration_${kind}`,
+          config.supabaseUrl
+        ),
         {
           method: "POST",
           redirect: "error",
@@ -89,7 +96,12 @@ export function createSupabaseBackend(
             apikey: config.serviceRoleKey,
             Authorization: `Bearer ${config.serviceRoleKey}`,
           },
-          body: JSON.stringify({ operation, args, actor }),
+          body: JSON.stringify(
+            (kind === "mutate" && operation === "create_task") ||
+              (kind === "read" && operation === "list_tasks")
+              ? { args, actor }
+              : { operation, args, actor }
+          ),
         }
       );
       if (!response.ok) {

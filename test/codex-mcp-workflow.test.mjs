@@ -4,6 +4,7 @@ import { Client } from "../integrations/codex/node_modules/@modelcontextprotocol
 import { InMemoryTransport } from "../integrations/codex/node_modules/@modelcontextprotocol/sdk/dist/esm/inMemory.js";
 import { createOfftasksServer } from "../integrations/codex/dist/tools.js";
 import { IntegrationBackendError } from "../integrations/codex/dist/contracts.js";
+import { readFile } from "node:fs/promises";
 import {
   createCodexDatabaseFixture,
   OWNER_A,
@@ -15,6 +16,25 @@ import {
 test("local MCP → real SQL read/save/apply/result loop is isolated, retry-safe and review-only", async (t) => {
   const f = await createCodexDatabaseFixture(t),
     { goal, prd } = await f.feature();
+  await f.db.exec("reset role");
+  await f.db.exec(
+    await readFile(
+      new URL(
+        "../supabase/migrations/20261028030000_chatgpt_create_task.sql",
+        import.meta.url
+      ),
+      "utf8"
+    )
+  );
+  await f.db.exec(
+    await readFile(
+      new URL(
+        "../supabase/migrations/20261028040000_chatgpt_list_note_tasks.sql",
+        import.meta.url
+      ),
+      "utf8"
+    )
+  );
   await f.owner("", "service_role");
   const adapt = (fn) => async (op, args) => {
     try {
@@ -25,7 +45,28 @@ test("local MCP → real SQL read/save/apply/result loop is isolated, retry-safe
     }
   };
   const server = createOfftasksServer({
-    backend: { read: adapt(f.read), mutate: adapt(f.mutate) },
+    backend: {
+      read: adapt((op, args, actor) =>
+        op === "list_tasks"
+          ? f.db
+              .query(
+                "select public.offtask_integration_list_tasks($1::jsonb,$2) result",
+                [JSON.stringify(args), actor]
+              )
+              .then((result) => result.rows[0].result)
+          : f.read(op, args, actor)
+      ),
+      mutate: adapt((op, args, actor) =>
+        op === "create_task"
+          ? f.db
+              .query(
+                "select public.offtask_integration_create_task($1::jsonb,$2) result",
+                [JSON.stringify(args), actor]
+              )
+              .then((result) => result.rows[0].result)
+          : f.mutate(op, args, actor)
+      ),
+    },
     principal: {
       userId: OWNER_A,
       clientId: "local-fixture",
@@ -117,6 +158,59 @@ test("local MCP → real SQL read/save/apply/result loop is isolated, retry-safe
   assert.equal(final.task.work_stage, "awaiting_review");
   assert.equal(final.task.isComplete, false);
   assert.equal(final.recent_updates[0].links[0].label, "Owning repository");
+  const personalTasks = await call("list_tasks", { status: "open" });
+  assert.ok(personalTasks.tasks.some((entry) => entry.id === taskId));
+  const createdOrdinary = await call("create_task", {
+    content: "A task from chat",
+    request_key: "chat-task-request",
+  });
+  assert.equal(createdOrdinary.task.date, null);
+  assert.equal(createdOrdinary.task.target_group, "upcoming");
+  const fromChat = await call("save_goal", {
+    title: "Learn guitar",
+    request_key: "chat-goal-create",
+  });
+  const withGoal = await call("create_task", {
+    content: "Practice chords",
+    goal_id: fromChat.goal.id,
+    request_key: "chat-goal-task",
+  });
+  assert.equal(withGoal.task.label, "Learn guitar");
+  const updatedGoal = await call("save_goal", {
+    title: "Learn guitar",
+    goal_id: fromChat.goal.id,
+    expected_revision: fromChat.goal.revision,
+    outcome: "Play a favorite song",
+    request_key: "chat-goal-update",
+  });
+  assert.equal(updatedGoal.goal.outcome, "Play a favorite song");
+  await f.owner(OWNER_A);
+  assert.equal(
+    (
+      await f.db.query(
+        "select value from public.planner_items where user_id=$1 and kind='goal' and id='learn guitar'",
+        [OWNER_A]
+      )
+    ).rows[0].value,
+    "Learn guitar"
+  );
+  await f.owner("", "service_role");
+  const scheduled = await call("update_task", {
+    task_id: taskId,
+    expected_revision: final.task.revision,
+    patch: { date: "2026-11-24" },
+    request_key: "workflow-schedule-request",
+  });
+  assert.equal(scheduled.task.date, "2026-11-24");
+  assert.equal(scheduled.task.target_group, "upcoming");
+  const movedLater = await call("update_task", {
+    task_id: taskId,
+    expected_revision: scheduled.task.revision,
+    patch: { date: null },
+    request_key: "workflow-later-request",
+  });
+  assert.equal(movedLater.task.date, null);
+  assert.equal(movedLater.task.target_group, "upcoming");
   await f.owner(OWNER_A);
   const current = await f.read("get_goal_context", { goal_id: goal.id });
   const longRequirements = "Requirement 🟢 stays complete.\n".repeat(2500);
