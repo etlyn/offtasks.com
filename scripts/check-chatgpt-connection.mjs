@@ -21,7 +21,7 @@ try {
   await page.goto(`${base}?mode=public`);
   assert.equal(await page.getByRole("link", { name: "Connect ChatGPT" }).getAttribute("href"), "https://chatgpt.com/plugins/offtasks");
   await page.goto(`${base}?mode=connected&dark`);
-  await page.getByText("Connected · Read and edit").waitFor();
+  await page.getByText("Access allowed · Read and edit").waitFor();
   await page.screenshot({ path: "/tmp/offtasks-chatgpt-web-connected-dark.png" });
   await page.getByRole("button", { name: "Disconnect" }).click();
   await page.getByText("Disconnect ChatGPT from your Offtasks account?").waitFor();
@@ -31,9 +31,9 @@ try {
   await page.getByRole("button", { name: "Switch account" }).click();
   await page.getByText("Coming soon").waitFor();
   await page.waitForTimeout(650);
-  assert.equal(await page.getByText("Connected · Read and edit").count(), 0);
+  assert.equal(await page.getByText("Access allowed · Read and edit").count(), 0);
   await page.goto(`${base}?mode=retry`);
-  await page.getByText("Connected · Read and edit").waitFor();
+  await page.getByText("Access allowed · Read and edit").waitFor();
   await page.getByRole("button", { name: "Disconnect" }).click();
   await page.getByRole("button", { name: "Disconnect", exact: true }).last().click();
   await page.getByRole("alert").waitFor();

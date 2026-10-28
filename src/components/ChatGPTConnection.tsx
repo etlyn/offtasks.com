@@ -99,7 +99,7 @@ export function ChatGPTConnection({ ownerId, connection }: { ownerId: string; co
           <p className="text-[12px] text-zinc-500 dark:text-zinc-400" aria-live="polite">
             {view.phase === "loading" && "Checking connection…"}
             {view.phase === "error" && "Connection status unavailable"}
-            {value?.status === "authorized" && (value.permissions.includes("write") ? "Connected · Read and edit" : "Connected · Read only")}
+            {value?.status === "authorized" && (value.permissions.includes("write") ? "Access allowed · Read and edit" : "Access allowed · Read only")}
             {value?.status === "reconnect" && "Reconnect in ChatGPT"}
             {(value?.status === "unavailable" || value?.status === "disconnected") && (value.installUrl ? "Not connected" : "Coming soon")}
           </p>
