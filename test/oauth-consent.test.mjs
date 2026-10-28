@@ -265,15 +265,50 @@ test("failed/uncertain provider approval never auto-replays or revokes an older 
   });
 });
 
-test("provider auto-consented redirect-only response fails closed without client/callback identity", async () => {
-  const { api, calls } = fixture({
-    fetch: async () =>
-      new Response(
-        JSON.stringify({ redirect_url: "https://evil.test/?code=private" }),
-      ),
+test("auto-approved reconnect reconstructs owner/client/callback before asking for Offtasks permission", async () => {
+  const calls=[];
+  const {api}=fixture({
+    fetch: async (_url, options) => {
+      calls.push({method:options.method});
+      return Response.json({redirect_url: callback + "&code=synthetic-code&state=synthetic-state"});
+    },
+    rpc: async (name,args) => {
+      calls.push({name,args});
+      if(name === "offtask_oauth_approved_authorization_details") return {data:{...authorization,state:"synthetic-state"},error:null};
+      if(name === "offtask_oauth_consent_details") return {data:policy,error:null};
+      return {data:{grant:{revision:"2"}},error:null};
+    },
   });
-  await assert.rejects(api.load(id, owner), { reason: "previous" });
-  assert.equal(calls.length, 0);
+  const context=await api.load(id,owner);
+  assert.equal(context.authorization.client.id,client);
+  const redirect=await api.decide(context,"approve",["read"],"reconnect-key");
+  assert.equal(new URL(redirect).searchParams.get("code"),"synthetic-code");
+  assert.equal(calls.filter(call=>call.method === "POST").length,0);
+  assert.equal(calls.at(-1).name,"offtask_oauth_set_consent");
+  assert.equal(calls.at(-1).args.authorization_id,id);
+});
+
+test("auto-approved reconnect rejects a mismatched callback, state or owner", async () => {
+  for (const [returned, approved] of [
+    ["https://evil.test/?code=private&state=synthetic-state",{...authorization,state:"synthetic-state"}],
+    [callback+"&code=private&state=wrong",{...authorization,state:"synthetic-state"}],
+    [callback+"&code=private&state=synthetic-state",{...authorization,user:{...authorization.user,id:"wrong"},state:"synthetic-state"}],
+  ]) {
+    const {api}=fixture({fetch:async()=>Response.json({redirect_url:returned}),rpc:async()=>({data:approved,error:null})});
+    await assert.rejects(api.load(id,owner),ConsentError);
+  }
+});
+
+test("denying auto-approved reconnect returns a denial, never its authorization code", async () => {
+  const {api}=fixture({
+    fetch:async()=>Response.json({redirect_url:callback+"&code=private&state=synthetic-state"}),
+    rpc:async name=>({data:name === "offtask_oauth_approved_authorization_details"?{...authorization,state:"synthetic-state"}:policy,error:null}),
+  });
+  const context=await api.load(id,owner);
+  const redirect=new URL(await api.decide(context,"deny",["read"],"deny-reconnect"));
+  assert.equal(redirect.searchParams.get("error"),"access_denied");
+  assert.equal(redirect.searchParams.get("state"),"synthetic-state");
+  assert.equal(redirect.searchParams.has("code"),false);
 });
 
 test("redirect validation binds exact registered host/path/query and standard response fields", () => {

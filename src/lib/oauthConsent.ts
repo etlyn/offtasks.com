@@ -32,6 +32,8 @@ export interface ConsentContext {
   authorization: AuthorizationDetails;
   policy: ConsentPolicy;
   ownerId: string;
+  /** Validated provider callback for an already-approved authorization. */
+  preapprovedRedirect?: string;
 }
 export class ConsentError extends Error {
   readonly reason:
@@ -327,18 +329,35 @@ export function createOAuthConsentService(deps: ConsentDependencies) {
       authorizationId: string,
       ownerId: string,
     ): Promise<ConsentContext> {
-      const authorization = parseAuthorization(
-        await providerRequest(ownerId, authorizationId),
-        authorizationId,
-        ownerId,
-      );
+      const providerResult = object(await providerRequest(ownerId, authorizationId));
+      let authorization: AuthorizationDetails;
+      let preapprovedRedirect: string | undefined;
+      if (providerResult.redirect_url && !providerResult.authorization_id) {
+        // Supabase auto-approves prior provider consent. Reconstruct the exact
+        // owner/client/callback from server-owned provider state before showing
+        // Offtasks permissions; the provider response alone is insufficient.
+        const approved = object(await rpc(ownerId, "offtask_oauth_approved_authorization_details", {
+          authorization_id: authorizationId,
+        }));
+        authorization = parseAuthorization(approved, authorizationId, ownerId);
+        preapprovedRedirect = verifiedProviderRedirect(providerResult.redirect_url, authorization.redirect_uri);
+        const response = new URL(preapprovedRedirect).searchParams;
+        const expectedState = approved.state;
+        if (
+          !response.get("code") || response.has("error") ||
+          (expectedState !== null && typeof expectedState !== "string") ||
+          (expectedState ? response.get("state") !== expectedState : response.has("state"))
+        ) throw new ConsentError("invalid");
+      } else {
+        authorization = parseAuthorization(providerResult, authorizationId, ownerId);
+      }
       const policy = parsePolicy(
         await rpc(ownerId, "offtask_oauth_consent_details", {
           oauth_client_id: authorization.client.id,
         }),
         authorization.client.id,
       );
-      return { authorization, policy, ownerId };
+      return { authorization, policy, ownerId, ...(preapprovedRedirect ? { preapprovedRedirect } : {}) };
     },
     async decide(
       context: ConsentContext,
@@ -346,7 +365,7 @@ export function createOAuthConsentService(deps: ConsentDependencies) {
       permissions: ConsentPermission[],
       requestKey: string,
     ): Promise<string> {
-      const { authorization, policy, ownerId } = context;
+      const { authorization, policy, ownerId, preapprovedRedirect } = context;
       const cancelPending = async (revision: string) => {
         try {
           await rpc(ownerId, "offtask_oauth_cancel_pending", {
@@ -386,6 +405,15 @@ export function createOAuthConsentService(deps: ConsentDependencies) {
         await cancelPending(policy.grant.revision);
       }
       try {
+        if (preapprovedRedirect) {
+          const approved = verifiedProviderRedirect(preapprovedRedirect, authorization.redirect_uri);
+          if (decision === "approve") return approved;
+          const denied = new URL(authorization.redirect_uri);
+          denied.searchParams.set("error", "access_denied");
+          const state = new URL(approved).searchParams.get("state");
+          if (state) denied.searchParams.set("state", state);
+          return verifiedProviderRedirect(denied.href, authorization.redirect_uri);
+        }
         const result = object(
           await providerRequest(
             ownerId,

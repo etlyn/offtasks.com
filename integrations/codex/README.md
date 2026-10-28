@@ -100,7 +100,8 @@ code exchange, refresh and revocation before enabling. See
 ## Production rollout and remaining gates
 
 The existing `nqsclqtpnosuhoobgyxc` database has the planner/import, integration,
-OAuth-policy, grant-checker and provider-approval-binding migrations. The
+OAuth-policy, grant-checker and provider-approval-binding migrations; the
+returning-authorization migration follows in this release. The
 `delete-account` function is deployed. The hosted service currently runs with
 `OFFTASK_MCP_ENABLED=false` at `https://offtasks-mcp-qjloputrxa-ul.a.run.app`;
 its 503 response is intentional and is not proof of provider readiness.

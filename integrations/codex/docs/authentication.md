@@ -21,6 +21,8 @@ Apply the existing planner/import chain, then these migrations in order:
 - `20261026020000_codex_oauth_grant_checker.sql`: service-only fresh grant check.
 - `20261028000000_codex_bind_provider_approval.sql`: require matching provider
   approval before pending permissions can activate.
+- `20261028010000_codex_resume_authorization.sql`: reconstruct a returning
+  owner’s approved provider request without exposing an authorization code.
 
 They do not enable OAuth, seed a client, register callbacks or install the hook.
 Register the exact client/callback supplied by the host. As an operator, add its
@@ -41,9 +43,10 @@ provider-approved owner/client authorization can activate it; an old session
 refresh or unrelated unapproved request cannot elevate access. The UI does not blindly replay uncertain provider
 decisions or claim that a connection is ready. Continue is an explicit link to
 the previously verified registered callback plus standard OAuth response fields.
-An already-consented redirect-only response cannot establish that context and
-fails closed. Restart using `prompt=consent` if supported by the deployed
-provider/host, or revoke the previous grant before reconnecting.
+For an already-consented redirect-only response, the app retrieves matching
+owner/client/callback details from server-owned provider state, verifies the
+callback and state, and asks the user to review Offtasks permissions again.
+Mismatched or expired requests fail closed.
 
 Compose the hook with any existing shared-identity hook through normal Auth
 configuration. **Do not replace an existing hook blindly.** Ordinary sessions and
