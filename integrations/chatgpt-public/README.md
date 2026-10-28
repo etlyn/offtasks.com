@@ -13,12 +13,14 @@ Offtasks client policy or MCP allowlist entry. Once the portal reveals its exact
 callback, replace the temporary URI; do not enable access until the policy and
 authorization paths have been reviewed and tested.
 
-The deployed connection status currently allows one enabled ChatGPT client.
-Supporting separate development/public clients requires tested status and
-revocation semantics, or an explicitly reviewed alternative that preserves the
-existing private connection. Supabase supports multiple exact redirect URIs but
-recommends separate clients per environment. The portal also needs a verified
-MCP domain challenge and a dedicated UI origin.
+Migration `20261028050000` implements status and revocation for separate
+development/public clients, but it does not itself enable the public client.
+Confirm that it is deployed, and preserve the private connection, before any
+public policy or allowlist change. Supabase supports multiple exact redirect
+URIs but recommends separate clients per environment. The portal also needs a
+verified MCP domain challenge and a dedicated UI origin; the MCP server supports
+the challenge through `OFFTASK_OPENAI_DOMAIN_CHALLENGE` once the portal issues
+the exact value.
 
 With the public client UUID, create a new output directory:
 

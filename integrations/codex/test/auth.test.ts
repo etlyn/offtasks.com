@@ -362,6 +362,7 @@ test("grant checker cancels responses over 16KiB before buffering and counts enc
 
 test("disabled is the default and production activation requires explicit secure configuration", () => {
   assert.equal(loadConfig({}).enabled, false);
+  assert.throws(() => loadConfig({ OFFTASK_OPENAI_DOMAIN_CHALLENGE: "token\nother" }), /domain challenge/);
   assert.throws(() => loadConfig({ OFFTASK_MCP_ENABLED: "true" }));
   const env = {
     OFFTASK_MCP_ENABLED: "true",

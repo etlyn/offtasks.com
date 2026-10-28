@@ -10,6 +10,7 @@ export interface RuntimeConfig extends AuthConfig {
   cursorSecret: string;
   grantCheckUrl: string;
   grantCheckCredential: string;
+  domainVerificationToken?: string;
   bindHost: string;
   port: number;
 }
@@ -75,11 +76,17 @@ export function loadConfig(
     cursorSecret: env.OFFTASK_CURSOR_SECRET ?? "",
     grantCheckUrl: env.OFFTASK_GRANT_CHECK_URL ?? "",
     grantCheckCredential: env.OFFTASK_GRANT_CHECK_CREDENTIAL ?? "",
+    ...(env.OFFTASK_OPENAI_DOMAIN_CHALLENGE
+      ? { domainVerificationToken: env.OFFTASK_OPENAI_DOMAIN_CHALLENGE }
+      : {}),
     bindHost: env.OFFTASK_BIND_HOST ?? "127.0.0.1",
     port: Number(env.PORT ?? env.OFFTASK_PORT ?? "4100"),
   };
   if (!Number.isInteger(config.port) || config.port < 1 || config.port > 65_535)
     throw new Error("A valid server port is required.");
+  if (config.domainVerificationToken &&
+      (!/^[\x20-\x7e]{1,1024}$/.test(config.domainVerificationToken) || !config.domainVerificationToken.trim()))
+    throw new Error("The domain challenge must be a bounded, single-line token.");
   if (!enabled) return config;
   const resource = secureUrl(audience, "OFFTASK_MCP_RESOURCE");
   const authIssuer = secureUrl(issuer, "OFFTASK_OAUTH_ISSUER");
