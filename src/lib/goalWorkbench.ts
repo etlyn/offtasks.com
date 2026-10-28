@@ -85,7 +85,7 @@ export function safePlannerReturn(value: unknown): string {
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (url.pathname === "/oauth/consent") {
       const ids = url.searchParams.getAll("authorization_id");
-      return ids.length === 1 && uuid.test(ids[0])
+      return ids.length === 1 && /^[A-Za-z0-9]{32}$/.test(ids[0])
         ? `/oauth/consent?${new URLSearchParams({ authorization_id: ids[0] })}`
         : "/app";
     }

@@ -16,7 +16,7 @@ create table public.offtask_oauth_grants(
  client_id uuid not null references public.offtask_oauth_clients(client_id)on delete cascade,
  resource text not null,permissions text[]not null default '{}',active boolean not null default false,
  revision bigint not null default 1,grant_epoch bigint not null default 0,
- pending_permissions text[],pending_authorization_id uuid,pending_expires_at timestamptz,
+ pending_permissions text[],pending_authorization_id text check(pending_authorization_id is null or pending_authorization_id~'^[A-Za-z0-9]{32}$'),pending_expires_at timestamptz,
  updated_at timestamptz not null default now(),primary key(user_id,client_id),
  check(not active or public.offtask_oauth_permissions_valid(permissions)),
  check(pending_permissions is null or public.offtask_oauth_permissions_valid(pending_permissions))
@@ -50,13 +50,13 @@ begin
   'grant',case when g.user_id is null then null else public.offtask_oauth_grant_json(g)end);
 end $$;
 
-create function public.offtask_oauth_set_consent(oauth_client_id uuid,permissions text[],expected_revision text,authorization_id uuid,request_key text)
+create function public.offtask_oauth_set_consent(oauth_client_id uuid,permissions text[],expected_revision text,authorization_id text,request_key text)
 returns jsonb language plpgsql security definer set search_path=public,pg_temp as $$
 <<consent>>
 declare owner uuid:=public.offtask_oauth_owner();c public.offtask_oauth_clients;g public.offtask_oauth_grants;
  fingerprint text;prior public.offtask_integration_requests;result jsonb;
 begin
- if request_key is null or length(request_key)not between 8 and 200 or request_key!~'^[A-Za-z0-9_.:-]+$'or authorization_id is null or not public.offtask_oauth_permissions_valid(permissions)then raise exception using message='validation_failed',errcode='22023';end if;
+ if request_key is null or length(request_key)not between 8 and 200 or request_key!~'^[A-Za-z0-9_.:-]+$'or authorization_id is null or authorization_id!~'^[A-Za-z0-9]{32}$'or not public.offtask_oauth_permissions_valid(permissions)then raise exception using message='validation_failed',errcode='22023';end if;
  perform pg_advisory_xact_lock(hashtextextended('offtask-owner:'||owner::text,0));
  fingerprint:=encode(sha256(convert_to(jsonb_build_object('client_id',oauth_client_id,'permissions',permissions,'expected_revision',expected_revision,'authorization_id',authorization_id)::text,'UTF8')),'hex');
  select *into prior from public.offtask_integration_requests r where r.user_id=owner and r.operation='oauth.set_consent'and r.target=oauth_client_id::text and r.request_key=$5;
@@ -100,11 +100,11 @@ begin
  return result;
 end $$;
 
-create function public.offtask_oauth_cancel_pending(oauth_client_id uuid,authorization_id uuid,expected_revision text,request_key text)
+create function public.offtask_oauth_cancel_pending(oauth_client_id uuid,authorization_id text,expected_revision text,request_key text)
 returns jsonb language plpgsql security definer set search_path=public,pg_temp as $$
 declare owner uuid:=public.offtask_oauth_owner();g public.offtask_oauth_grants;fingerprint text;prior public.offtask_integration_requests;result jsonb;
 begin
- if request_key is null or length(request_key)not between 8 and 200 or request_key!~'^[A-Za-z0-9_.:-]+$'or authorization_id is null then raise exception using message='validation_failed',errcode='22023';end if;
+ if request_key is null or length(request_key)not between 8 and 200 or request_key!~'^[A-Za-z0-9_.:-]+$'or authorization_id is null or authorization_id!~'^[A-Za-z0-9]{32}$'then raise exception using message='validation_failed',errcode='22023';end if;
  perform pg_advisory_xact_lock(hashtextextended('offtask-owner:'||owner::text,0));
  fingerprint:=encode(sha256(convert_to(jsonb_build_object('client_id',oauth_client_id,'authorization_id',authorization_id,'expected_revision',expected_revision)::text,'UTF8')),'hex');
  select *into prior from public.offtask_integration_requests r where r.user_id=owner and r.operation='oauth.cancel_pending'and r.target=oauth_client_id::text and r.request_key=$4;
@@ -143,8 +143,8 @@ begin
  return jsonb_build_object('claims',claims);
 end $$;
 
-revoke all on function public.offtask_oauth_permissions_valid(text[]),public.offtask_oauth_owner(),public.offtask_oauth_grant_json(public.offtask_oauth_grants),public.offtask_oauth_consent_details(uuid),public.offtask_oauth_set_consent(uuid,text[],text,uuid,text),public.offtask_oauth_revoke_consent(uuid,text,text),public.offtask_oauth_cancel_pending(uuid,uuid,text,text),public.offtask_mcp_access_token_hook(jsonb)from public,anon,authenticated,service_role;
-grant execute on function public.offtask_oauth_consent_details(uuid),public.offtask_oauth_set_consent(uuid,text[],text,uuid,text),public.offtask_oauth_revoke_consent(uuid,text,text),public.offtask_oauth_cancel_pending(uuid,uuid,text,text)to authenticated;
+revoke all on function public.offtask_oauth_permissions_valid(text[]),public.offtask_oauth_owner(),public.offtask_oauth_grant_json(public.offtask_oauth_grants),public.offtask_oauth_consent_details(uuid),public.offtask_oauth_set_consent(uuid,text[],text,text,text),public.offtask_oauth_revoke_consent(uuid,text,text),public.offtask_oauth_cancel_pending(uuid,text,text,text),public.offtask_mcp_access_token_hook(jsonb)from public,anon,authenticated,service_role;
+grant execute on function public.offtask_oauth_consent_details(uuid),public.offtask_oauth_set_consent(uuid,text[],text,text,text),public.offtask_oauth_revoke_consent(uuid,text,text),public.offtask_oauth_cancel_pending(uuid,text,text,text)to authenticated;
 grant execute on function public.offtask_oauth_permissions_valid(text[])to service_role;
 grant usage on schema public to supabase_auth_admin;
 grant execute on function public.offtask_mcp_access_token_hook(jsonb)to supabase_auth_admin;

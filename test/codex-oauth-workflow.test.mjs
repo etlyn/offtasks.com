@@ -41,7 +41,7 @@ test("local consent → SQL hook → signed token → fresh SQL checker rejects 
       OAUTH_CLIENT,
       ["read", "write"],
       revision,
-      "66666666-6666-4666-8666-666666666666",
+      "0123456789abcdefghijklmnopqrstuv",
       `workflow-consent-${++request}`,
     ]);
   };

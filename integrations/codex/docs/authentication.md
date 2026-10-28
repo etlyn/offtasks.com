@@ -28,7 +28,7 @@ disabled. Never copy production secrets into staging.
 Configure the provider's authorization path as `/oauth/consent`. This page uses
 an ordinary signed-in session, validates current provider authorization details
 and server-owned policy, and offers read-only or read-and-write access. It has
-no planner taskbar. Login return retains only the authorization UUID; credentials
+no planner taskbar. Login return retains only the opaque authorization ID; credentials
 and external URLs are discarded. The isolated REST adapter uses official Auth
 endpoints without upgrading the application's older Supabase SDK.
 

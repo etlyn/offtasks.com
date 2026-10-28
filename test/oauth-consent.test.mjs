@@ -16,7 +16,9 @@ import {
 import { screenForPath } from "../src/analytics-routes.ts";
 
 const owner = "11111111-1111-4111-8111-111111111111";
-const id = "22222222-2222-4222-8222-222222222222";
+// Supabase uses an opaque SecureAlphanumeric(32), not its row UUID.
+const id = "0123456789abcdefghijklmnopqrstuv";
+const otherAuthorizationId = "abcdefghijklmnopqrstuvwxyz234567";
 const client = "33333333-3333-4333-8333-333333333333";
 const callback = "https://client.example.test/oauth/callback?registered=one";
 const authorization = {
@@ -84,6 +86,8 @@ test("consent login return retains one valid opaque request ID and strips tokens
     null,
   );
   assert.equal(authorizationIdFromSearch("?authorization_id=../../user"), null);
+  assert.equal(authorizationIdFromSearch(`?authorization_id=${owner}`), null);
+  assert.equal(authorizationIdFromSearch(`?authorization_id=${id}0`), null);
   const route = consentRoute(id);
   assert.equal(
     safePlannerReturn(
@@ -392,7 +396,7 @@ test("Deny leaves a different authorization's pending intent alone", async () =>
     permissions: ["read"],
     active: true,
     revision: "7",
-    pending_authorization_id: owner,
+    pending_authorization_id: otherAuthorizationId,
   };
   await api.decide(context, "deny", ["read"], "deny-key");
   assert.equal(

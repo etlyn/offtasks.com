@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import{createCodexDatabaseFixture,OWNER_A as A,OWNER_B as B}from'./helpers/codex-database.mjs';
-const C='33333333-3333-4333-8333-333333333333',OTHER='44444444-4444-4444-8444-444444444444',AUTH='55555555-5555-4555-8555-555555555555';
+const C='33333333-3333-4333-8333-333333333333',OTHER='44444444-4444-4444-8444-444444444444',AUTH='0123456789abcdefghijklmnopqrstuv',OTHER_AUTH='abcdefghijklmnopqrstuvwxyz234567';
 const resource='https://mcp.example.test/mcp';
 async function setup(t){
  const f=await createCodexDatabaseFixture(t),{db,owner}=f;
@@ -11,7 +11,7 @@ async function setup(t){
  await db.query('insert into offtask_oauth_clients(client_id,client_name,resource,allowed_permissions,enabled)values($1,$2,$3,$4,true)',[C,'Private MCP',resource,['read','write']]);
  await owner(A);let key=0;
  const details=async(client=C)=>(await db.query('select offtask_oauth_consent_details($1::uuid) result',[client])).rows[0].result;
- const save=async(perms=['read'],revision=null,requestKey=`consent-request-${++key}`)=>(await db.query('select offtask_oauth_set_consent($1::uuid,$2::text[],$3,$4::uuid,$5) result',[C,perms,revision,AUTH,requestKey])).rows[0].result;
+ const save=async(perms=['read'],revision=null,requestKey=`consent-request-${++key}`)=>(await db.query('select offtask_oauth_set_consent($1::uuid,$2::text[],$3,$4::text,$5) result',[C,perms,revision,AUTH,requestKey])).rows[0].result;
  const revoke=async(revision,key=`revoke-request-${++key}`)=>(await db.query('select offtask_oauth_revoke_consent($1::uuid,$2,$3) result',[C,revision,key])).rows[0].result;
  const event=(method='oauth_provider/authorization_code',client=C)=>({user_id:A,authentication_method:method,claims:{sub:A,client_id:client,aud:'authenticated',role:'authenticated',session_id:'66666666-6666-4666-8666-666666666666',iat:1793000000,exp:1793003600,iss:'https://example.supabase.co/auth/v1',email:'test@example.test',phone:'',aal:'aal1',is_anonymous:false,user_metadata:{offtasks_mcp:{permissions:['read','write']}}}});
  const hook=async(input=event())=>{await db.exec('reset role;set role supabase_auth_admin');try{return(await db.query('select offtask_mcp_access_token_hook($1::jsonb) result',[JSON.stringify(input)])).rows[0].result;}finally{await owner(A);}};
@@ -49,6 +49,7 @@ test('ordinary/other clients remain unchanged and user metadata cannot grant acc
  await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({client_id:C})]);await assert.rejects(()=>details(),/first-party session/);await assert.rejects(()=>save(),/first-party session/);
  await db.query("select set_config('request.jwt.claims','{}',false)");
  await assert.rejects(()=>save(['write']),/validation_failed/);await assert.rejects(()=>save(['read','delete']),/validation_failed/);
+ await assert.rejects(()=>db.query('select offtask_oauth_set_consent($1::uuid,$2::text[],$3,$4::text,$5)',[C,['read'],null,'55555555-5555-4555-8555-555555555555','bad-auth-id-key']),/validation_failed/);
  await db.exec('reset role');await db.query("update offtask_oauth_clients set allowed_permissions=array['read']where client_id=$1",[C]);await owner(A);
  await assert.rejects(()=>save(['read','write']),/exceed client policy/);
  await db.exec('reset role');await db.query('update offtask_oauth_clients set enabled=false where client_id=$1',[C]);await owner(A);await assert.rejects(()=>details(),/not enabled/);
@@ -64,8 +65,9 @@ test('expired pending intent and mismatched identities never issue MCP claims',a
 test('denying the matching pending request cannot revoke active access or undo completed token issuance',async t=>{
  const{db,details,save,hook,event}=await setup(t);await save();const active=await hook();let g=(await details()).grant;
  const pending=await save(['read','write'],g.revision);assert.equal(pending.grant.pending_authorization_id,AUTH);
- const cancel=async(rev,authID=AUTH,key='cancel-pending-key')=>(await db.query('select offtask_oauth_cancel_pending($1::uuid,$2::uuid,$3,$4) result',[C,authID,rev,key])).rows[0].result;
- await assert.rejects(()=>cancel(pending.grant.revision,OTHER,'wrong-auth-key'),/pending authorization changed/);
+ const cancel=async(rev,authID=AUTH,key='cancel-pending-key')=>(await db.query('select offtask_oauth_cancel_pending($1::uuid,$2::text,$3,$4) result',[C,authID,rev,key])).rows[0].result;
+ await assert.rejects(()=>cancel(pending.grant.revision,OTHER_AUTH,'wrong-auth-key'),/pending authorization changed/);
+ await assert.rejects(()=>cancel(pending.grant.revision,'../invalid','invalid-auth-key'),/validation_failed/);
  const cancelled=await cancel(pending.grant.revision);assert.equal(cancelled.grant.active,true);assert.deepEqual(cancelled.grant.permissions,['read']);assert.equal(cancelled.grant.pending_authorization_id,null);assert.equal(cancelled.grant.grant_revision,active.claims.offtasks_mcp.grant_revision);
  assert.deepEqual(await cancel(pending.grant.revision),cancelled);
  assert.deepEqual((await hook(event('token_refresh'))).claims.offtasks_mcp.permissions,['read']);

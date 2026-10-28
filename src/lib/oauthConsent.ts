@@ -47,9 +47,10 @@ export class ConsentError extends Error {
     this.reason = reason;
   }
 }
-const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// Supabase Auth generates this opaque value with SecureAlphanumeric(32).
+const authorizationIdPattern = /^[A-Za-z0-9]{32}$/;
 export const validAuthorizationId = (value: unknown): value is string =>
-  typeof value === "string" && uuid.test(value);
+  typeof value === "string" && authorizationIdPattern.test(value);
 export const consentRoute = (id: string) =>
   `/oauth/consent?${new URLSearchParams({ authorization_id: id })}`;
 export function authorizationIdFromSearch(search: string): string | null {
