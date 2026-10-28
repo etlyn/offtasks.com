@@ -1,10 +1,10 @@
 # Authentication and private connection setup
 
-Disabled by default. The resource server, first-party consent UI, Supabase
-token hook and current-grant checker are implemented. Additive migrations are
-applied to the existing shared project and Cloud Run hosts a disabled service.
-Supabase remains the authorization server; provider configuration and a real
-ChatGPT/Codex connection have not yet been completed.
+The source defaults to disabled. The existing shared Supabase project now has
+the additive migrations, OAuth server and tested token hook configured. Cloud
+Run is enabled for one registered Codex client; individual users must consent.
+A disposable account verified the provider flow, but real user, ChatGPT and
+two-client acceptance remain separate.
 
 ## Provider setup
 
@@ -24,8 +24,9 @@ Apply the existing planner/import chain, then these migrations in order:
 - `20261028010000_codex_resume_authorization.sql`: reconstruct a returning
   owner’s approved provider request without exposing an authorization code.
 
-They do not enable OAuth, seed a client, register callbacks or install the hook.
-Register the exact client/callback supplied by the host. As an operator, add its
+These migrations alone do not enable OAuth, seed clients, register callbacks or
+install the hook. The current deployment configured those separately for one
+Codex client. Register the exact client/callback supplied by any additional host. As an operator, add its
 real UUID to `offtask_oauth_clients` with the canonical HTTPS MCP resource,
 approved read/write permissions and explicit enabled state. Policies default to
 disabled. Never copy production secrets into staging.
@@ -48,10 +49,11 @@ owner/client/callback details from server-owned provider state, verifies the
 callback and state, and asks the user to review Offtasks permissions again.
 Mismatched or expired requests fail closed.
 
-Compose the hook with any existing shared-identity hook through normal Auth
-configuration. **Do not replace an existing hook blindly.** Ordinary sessions and
-unrelated clients retain their claims. Verify authorization-code + PKCE, denial,
-refresh and revocation with the real provider/host before enabling MCP.
+The shared project had no existing access-token hook when this one was installed.
+**Do not replace an existing hook blindly.** Ordinary sessions and unrelated
+clients retain their claims. Real-provider authorization-code + PKCE, refresh,
+revocation and returning consent passed with a disposable account; denial and
+other boundaries have local tests. Actual target-host acceptance remains open.
 
 ## Resource tokens and explicit app access
 
@@ -97,11 +99,10 @@ never modifies provider tables.
 
 Provider storage is **not an app-owned schema**. The checker pins official Auth
 source `c3348e8f1cb31454e9783e4eb9eab1e71ad9652f` and validates expected column
-types. Verify the deployed version before rollout. Session timebox, inactivity
-and low-AAL policies also depend on provider configuration unavailable locally;
-row presence does not reproduce them. Verify their actual deployed behavior and
-adapt the provider/checker arrangement before enabling if needed. Local schema
-fixtures and signed-token tests do not establish hosted acceptance.
+types. The deployed session timebox and inactivity limits were disabled at rollout;
+row presence alone does not reproduce policies if those settings change. Recheck
+the provider version, session configuration and this checker before such changes.
+Local schema fixtures and signed-token tests do not establish host acceptance.
 
 An independently verified external checker can optionally replace the built-in
 RPC by setting **both** `OFFTASK_GRANT_CHECK_URL` and
@@ -132,8 +133,8 @@ checker needs no separate checker endpoint or credential.
 For a verified private configuration, run `node --env-file=.env dist/start.js` behind HTTPS
 or a supported private tunnel. Static Vite hosting does not run this service.
 Preserve Host/Authorization, apply rate limits and avoid authorization/body logs.
-`/health` reports configuration state, not provider readiness. Keep enablement
-false until real checks pass.
+`/health` reports configuration state, not provider or host readiness. Keep a
+new deployment disabled until its provider checks pass.
 
 Verify discovery/challenge, linking, owned-record reads, stale/read-only denial,
 refresh/revocation and two-client sync. Use MCP Inspector, then actual ChatGPT and

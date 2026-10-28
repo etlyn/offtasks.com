@@ -60,10 +60,11 @@ matching authorization before pending permissions can activate.
 
 On October 28 the owner chose the existing shared Supabase project, rather than
 creating staging. Additive planner/import, integration and OAuth migrations and
-the app-only deletion function are deployed. A Cloud Run endpoint is deployed
-but disabled. Shared OAuth-server and token-hook configuration, exact client
-registration, real provider acceptance and host connection remain release gates.
-No model API key or agent scheduler is required. Assignment never grants
+the app-only deletion function are deployed. Cloud Run, the shared OAuth
+server and token hook are enabled for a single registered Codex client. A
+disposable account verified real provider consent, PKCE, local MCP read,
+refresh, revocation and reconnect; actual user/host and two-client acceptance
+remain. No model API key or agent scheduler is required. Assignment never grants
 repository access or starts execution.
 
 ## Validation and rollback
@@ -76,8 +77,8 @@ reject stale/foreign/revoked calls and observe changes in both clients. Widget
 bridge behavior must also be exercised in a supported ChatGPT host; Codex text
 support does not prove widget rendering.
 
-Keep the adapter privately disabled until those gates pass. Rollback starts by
-disabling its deployment and revoking its OAuth grants, not deleting user work.
+Keep new client policies disabled until their boundaries are verified. Rollback starts by
+disabling the adapter and revoking its OAuth grants, not deleting user work.
 Additive integration records remain for inspection. Do not drop populated
 tables or roll back shared identity/migrations without a backup and separate
 approval. The existing app and app-only deletion retain their identity boundary.

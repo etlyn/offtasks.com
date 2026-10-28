@@ -1,10 +1,11 @@
 # Offtasks Codex / ChatGPT integration
 
-The MCP service is **disabled by default**. On October 28, 2026, the owner chose
-the existing shared Supabase project instead of a separate staging project. The
-additive database migrations and app-only deletion function are deployed; Cloud
-Run hosts a disabled service. OAuth server, client policy and the shared token
-hook remain unconfigured, so this is not yet a connected or usable integration.
+The MCP service defaults to disabled in source. On October 28, 2026, the owner
+chose the existing shared Supabase project instead of separate staging. The
+additive migrations, deletion function, consent route and OAuth policy are
+deployed. Cloud Run is enabled for one pre-registered Codex client; each user
+must sign in and explicitly choose Offtasks permissions. A real user connection
+and ChatGPT/widget acceptance are separate checks.
 
 ## What is implemented
 
@@ -71,9 +72,9 @@ gcloud run deploy offtasks-mcp --source . --project YOUR_PROJECT --region YOUR_R
 ```
 
 Allowing unauthenticated network access makes OAuth discovery reachable; MCP
-requests still require verified authorization when enabled. Keep the flag false
-until the documented provider and real-host checks pass. Store internal keys in
-a secret manager with access limited to the dedicated runtime service account.
+requests still require verified authorization when enabled. For new environments,
+validate provider configuration before enabling an explicitly registered client.
+Store internal keys in a secret manager limited to the dedicated runtime identity.
 
 Prepare a private `.env` from `.env.example` in this package, not web's Vite
 environment. Never prefix internal service/checker credentials with `VITE_`.
@@ -88,44 +89,45 @@ There is no insecure development-token or authentication bypass.
 
 ## Remaining provider-dependent verification — do not skip
 
-The consent UI, provider hook and SQL checker are implemented and tested locally.
-They have **not** been configured or exercised against a real Supabase provider.
-Supabase's standard OIDC scopes do not confer app write access. The checker uses
-a pinned provider storage contract and fails closed if that schema is absent or
-unsupported. Verify the deployed provider version and session policies, compose
-the hook with any existing shared-identity hook, and exercise actual consent,
-code exchange, refresh and revocation before enabling. See
+Supabase's standard OIDC scopes do not confer app write access. The deployed
+checker uses a pinned provider storage contract and fails closed if that schema
+is absent or unsupported. A disposable-account production exercise verified
+ordinary sign-in, consent, PKCE exchange, local MCP read against the real
+provider, refresh, revocation and re-consent. It did not establish a real
+user's Codex/ChatGPT connection or native two-client acceptance. See
 [authentication.md](docs/authentication.md).
 
 ## Production rollout and remaining gates
 
 The existing `nqsclqtpnosuhoobgyxc` database has the planner/import, integration,
-OAuth-policy, grant-checker and provider-approval-binding migrations; the
-returning-authorization migration follows in this release. The
-`delete-account` function is deployed. The hosted service currently runs with
-`OFFTASK_MCP_ENABLED=false` at `https://offtasks-mcp-qjloputrxa-ul.a.run.app`;
-its 503 response is intentional and is not proof of provider readiness.
+OAuth policy, grant checker, provider approval and returning-authorization
+migrations; the app-only `delete-account` function is also deployed. The shared
+Supabase OAuth server and access-token hook are configured, dynamic client
+registration is disabled, and an explicit Codex public client uses a fixed
+loopback callback. The live MCP endpoint is
+`https://offtasks-mcp-qjloputrxa-ul.a.run.app/mcp`. Requests without valid
+authorization receive a 401 challenge. Its Cloud Run identity can read only the
+dedicated runtime secrets through Secret Manager.
 
-No separate staging database was created. Before enabling the service, register
-the actual host's exact callback and client, verify the shared site's consent
-route and allowed origins, install the compatible shared-identity token hook,
-configure restricted runtime secrets and resource/issuer/client values, and
-exercise authorization, refresh and revocation against the real provider. Use
-an explicitly disposable account or approved data for validation. Do not modify
-other users' data. A healthy process alone is not host acceptance.
+No separate staging database was created. The temporary probe account and client
+were removed after provider verification; use disposable accounts or approved
+data for further validation. Actual Codex account approval, ChatGPT host and
+widget behavior, and two-client app synchronization remain separate acceptance
+checks. Additional hosts require a reviewed registration and explicit client
+policy; a healthy process alone is not host acceptance.
 
 ## Connection and metadata refresh
 
-After provider and host acceptance:
+Connect each intended host separately:
 
-- ChatGPT: Plugins → plus → Add custom MCP server. Enter the verified `/mcp`
-  endpoint or secure tunnel, configure provider authentication, review tools and
-  install privately. Test in a **new** conversation. Check widget support in that
-  actual host; text tools remain independent.
-- Codex: connect independently, for example
-  `codex mcp add offtasks --url https://YOUR_VERIFIED_HOST/mcp`, then
-  `codex mcp login offtasks`. For a predefined client, supply its real client ID
-  and register the exact callback the client displays; never guess it.
+- ChatGPT is not yet registered or connected. First register its exact client
+  and callback and add a matching explicit server policy; then create a private
+  custom MCP server, review its tools and test in a **new** conversation. Check
+  widget support in that actual host; text tools remain independent.
+- Codex on the configured Mac: run `codex mcp login offtasks`, sign in, select
+  access and continue back to Codex. The configured public client and fixed
+  callback are specific to this server URL and local callback port. A different
+  host or callback requires its own reviewed registration.
 - Portable `plugin.json`/`mcp.json` are provided. The `.invalid` endpoint is
   deliberately not installable. Replace it only in a private configured copy;
   manifests never contain secrets.
