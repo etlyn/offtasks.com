@@ -15,11 +15,22 @@ desktop and mobile. The service does not create or deliver reminders.
 
 The public portal may issue a different OAuth callback from the personal
 development plugin. Register only the exact callback it provides, with PKCE,
-and preserve existing account access. The current status migration permits one
-enabled ChatGPT client, so do not enable another one or replace the existing
-policy without first designing and testing multi-client status and revocation.
-Dynamic registration is intentionally disabled. Never put credentials, access
-tokens, or real user data in the submission package or test video.
+and preserve existing account access. Migration `20261028050000` supports
+separate private and public ChatGPT clients: account status aggregates the
+owner's grants, and disconnect revokes all of them using a revision-bound,
+idempotent operation. The migration does not register or enable a client; check
+the actual deployed migration before configuring any additional policy. Keep
+the public client outside the MCP allowlist and disabled in Offtasks until the
+real callback and policy have been reviewed and tested. Dynamic registration
+is intentionally disabled. Never put credentials, access tokens, or real user
+data in the submission package or test video.
+
+The MCP server can answer OpenAI's domain verification challenge at
+`/.well-known/openai-apps-challenge` when `OFFTASK_OPENAI_DOMAIN_CHALLENGE` is
+set to the exact value issued by the portal. The endpoint returns 404 when it is
+unset. Configure it only for the domain being verified, check the returned
+content exactly, and remove it when verification no longer requires it. A
+portal-issued challenge and a dedicated widget origin still need verification.
 
 ## Proposed review cases
 

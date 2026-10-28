@@ -83,6 +83,15 @@ export function createMcpHttpHandler(
       res.end();
       return;
     }
+    if (req.method === "GET" && path === "/.well-known/openai-apps-challenge") {
+      if (!config.domainVerificationToken) {
+        json(res, 404, { error: "not_found" });
+        return;
+      }
+      res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" });
+      res.end(config.domainVerificationToken);
+      return;
+    }
     if (req.method === "GET" && path === "/") {
       json(res, 200, {
         name: "Offtasks MCP",

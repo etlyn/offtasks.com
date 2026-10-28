@@ -144,6 +144,30 @@ test("protected-resource discovery is accurate and unauthenticated calls challen
   );
 });
 
+test("the optional domain challenge is exact, host-bound, and absent by default", async () => {
+  const path = `${base}/.well-known/openai-apps-challenge`;
+  assert.equal((await fetch(path)).status, 404);
+  config.domainVerificationToken = "synthetic-verification-token";
+  try {
+    const response = await fetch(path);
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get("content-type") ?? "", /^text\/plain/);
+    assert.equal(response.headers.get("cache-control"), "no-store");
+    assert.equal(await response.text(), "synthetic-verification-token");
+    // Node's fetch may normalize the Host header; issue a raw HTTP request so
+    // the handler actually receives the untrusted value.
+    const untrustedHostStatus = await new Promise<number>((resolve, reject) => {
+      request(path, { headers: { Host: "untrusted.example" } }, (response) => {
+        response.resume();
+        resolve(response.statusCode!);
+      }).on("error", reject).end();
+    });
+    assert.equal(untrustedHostStatus, 403);
+  } finally {
+    delete config.domainVerificationToken;
+  }
+});
+
 test("real SDK clients discover and call with request-local isolated principals", async () => {
   const clients = [
     new Client({ name: "first", version: "1.0.0" }),
