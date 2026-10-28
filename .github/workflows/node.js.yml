@@ -39,6 +39,7 @@ jobs:
       - name: Check isolated integration and data boundaries
         run: |
           yarn test:codex
+          yarn test:chatgpt-connection
           yarn test:database
           yarn test:delete-account
           yarn test:analytics

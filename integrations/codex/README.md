@@ -101,7 +101,7 @@ checker uses a pinned provider storage contract and fails closed if that schema
 is absent or unsupported. A disposable-account production exercise verified
 ordinary sign-in, consent, PKCE exchange, local MCP read against the real
 provider, refresh, revocation and re-consent. It did not establish a real
-user's Codex/ChatGPT connection or native two-client acceptance. See
+user's Codex/ChatGPT connection or native two-client acceptance at that time. See
 [authentication.md](docs/authentication.md).
 
 ## Production rollout and remaining gates
@@ -118,19 +118,18 @@ dedicated runtime secrets through Secret Manager.
 
 No separate staging database was created. The temporary probe account and client
 were removed after provider verification; use disposable accounts or approved
-data for further validation. Actual Codex account approval, ChatGPT host and
-widget behavior, and two-client app synchronization remain separate acceptance
-checks. Additional hosts require a reviewed registration and explicit client
-policy; a healthy process alone is not host acceptance.
+data for further validation. Additional hosts require a reviewed registration
+and explicit client policy; a healthy process alone is not host acceptance.
 
 ## Connection and metadata refresh
 
 Connect each intended host separately:
 
-- ChatGPT is not yet registered or connected. First register its exact client
-  and callback and add a matching explicit server policy; then create a private
-  custom MCP server, review its tools and test in a **new** conversation. Check
-  widget support in that actual host; text tools remain independent.
+- A private ChatGPT development plugin was connected to one user's account on
+  October 28, 2026. A read-only request returned tasks and the task widget
+  displayed after a retry; its initial host load failed twice. This does not
+  establish public availability, dependable first-load behavior, mobile host
+  acceptance, or a working connection for other users.
 - Codex on the configured Mac: run `codex mcp login offtasks`, sign in, select
   access and continue back to Codex. The configured public client and fixed
   callback are specific to this server URL and local callback port. A different
@@ -151,6 +150,12 @@ URL before the mobile Connect action is shown. A private custom MCP connection
 is not a public listing. "Authorized" reports the Offtasks grant and provider
 session, not whether the host has retained the plugin. Reconnect when necessary.
 Guest items remain on their device unless the user explicitly imports them.
+The web Account settings use the same status and revocation contract. They show
+Connect ChatGPT only as an active link when a verified public listing is
+configured; the private development plugin must not be used as that URL.
+
+See [public ChatGPT rollout](docs/chatgpt-publication.md) for review preparation
+and remaining registration, safety, and host acceptance gates.
 
 Existing Offtasks reminders are scheduled locally on the phone. The MCP service
 does not yet offer reminder creation or promise delivery on a closed phone:

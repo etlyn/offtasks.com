@@ -11,6 +11,8 @@ import { Label } from "./ui/label";
 import { Separator } from "./ui/separator";
 import { Search, LogOut } from "lucide-react";
 import type { Task } from "../types/task";
+import { ChatGPTConnection } from "./ChatGPTConnection";
+import { chatGPTConnection } from "../lib/chatgptConnectionClient";
 
 interface SettingsSheetProps {
   isOpen: boolean;
@@ -21,6 +23,7 @@ interface SettingsSheetProps {
   onToggleTask?: (id: string) => void;
   onLogout?: () => void;
   userEmail?: string;
+  ownerId?: string;
 }
 
 export function SettingsSheet({
@@ -32,6 +35,7 @@ export function SettingsSheet({
   onToggleTask,
   onLogout,
   userEmail,
+  ownerId,
 }: SettingsSheetProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const filteredTasks = useMemo(() => {
@@ -85,6 +89,9 @@ export function SettingsSheet({
                   Connected to Supabase
                 </p>
               </div>
+              {isOpen && ownerId && (
+                <ChatGPTConnection key={ownerId} ownerId={ownerId} connection={chatGPTConnection} />
+              )}
               <a href="https://etlyn.com/auth/account" className="text-sm text-sky-600 underline">Manage shared Etlyn account</a>
               {onLogout && (
                 <button
