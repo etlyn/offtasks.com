@@ -16,6 +16,8 @@ import { LoginScreen } from "@/screens/Login";
 import { SignupScreen } from "@/screens/Signup";
 import { ResetPasswordScreen } from "@/screens/ResetPassword";
 import { OAuthConsentScreen } from "@/screens/OAuthConsent";
+import { SignInCallbackScreen } from "@/screens/SignInCallback";
+import { isManagedSignInCallback } from "@/lib/googleAuth";
 
 const LoadingView = () => (
   <div className="flex min-h-screen items-center justify-center bg-[#f3fbf8] px-6 text-[#123532]">
@@ -77,58 +79,65 @@ const LoadingAwareRoute = ({ children }: { children: ReactNode }) => {
   return <>{children}</>;
 };
 
-const AppRoutes = () => (
-  <Routes>
-    <Route path="/" element={<LandingScreen />} />
-    <Route path="/privacy" element={<PrivacyScreen />} />
-    <Route path="/privacy-policy" element={<PrivacyScreen />} />
-    <Route path="/support" element={<SupportScreen />} />
-    <Route path="/contact" element={<SupportScreen />} />
-    <Route path="/terms" element={<TermsScreen />} />
-    <Route path="/oauth/consent" element={<OAuthConsentScreen />} />
-    <Route
-      path="/app"
-      element={
-        <ProtectedRoute>
-          <DashboardScreen />
-        </ProtectedRoute>
-      }
-    />
-    <Route
-      path="/login"
-      element={
-        <GuestRoute>
-          <LoginScreen />
-        </GuestRoute>
-      }
-    />
-    <Route
-      path="/signup"
-      element={
-        <GuestRoute>
-          <SignupScreen />
-        </GuestRoute>
-      }
-    />
-    <Route
-      path="/forgot-password"
-      element={
-        <GuestRoute>
-          <ForgotPasswordScreen />
-        </GuestRoute>
-      }
-    />
-    <Route
-      path="/reset-password"
-      element={
-        <LoadingAwareRoute>
-          <ResetPasswordScreen />
-        </LoadingAwareRoute>
-      }
-    />
-    <Route path="*" element={<Navigate to="/" replace />} />
-  </Routes>
-);
+const AppRoutes = () => {
+  const location = useLocation();
+  return (
+    <Routes>
+      <Route path="/" element={<LandingScreen />} />
+      <Route path="/privacy" element={<PrivacyScreen />} />
+      <Route path="/privacy-policy" element={<PrivacyScreen />} />
+      <Route path="/support" element={<SupportScreen />} />
+      <Route path="/contact" element={<SupportScreen />} />
+      <Route path="/terms" element={<TermsScreen />} />
+      <Route path="/oauth/consent" element={<OAuthConsentScreen />} />
+      <Route
+        path="/app"
+        element={
+          isManagedSignInCallback(location) ? (
+            <SignInCallbackScreen />
+          ) : (
+            <ProtectedRoute>
+              <DashboardScreen />
+            </ProtectedRoute>
+          )
+        }
+      />
+      <Route
+        path="/login"
+        element={
+          <GuestRoute>
+            <LoginScreen />
+          </GuestRoute>
+        }
+      />
+      <Route
+        path="/signup"
+        element={
+          <GuestRoute>
+            <SignupScreen />
+          </GuestRoute>
+        }
+      />
+      <Route
+        path="/forgot-password"
+        element={
+          <GuestRoute>
+            <ForgotPasswordScreen />
+          </GuestRoute>
+        }
+      />
+      <Route
+        path="/reset-password"
+        element={
+          <LoadingAwareRoute>
+            <ResetPasswordScreen />
+          </LoadingAwareRoute>
+        }
+      />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+};
 
 export default function App() {
   return (

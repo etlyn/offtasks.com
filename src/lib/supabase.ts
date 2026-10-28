@@ -1,6 +1,7 @@
 import { createClient, type PostgrestError } from "@supabase/supabase-js";
 import { getCurrentDate } from "@/hooks/useDate";
 import type { SupabaseTask, TaskGroup } from "@/types/supabase";
+import { isManagedSignInCallback } from "./googleAuth";
 
 const SUPABASE_URL = import.meta.env.VITE_PUBLIC_SUPABASE_URL as string | undefined;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_PUBLIC_SUPABASE_ANON_KEY as string | undefined;
@@ -13,7 +14,7 @@ if (!SUPABASE_ANON_KEY) {
   throw new Error("Missing VITE_PUBLIC_SUPABASE_ANON_KEY. Check your environment variables.");
 }
 
-export const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { flowType: "pkce", detectSessionInUrl: true, persistSession: true, autoRefreshToken: true } });
+export const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { flowType: "pkce", detectSessionInUrl: !isManagedSignInCallback(window.location), persistSession: true, autoRefreshToken: true } });
 
 export interface UserPreferences {
   user_id: string;

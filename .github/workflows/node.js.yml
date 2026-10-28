@@ -34,6 +34,7 @@ jobs:
         run: |
           yarn typecheck
           yarn test:password-recovery
+          yarn test:google-auth
 
       - name: Check isolated integration and data boundaries
         run: |

@@ -10,6 +10,7 @@
     "postbuild": "node scripts/create-spa-route-copies.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
+    "test:google-auth": "node --test test/google-auth.test.mjs",
     "test:delete-account": "rm -rf .test-dist/delete-account && tsc -p tsconfig.delete-account-tests.json && node --test .test-dist/delete-account/delete-account.test.js",
     "test:password-recovery": "rm -rf .test-dist/password-recovery && tsc -p tsconfig.password-recovery-tests.json && node --test .test-dist/password-recovery/test/password-recovery.test.js",
     "test:database": "node --test test/planner-database.test.mjs",
@@ -63,7 +64,8 @@
     "recharts": "^2.15.2",
     "sonner": "^2.0.3",
     "tailwind-merge": "*",
-    "vaul": "^1.1.2"
+    "vaul": "^1.1.2",
+    "@etlyn/etlyn-auth": "file:vendor/etlyn-etlyn-auth-0.1.0-alpha.5.tgz"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.3.14",

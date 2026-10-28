@@ -10,6 +10,7 @@ import {
 } from "@/components/public/AuthFields";
 import { Button } from "@/components/ui/button";
 import { supabaseClient } from "@/lib/supabase";
+import { GoogleSignInButton } from "@/components/public/GoogleSignInButton";
 import {
   getPasswordValidationError,
   mapAuthErrorMessage,
@@ -102,6 +103,7 @@ export const SignupScreen = () => {
       {error ? <AuthNotice tone="error">{error}</AuthNotice> : null}
       {message ? <AuthNotice tone="success">{message}</AuthNotice> : null}
 
+      <GoogleSignInButton returnTo={returnTo} disabled={isLoading} onBusyChange={setIsLoading} onError={setError} />
       <form className="space-y-5" onSubmit={submitHandler} noValidate>
         <AuthTextInput
           id="email"

@@ -173,6 +173,10 @@
   version "0.5.0-alpha.0"
   resolved "file:vendor/etlyn-analytics-0.5.0-alpha.0.tgz#cd09651fe2ffda1894f56c42f7a4035e60b7ce46"
 
+"@etlyn/etlyn-auth@file:vendor/etlyn-etlyn-auth-0.1.0-alpha.5.tgz":
+  version "0.1.0-alpha.5"
+  resolved "file:vendor/etlyn-etlyn-auth-0.1.0-alpha.5.tgz#c4b0a026b61f80d8f64d8316791a07ac174e69ae"
+
 "@floating-ui/core@^1.7.3":
   version "1.7.3"
   resolved "https://registry.npmjs.org/@floating-ui/core/-/core-1.7.3.tgz"
