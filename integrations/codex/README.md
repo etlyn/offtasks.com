@@ -155,6 +155,7 @@ Guest items remain on their device unless the user explicitly imports them.
 Existing Offtasks reminders are scheduled locally on the phone. The MCP service
 does not yet offer reminder creation or promise delivery on a closed phone:
 shared durable reminders and a verified push-delivery path are required first.
+See [the mobile rollout and reminder requirements](docs/chatgpt-mobile.md).
 
 Primary references:
 [connection/testing](https://developers.openai.com/plugins/deploy/connect-chatgpt),
