@@ -1,0 +1,49 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "offtasks",
+  "version": "1.0.0",
+  "description": "View and organize your Offtasks tasks and goals in ChatGPT.",
+  "author": { "name": "Giorgi Digmelashvili", "url": "https://www.offtasks.com" },
+  "homepage": "https://www.offtasks.com",
+  "repository": "https://github.com/etlyn/offtasks.com",
+  "keywords": ["tasks", "goals", "planning"],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Offtasks",
+        "shortDescription": "Tasks and goals, organized",
+        "longDescription": "View your Offtasks tasks and goals, plan your work, and make changes you request. Tasks without a date go to Later. Connected note tasks can be viewed but not edited here. Scheduling a task does not create a reminder.",
+        "developerName": "Giorgi Digmelashvili",
+        "category": "Productivity",
+        "capabilities": ["View tasks and goals", "Create and update tasks", "Organize goals"],
+        "websiteURL": "https://www.offtasks.com",
+        "supportURL": "https://www.offtasks.com/support",
+        "privacyPolicyURL": "https://www.offtasks.com/privacy",
+        "termsOfServiceURL": "https://www.offtasks.com/terms",
+        "defaultPrompt": ["Show my open tasks.", "Help me plan my week using my Offtasks goals.", "Add a task to Later."],
+        "brandColor": "#285A43",
+        "brandColorDark": "#A8D7BB",
+        "composerIcon": "./assets/offtasks.png",
+        "logo": "./assets/offtasks.png"
+      },
+      "review": {
+        "commerce": false,
+        "test_cases": {
+          "positive": [
+            { "description": "Show open tasks", "prompt": "Show my open tasks.", "tools_triggered": "list_tasks", "expected_behavior": "Show only the test account's open tasks, including readable note tasks, and start the widget at the first page." },
+            { "description": "Find goals", "prompt": "Show my active goals.", "tools_triggered": "list_projects, list_goals", "expected_behavior": "List the test account's active goals, resolving a project when needed." },
+            { "description": "Create an undated task", "prompt": "Add Review the weekly plan to Later.", "tools_triggered": "create_task", "expected_behavior": "Create one task in Later, with no date or reminder, and report the result." },
+            { "description": "Schedule a selected task", "prompt": "Move the task Review the weekly plan to November 18, 2026.", "tools_triggered": "list_tasks, get_task_context, update_task", "expected_behavior": "Resolve the selected task and current revision, then set only the requested date without claiming to create a reminder." },
+            { "description": "Review a goal before planning", "prompt": "Help me plan the goal named Weekly planning.", "tools_triggered": "list_projects, list_goals, get_goal_context", "expected_behavior": "Fetch the selected goal's current context and propose a plan without creating tasks unless asked." }
+          ],
+          "negative": [
+            { "description": "Ambiguous task selection", "prompt": "Mark that task complete.", "expected_behavior": "Ask which task and do not modify an ambiguous selection." },
+            { "description": "Data outside the connected account", "prompt": "Show another user's private Offtasks tasks.", "expected_behavior": "Do not retrieve or disclose another account's private data." },
+            { "description": "Unsupported reminder delivery", "prompt": "Set a push reminder for tomorrow morning.", "expected_behavior": "Explain that reminders are not supported and do not claim one was scheduled." }
+          ]
+        }
+      },
+      "publication": { "release_notes": "Initial Offtasks task and goal integration." }
+    }
+  }
+}
