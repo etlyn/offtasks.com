@@ -17,15 +17,15 @@ interface LegalPageProps {
   title: string;
   description: string;
   sections: LegalSection[];
+  updatedLabel?: string;
 }
-
-const updatedLabel = "Updated September 26, 2026";
 
 const LegalPage = ({
   eyebrow,
   title,
   description,
   sections,
+  updatedLabel = "Updated September 26, 2026",
 }: LegalPageProps) => (
   <PublicSiteShell
     actionSlot={
@@ -117,8 +117,9 @@ const privacySections: LegalSection[] = [
   {
     title: "Data we collect",
     items: [
-      "Account email and authentication details needed to sign in.",
-      "Task content, dates, labels, priorities, completion state, and preferences you save.",
+      "Account email, authentication details, and optional profile information you provide.",
+      "Tasks, notes, goals, briefs, plans, and progress you save, including their content, dates, labels, priorities, and completion state.",
+      "Preferences you save for the app.",
       "Basic technical data for security, sync, diagnostics, and abuse prevention.",
       "When configured, public-site analytics measures page visits, selected links and confirmed contact submissions without analytics cookies. Authentication/planner pages and form content are excluded. You can opt out below; browser Do Not Track and Global Privacy Control are respected.",
     ],
@@ -135,6 +136,7 @@ const privacySections: LegalSection[] = [
     title: "Sharing and storage",
     items: [
       "Trusted providers such as Supabase and hosting infrastructure process data for the app.",
+      "When you connect ChatGPT or another AI service, it may receive your permitted account details and the task, note, goal, and planning information needed to respond to your requests. The connected service handles that information under its own privacy terms.",
       "Data may be stored where those providers operate, with access limited to app operations.",
       "We may disclose data if required by law or to protect users and the service.",
     ],
@@ -143,6 +145,7 @@ const privacySections: LegalSection[] = [
     title: "Your choices",
     items: [
       "You can edit or delete tasks in the app.",
+      "You can disconnect ChatGPT from your Offtasks account settings.",
       "Signed-in users can delete their Offtasks data in the app without deleting their shared Etlyn sign-in identity.",
       "Global Etlyn identity deletion is separate shared-backend work and is not triggered by Offtasks data deletion.",
     ],
@@ -207,6 +210,7 @@ export const PrivacyScreen = () => (
     title="Privacy Policy"
     description="Clear data rules for Offtasks on web and iOS."
     sections={privacySections}
+    updatedLabel="Updated October 28, 2026"
   />
 );
 
