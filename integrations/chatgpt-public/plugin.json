@@ -32,8 +32,8 @@
           "positive": [
             { "description": "Show open tasks", "prompt": "Show my open tasks.", "tools_triggered": "list_tasks", "expected_behavior": "Show only the test account's open tasks, including readable note tasks, and start the widget at the first page." },
             { "description": "Find goals", "prompt": "Show my active goals.", "tools_triggered": "list_projects, list_goals", "expected_behavior": "List the test account's active goals, resolving a project when needed." },
-            { "description": "Create an undated task", "prompt": "Add Review the weekly plan to Later.", "tools_triggered": "create_task", "expected_behavior": "Create one task in Later, with no date or reminder, and report the result." },
-            { "description": "Schedule a selected task", "prompt": "Move the task Review the weekly plan to November 18, 2026.", "tools_triggered": "list_tasks, get_task_context, update_task", "expected_behavior": "Resolve the selected task and current revision, then set only the requested date without claiming to create a reminder." },
+            { "description": "Create an undated task", "prompt": "Add Prepare the weekly reflection to Later.", "tools_triggered": "create_task", "expected_behavior": "Create one task in Later, with no date or reminder, and report the result." },
+            { "description": "Schedule a selected task", "prompt": "Move the task Review the weekly plan to March 18, 2027.", "tools_triggered": "list_tasks, get_task_context, update_task", "expected_behavior": "Resolve the selected task and current revision, then set only the requested date without claiming to create a reminder." },
             { "description": "Review a goal before planning", "prompt": "Help me plan the goal named Weekly planning.", "tools_triggered": "list_projects, list_goals, get_goal_context", "expected_behavior": "Fetch the selected goal's current context and propose a plan without creating tasks unless asked." }
           ],
           "negative": [
@@ -43,7 +43,7 @@
           ]
         }
       },
-      "publication": { "release_notes": "Refines task-selection and account-boundary guidance for the Offtasks integration." }
+      "publication": { "release_notes": "Initial Offtasks task and goal integration with clear task selection and account boundaries." }
     }
   }
 }

@@ -1,19 +1,22 @@
 # Offtasks ChatGPT review walkthrough
 
-Status: **not recorded or submitted**. The dedicated reviewer account signed
-in to Offtasks and authorized the public portal draft. It was also connected
-separately to the existing ChatGPT development plugin for sample-only host
-rehearsals. The final public package and its bundled skill have not yet been
-installed and tested as a complete plugin; no hosted recording is available.
+Status: **recorded locally; submission pending**. The dedicated reviewer
+account signed in to Offtasks and authorized the public portal draft. It was
+also connected separately to the existing ChatGPT development plugin. A silent
+130-second sample-only recording shows the task widget, task creation and
+scheduling, a proposed goal plan, and the push-reminder limitation. Keep the
+unlisted reviewer URL in the portal rather than publishing it in this source.
+The final public package and bundled skill still require exact-version review.
 
 ## Prepare
 
 - Keep the dedicated sample-only account usable for future reviews. Do not
   record the owner's personal account, credentials, authorization codes, or
   unrelated content.
-- The account has two ordinary open tasks, a note-linked open task, and a goal
-  named **Weekly planning**. Confirm that **Review the weekly plan** does not
-  exist before the create-task case.
+- The account has a note-linked open task, a goal named **Weekly planning**,
+  and the existing open task **Review the weekly plan** for the schedule case.
+  Confirm **Prepare the weekly reflection** is absent before the create case;
+  the creation and scheduling cases must not depend on each other's order.
 - Test the exact version being submitted and verify that the reviewer can
   sign in independently. Provide credentials and steps only in the portal's
   reviewer-access fields, not in the ZIP or listing.
@@ -32,8 +35,8 @@ Run these prompts in order, showing the result of each:
 1. “Show my open tasks.” Confirm that the widget shows the sample account's
    open tasks, including the note-linked task.
 2. “Show my active goals.” Confirm the sample goal appears.
-3. “Add Review the weekly plan to Later.” Confirm one undated task is created.
-4. “Move the task Review the weekly plan to November 18, 2026.” Confirm its
+3. “Add Prepare the weekly reflection to Later.” Confirm one undated task is created.
+4. “Move the task Review the weekly plan to March 18, 2027.” Confirm its
    date changes and no reminder is claimed. Update the fixed date and case
    together if it is no longer suitable when review occurs.
 5. “Help me plan the goal named Weekly planning.” Confirm a proposal is shown
