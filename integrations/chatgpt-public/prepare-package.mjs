@@ -23,9 +23,8 @@ const mcp = {
       url: "https://offtasks-mcp-qjloputrxa-ul.a.run.app/mcp",
       extensions: {
         "com.openai": {
-          // The provider advertises email, profile and phone by default. The
-          // Offtasks permission grant uses the authenticated subject, so do not
-          // request those identity fields merely to access tasks and goals.
+          // Offtasks authorization uses the subject. Attempt to limit identity
+          // scopes, but verify the actual portal request: discovery may add more.
           auth: {
             type: "oauth",
             client: { mode: "provided", clientId, tokenEndpointAuthMethod: "none" },

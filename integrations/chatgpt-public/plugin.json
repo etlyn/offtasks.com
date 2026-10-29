@@ -43,7 +43,7 @@
           ]
         }
       },
-      "publication": { "release_notes": "Initial Offtasks task and goal integration with minimal identity access." }
+      "publication": { "release_notes": "Initial Offtasks task and goal integration." }
     }
   }
 }

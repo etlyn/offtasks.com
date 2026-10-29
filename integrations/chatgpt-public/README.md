@@ -35,11 +35,13 @@ upload a ZIP, authenticate a reviewer, submit for review, or publish a listing.
 Keep the live Connect action gated until OpenAI approves a public listing and
 the matching OAuth policy is configured and verified for independent accounts.
 
-The draft requests only the `openid` identity scope. Offtasks permissions are
-approved separately during the first-party consent flow. After upload, verify
-the saved MCP configuration and actual provider request: the portal may retain
-an existing connection's settings or add scopes despite package overrides. Test
-sign-in, refresh and revocation before treating the reduced scope as working.
+The package configures an `openid`-only identity scope override. Offtasks
+permissions are approved separately during the first-party consent flow. In an
+October 28, 2026 portal test, the actual authorization request still included
+`email`, `offline_access`, `profile`, and `phone` despite these overrides. The
+reason is unconfirmed; OpenAI may retain existing connection settings or add
+provider-advertised scopes. Do not claim reduced identity access until the
+actual request, sign-in, refresh, and revocation have been verified.
 
 Validation caveat (October 28, 2026): OpenAI's package guide documents the
 `extensions.com.openai.auth` server field used here, but the linked Agent
