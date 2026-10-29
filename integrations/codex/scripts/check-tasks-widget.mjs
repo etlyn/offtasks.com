@@ -18,8 +18,8 @@ const page2={tasks:[{id:'3',content:'Review the goal',date:null,isComplete:false
 const result=data=>({content:[],structuredContent:{schema_version:'1',fetched_at:new Date().toISOString(),ok:true,data}});
 const frame=document.getElementById('app');
 const bridge=new AppBridge(null,{name:'Synthetic fixture',version:'1.0.0'},{...(!location.search.includes('no-server-tools')?{serverTools:{}}:{}),...(!location.search.includes('no-message')?{message:{text:{}}}:{})});
-window.fixture={calls:[],messages:[],fail:false,theme:theme=>bridge.setHostContext({theme}),disconnect:()=>bridge.sendToolResult({content:[],isError:true,structuredContent:{ok:false,error:{code:'unauthenticated',message:'Reconnect fixture'}}})};
-bridge.oncalltool=async({name,arguments:args})=>{window.fixture.calls.push({name,args});if(window.fixture.fail)return{content:[],isError:true,structuredContent:{ok:false,error:{code:'unauthenticated',message:'Reconnect fixture'}}};return result(args.cursor?page2:page1);};
+window.fixture={calls:[],messages:[],fail:false,throwCall:false,theme:theme=>bridge.setHostContext({theme}),disconnect:()=>bridge.sendToolResult({content:[],isError:true,structuredContent:{ok:false,error:{code:'unauthenticated',message:'Reconnect fixture'}}})};
+bridge.oncalltool=async({name,arguments:args})=>{window.fixture.calls.push({name,args});if(window.fixture.throwCall)throw new Error('synthetic tool connection error');if(window.fixture.fail)return{content:[],isError:true,structuredContent:{ok:false,error:{code:'unauthenticated',message:'Reconnect fixture'}}};return result(args.cursor?page2:page1);};
 bridge.onmessage=async message=>{window.fixture.messages.push(message);return{};};
 bridge.oninitialized=async()=>{const later=location.search.includes('later-page');await bridge.sendToolInput({arguments:{status:'open',...(later?{cursor:'more'}:{})}});await bridge.sendToolResult(result(later?page2:page1));};
 void bridge.connect(new PostMessageTransport(frame.contentWindow,frame.contentWindow)).then(()=>{frame.src='/widget';});
@@ -58,6 +58,21 @@ try {
   await frame.getByText('Prepare the weekly plan').waitFor();
   await frame.getByRole('button', { name: 'Plan with ChatGPT' }).click();
   assert.match(await frame.getByLabel('Copy into your conversation').inputValue(), /Ask before making any changes/);
+  await page.goto(`${base}/?refresh-error`);
+  await frame.getByText('Prepare the weekly plan').waitFor();
+  await page.evaluate(() => { window.fixture.throwCall = true; });
+  await frame.getByRole('button', { name: 'Refresh tasks' }).click();
+  await frame.getByText('Direct refresh unavailable. Tap Refresh to ask ChatGPT for an updated list.').waitFor();
+  assert.equal(await frame.getByText('Prepare the weekly plan').count(), 0);
+  assert.equal(await page.evaluate(() => window.fixture.messages.length), 0);
+  await frame.getByRole('button', { name: 'Refresh tasks' }).click();
+  await page.waitForFunction(() => window.fixture.messages.length === 1);
+  assert.match(JSON.stringify(await page.evaluate(() => window.fixture.messages[0])), /same connected account/);
+  assert.match(JSON.stringify(await page.evaluate(() => window.fixture.messages[0])), /do not access another account or change any tasks/);
+  await page.goto(`${base}/?no-server-tools&no-message`);
+  await frame.getByText('Prepare the weekly plan').waitFor();
+  await frame.getByRole('button', { name: 'Refresh tasks' }).click();
+  assert.match(await frame.getByLabel('Copy into your conversation').inputValue(), /same connected account/);
   await page.goto(`${base}/?later-page`);
   await frame.getByText('Prepare the weekly plan').waitFor();
   assert.equal(await frame.getByText('Review the goal').count(), 0);
@@ -76,7 +91,7 @@ try {
   await frame.locator('html[data-theme="dark"]').waitFor();
   await frame.locator('body').screenshot({ path: '/tmp/offtasks-chatgpt-widget-dark.png' });
   assert.deepEqual(errors, []);
-  console.log(JSON.stringify({ fixture: 'synthetic MCP Apps host', narrowLight: true, narrowDark: true, escapedContent: true, pagination: true, laterPageStartsAtFirst: true, noServerToolsFallback: true, messageHandoff: true, copyFallback: true, disconnectedDataCleared: true, errors }));
+  console.log(JSON.stringify({ fixture: 'synthetic MCP Apps host', narrowLight: true, narrowDark: true, escapedContent: true, pagination: true, laterPageStartsAtFirst: true, noServerToolsFallback: true, messageHandoff: true, copyFallback: true, rejectedRefreshHandoff: true, disconnectedDataCleared: true, errors }));
 } finally {
   await browser.close();
   server.closeAllConnections();

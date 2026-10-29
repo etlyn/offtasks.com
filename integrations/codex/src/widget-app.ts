@@ -22,6 +22,7 @@ let args: RecordData = {},
   connected = false,
   stale = false;
 let activeRefresh: number | null = null;
+let refreshInChat = false;
 
 function element<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -42,7 +43,7 @@ function action(label: string, handler: () => void, cls?: string) {
 function clear() {
   sequence++;
   activeRefresh = null;
-  refreshButton.disabled = connected && !app.getHostCapabilities()?.serverTools;
+  refreshButton.disabled = !connected;
   data = {};
   area.replaceChildren();
   handoff.hidden = true;
@@ -116,6 +117,7 @@ function consume(result: unknown) {
     return false;
   }
   data = record(envelope.data);
+  refreshInChat = false;
   refreshTime = text(envelope.fetched_at);
   stale = false;
   render();
@@ -128,7 +130,9 @@ async function refresh() {
     return;
   }
   if (!app.getHostCapabilities()?.serverTools) {
-    notify("Ask to refresh Offtasks in the conversation.");
+    refreshInChat = true;
+    refreshButton.disabled = false;
+    notify("Tap Refresh to ask ChatGPT for the current plan.");
     return;
   }
   const current = ++sequence;
@@ -148,9 +152,8 @@ async function refresh() {
   } catch {
     if (current === sequence) {
       clear();
-      notify(
-        "Connection unavailable. Refresh to recheck the connected account."
-      );
+      refreshInChat = true;
+      notify("Direct refresh unavailable. Tap Refresh to ask ChatGPT for the current plan.");
     }
   } finally {
     if (activeRefresh === current) {
@@ -525,6 +528,7 @@ async function showTask(id: string) {
 
 app.ontoolinput = ({ arguments: input }) => {
   clear();
+  refreshInChat = false;
   args = { ...record(input) };
   notify("Reading current Offtasks records…");
 };
@@ -540,10 +544,15 @@ app.onhostcontextchanged = (context) => {
 app.onteardown = async () => {
   clear();
   connected = false;
+  refreshInChat = false;
   return {};
 };
 refreshButton.onclick = () => {
-  void refresh();
+  if (refreshInChat || !app.getHostCapabilities()?.serverTools) {
+    void message(
+      "Refresh the Offtasks plan for the same connected account and goal as the previous card. If the account or goal is unclear, ask me; do not access another account or save changes."
+    );
+  } else void refresh();
 };
 document.getElementById("open")!.onclick = () => {
   void open(url());
@@ -553,13 +562,13 @@ document.addEventListener("visibilitychange", () => {
     clear();
     refreshButton.disabled = false;
     notify("Refresh to load the current connected account.");
-  } else if (connected) void refresh();
+  } else if (connected && !refreshInChat) void refresh();
 });
 void app
   .connect()
   .then(() => {
     connected = true;
-    refreshButton.disabled = !app.getHostCapabilities()?.serverTools;
+    refreshButton.disabled = false;
     const theme = app.getHostContext()?.theme;
     if (theme) document.documentElement.dataset.theme = theme;
     if (!Object.keys(data).length)

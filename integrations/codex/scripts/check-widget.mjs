@@ -22,8 +22,8 @@ const data={goal:{id,title:'Synthetic fixture <img src=x onerror=window.__PWNED_
 const result=value=>({content:[{type:'text',text:JSON.stringify(value)}],structuredContent:{schema_version:'1',fetched_at:new Date().toISOString(),ok:true,data:value}});
 const frame=document.getElementById('app');const messages=!location.search.includes('no-message');
 const bridge=new AppBridge(null,{name:'Local synthetic fixture',version:'1.0.0'},{serverTools:{},openLinks:{},...(messages?{message:{text:{}}}:{})});
-window.fixture={calls:[],messages:[],nextUnauthorized:false,setTheme:theme=>bridge.setHostContext({theme}),stalePlan:()=>{data.plan.requirements_changed=true;return bridge.sendToolResult(result(data));},failure:()=>bridge.sendToolResult({content:[],isError:true,structuredContent:{ok:false,error:{code:'upstream_unavailable',message:'Fixture refresh unavailable'}}}),disconnect:()=>bridge.sendToolResult({content:[],isError:true,structuredContent:{ok:false,error:{code:'unauthenticated',message:'Reconnect fixture'}}})};
-bridge.oncalltool=async({name})=>{window.fixture.calls.push(name);if(window.fixture.nextUnauthorized){window.fixture.nextUnauthorized=false;return{content:[],isError:true,structuredContent:{ok:false,error:{code:'unauthenticated',message:'Reconnect fixture'}}};}if(name==='get_task_context')return result({task:{...data.tasks[0],description:'Selected task',acceptance_criteria:['Tests pass; no background execution.']},goal:data.goal,recent_updates:[]});return result(data);};
+window.fixture={calls:[],messages:[],nextUnauthorized:false,throwCall:false,setTheme:theme=>bridge.setHostContext({theme}),stalePlan:()=>{data.plan.requirements_changed=true;return bridge.sendToolResult(result(data));},failure:()=>bridge.sendToolResult({content:[],isError:true,structuredContent:{ok:false,error:{code:'upstream_unavailable',message:'Fixture refresh unavailable'}}}),disconnect:()=>bridge.sendToolResult({content:[],isError:true,structuredContent:{ok:false,error:{code:'unauthenticated',message:'Reconnect fixture'}}})};
+bridge.oncalltool=async({name})=>{window.fixture.calls.push(name);if(window.fixture.throwCall)throw new Error('synthetic tool connection error');if(window.fixture.nextUnauthorized){window.fixture.nextUnauthorized=false;return{content:[],isError:true,structuredContent:{ok:false,error:{code:'unauthenticated',message:'Reconnect fixture'}}};}if(name==='get_task_context')return result({task:{...data.tasks[0],description:'Selected task',acceptance_criteria:['Tests pass; no background execution.']},goal:data.goal,recent_updates:[]});return result(data);};
 bridge.onmessage=async value=>{window.fixture.messages.push(value);return{};};bridge.onopenlink=async()=>({});
 bridge.oninitialized=async()=>{await bridge.sendToolInput({arguments:{project_id:'11111111-1111-4111-8111-111111111111',goal_id:id}});await bridge.sendToolResult(result(data));};
 void bridge.connect(new PostMessageTransport(frame.contentWindow,frame.contentWindow)).then(()=>{frame.src='/widget';});
@@ -134,6 +134,16 @@ try {
   await frame
     .getByText("Requirements changed. Reconcile this plan before continuing.")
     .waitFor();
+  await page.goto(base + "/?refresh-error");
+  await frame.getByRole("heading", { name: /Synthetic fixture/ }).waitFor();
+  await page.evaluate(() => { window.fixture.throwCall = true; });
+  await frame.getByRole("button", { name: "Refresh", exact: true }).click();
+  await frame.getByText("Direct refresh unavailable. Tap Refresh to ask ChatGPT for the current plan.").waitFor();
+  assert.equal(await frame.getByRole("heading", { name: /Synthetic fixture/ }).count(), 0);
+  assert.equal(await page.evaluate(() => window.fixture.messages.length), 0);
+  await frame.getByRole("button", { name: "Refresh", exact: true }).click();
+  await page.waitForFunction(() => window.fixture.messages.length === 1);
+  assert.match(await page.evaluate(() => window.fixture.messages[0].content[0].text), /same connected account/);
   await page.goto(base + "/?no-message");
   await frame.getByRole("heading", { name: /Synthetic fixture/ }).waitFor();
   await frame
@@ -161,6 +171,7 @@ try {
       keyboardFocus: true,
       messageHandoff: true,
       copyFallback: true,
+      rejectedRefreshHandoff: true,
       disconnectClearsPrivateData: true,
       zeroMutations: true,
       errors,
