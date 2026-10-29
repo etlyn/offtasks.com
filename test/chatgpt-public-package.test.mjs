@@ -23,7 +23,7 @@ test("the public package requires a separate client and never overwrites a desti
   assert.deepEqual(auth, {
     type: "oauth",
     client: { mode: "provided", clientId: client, tokenEndpointAuthMethod: "none" },
-    baseScopes: ["openid"],
+    baseScopes: ["openid", "offline_access"],
     defaultScopes: [],
     oidcScopesSupported: ["openid"],
   });
