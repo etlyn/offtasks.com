@@ -51,6 +51,7 @@ jobs:
           else
             npm run build
           fi
+          yarn test:privacy
           touch ./build/.nojekyll
         env:
           VITE_PUBLIC_SITE_URL: https://www.offtasks.com

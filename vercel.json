@@ -16,6 +16,14 @@
       "destination": "https://storage.googleapis.com/etlyn_images/offtasks-review/:file"
     },
     {
+      "source": "/privacy",
+      "destination": "/privacy/index.html"
+    },
+    {
+      "source": "/privacy-policy",
+      "destination": "/privacy-policy/index.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

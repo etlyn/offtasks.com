@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "offtasks",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "View and organize your Offtasks tasks and goals in ChatGPT.",
   "author": { "name": "Giorgi Digmelashvili", "url": "https://www.offtasks.com" },
   "homepage": "https://www.offtasks.com",
@@ -43,7 +43,7 @@
           ]
         }
       },
-      "publication": { "release_notes": "Initial Offtasks task and goal integration with clear task selection and account boundaries." }
+      "publication": { "release_notes": "Clarifies the privacy policy for connected AI data, retention, recipients, and user controls." }
     }
   }
 }

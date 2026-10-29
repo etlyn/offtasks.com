@@ -6,10 +6,12 @@ import { PublicSiteShell } from "@/components/public/PublicSiteShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PRIVACY_URL, SUPPORT_URL } from "@/config/publicSite";
+import privacyPolicy from "@/config/privacyPolicy.json";
 
 interface LegalSection {
   title: string;
   items: string[];
+  links?: { label: string; href: string }[];
 }
 
 interface LegalPageProps {
@@ -88,6 +90,15 @@ const LegalPage = ({
                   </li>
                 ))}
               </ul>
+              {section.links && (
+                <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium text-teal-800">
+                  {section.links.map((link) => (
+                    <a key={link.href} href={link.href} className="underline underline-offset-4">
+                      {link.label}
+                    </a>
+                  ))}
+                </div>
+              )}
             </article>
           ))}
         </section>
@@ -112,45 +123,6 @@ const LegalPage = ({
     </main>
   </PublicSiteShell>
 );
-
-const privacySections: LegalSection[] = [
-  {
-    title: "Data we collect",
-    items: [
-      "Account email, authentication details, and optional profile information you provide.",
-      "Tasks, notes, goals, briefs, plans, and progress you save, including their content, dates, labels, priorities, and completion state.",
-      "Preferences you save for the app.",
-      "Basic technical data for security, sync, diagnostics, and abuse prevention.",
-      "When configured, public-site analytics measures page visits, selected links and confirmed contact submissions without analytics cookies. Authentication/planner pages and form content are excluded. You can opt out below; browser Do Not Track and Global Privacy Control are respected.",
-    ],
-  },
-  {
-    title: "How we use data",
-    items: [
-      "To run the Offtasks web and iOS task experience.",
-      "To sync your tasks, protect accounts, answer support, and improve reliability.",
-      "We do not sell personal data or use task content for advertising.",
-    ],
-  },
-  {
-    title: "Sharing and storage",
-    items: [
-      "Trusted providers such as Supabase and hosting infrastructure process data for the app.",
-      "When you connect ChatGPT or another AI service, it may receive your permitted account details and the task, note, goal, and planning information needed to respond to your requests. The connected service handles that information under its own privacy terms.",
-      "Data may be stored where those providers operate, with access limited to app operations.",
-      "We may disclose data if required by law or to protect users and the service.",
-    ],
-  },
-  {
-    title: "Your choices",
-    items: [
-      "You can edit or delete tasks in the app.",
-      "You can disconnect ChatGPT from your Offtasks account settings.",
-      "Signed-in users can delete their Offtasks data in the app without deleting their shared Etlyn sign-in identity.",
-      "Global Etlyn identity deletion is separate shared-backend work and is not triggered by Offtasks data deletion.",
-    ],
-  },
-];
 
 const supportSections: LegalSection[] = [
   {
@@ -207,10 +179,10 @@ const termsSections: LegalSection[] = [
 export const PrivacyScreen = () => (
   <LegalPage
     eyebrow="Privacy"
-    title="Privacy Policy"
-    description="Clear data rules for Offtasks on web and iOS."
-    sections={privacySections}
-    updatedLabel="Updated October 28, 2026"
+    title={privacyPolicy.title}
+    description={privacyPolicy.description}
+    sections={privacyPolicy.sections}
+    updatedLabel={privacyPolicy.updatedLabel}
   />
 );
 
