@@ -2,7 +2,19 @@
   "installCommand": "yarn install --frozen-lockfile --production=false",
   "buildCommand": "yarn build",
   "outputDirectory": "build",
+  "headers": [
+    {
+      "source": "/review-media/:file",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
+      ]
+    }
+  ],
   "rewrites": [
+    {
+      "source": "/review-media/:file",
+      "destination": "https://storage.googleapis.com/etlyn_images/offtasks-review/:file"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
