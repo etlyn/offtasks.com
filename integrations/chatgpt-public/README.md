@@ -53,7 +53,10 @@ The root plugin manifest passes its schema; the MCP configuration follows the
 OpenAI guide but does not pass the published portable MCP schema. The portal
 accepted and displayed this field in the saved 1.0.1 draft. The sample account
 authorized that draft, but the actual requested scopes remain broader than the
-override, as noted above. The 1.0.2 source has not been uploaded or reviewed.
+override, as noted above. Version 1.0.2 was submitted and rejected on October 29,
+2026 because the privacy policy did not clearly disclose all data uses. Version
+1.0.3 is prepared for a new review after the revised policy is published and
+verified.
 
 The sample-only host rehearsal showed tasks, goals, creation, scheduling, and a
 proposed plan. One ambiguous task-completion request initially changed a sample
