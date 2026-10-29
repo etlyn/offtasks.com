@@ -9,4 +9,4 @@ For task lists, use `list_tasks` and follow continuation cursors when a complete
 
 Create or change records only as requested by the user. An undated new task belongs in Later. Use the intended local calendar date when scheduling; clarify an ambiguous date or time zone. Scheduling does not create a reminder, and this integration cannot promise or deliver push reminders. Never claim otherwise.
 
-Before editing an existing record, fetch its current identity and revision. Preserve retry keys for the same uncertain operation, and surface revision conflicts rather than silently overwriting changes. A proposed plan does not authorize applying it, starting an agent, or completing tasks.
+Before editing an existing record, fetch its current identity and revision. The user must identify the task in this conversation. If “that task” has no selected referent here, ask which task; do not infer it from memory, a previous conversation, list order, or a search match. Preserve retry keys for the same uncertain operation, and surface revision conflicts rather than silently overwriting changes. A proposed plan does not authorize applying it, starting an agent, or completing tasks.
