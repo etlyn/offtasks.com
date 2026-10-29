@@ -1,10 +1,12 @@
 # Public ChatGPT plugin preparation
 
-This is a submission draft, not a published plugin. It uses the owner's chosen
-verified individual publisher name and the existing Offtasks icon. Its five
-positive and three negative review cases are proposals: run them against a
-dedicated sample account and record a reviewer-accessible video before review.
-Do not use the owner's account or include credentials in the package.
+This is a submission draft, not a published plugin. The portal selected a
+verified business identity whose displayed developer name is Giorgi
+Digmelashvili; it did not offer an Etlyn-named identity. The package uses the
+existing Offtasks icon. Its five positive and three negative review cases are
+proposals: run them against a dedicated sample account and record a
+reviewer-accessible video before review. Do not use the owner's account or
+include credentials in the package. See [the review walkthrough](./review-walkthrough.md).
 
 A portal draft needs a client ID before it can show its callback. One possible
 bootstrap is to register a separate public client with the temporary exact URI
@@ -47,8 +49,9 @@ Validation caveat (October 28, 2026): OpenAI's package guide documents the
 `extensions.com.openai.auth` server field used here, but the linked Agent
 Plugins 1.0.0 MCP JSON schema rejects that field as an additional property.
 The root plugin manifest passes its schema; the MCP configuration follows the
-OpenAI guide but does not pass the published portable MCP schema. Confirm the
-portal's actual ingestion and resolve any finding before submission.
+OpenAI guide but does not pass the published portable MCP schema. The portal
+accepted and displayed this field in the saved 1.0.1 draft; authorization and
+the actual requested scopes remain unverified or unresolved, as noted above.
 
 Sources: [OpenAI package guide](https://developers.openai.com/plugins/build/plugins),
 [submission guide](https://developers.openai.com/plugins/deploy/submission), and
