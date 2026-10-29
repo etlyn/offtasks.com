@@ -53,6 +53,7 @@ test("real MCP discovery exposes tools with wire auth policy and the plan and ta
   const client = await connect(t, noop),
     { tools } = await client.listTools();
   assert.equal(tools.length, 12);
+  const widgetReadable = ["list_tasks", "list_goals", "get_task_context", "render_plan_widget"];
   for (const tool of tools) {
     assert.deepEqual(object(tool._meta).securitySchemes, [
       { type: "oauth2", scopes: ["openid"] },
@@ -65,8 +66,14 @@ test("real MCP discovery exposes tools with wire auth policy and the plan and ta
       ["save_goal", "save_plan", "update_task"].includes(tool.name),
       `${tool.name} must advertise whether it can overwrite existing content`
     );
-    if (!["render_plan_widget", "list_tasks"].includes(tool.name))
+    if (widgetReadable.includes(tool.name)) {
+      assert.equal(tool.annotations?.readOnlyHint, true);
+      assert.deepEqual(object(tool._meta?.ui).visibility, ["model", "app"]);
+      assert.equal(object(tool._meta)["openai/widgetAccessible"], true);
+    } else {
       assert.equal(object(tool._meta ?? {}).ui, undefined);
+      assert.equal(object(tool._meta)["openai/widgetAccessible"], undefined);
+    }
   }
   // The standard SDK client strips unknown extension fields in listTools().
   // Inspect the actual wire response with an extension-aware result schema too.
@@ -105,6 +112,22 @@ test("real MCP discovery exposes tools with wire auth policy and the plan and ta
   );
   const legacy = await client.readResource({ uri: "ui://offtasks/tasks-v1.html" });
   assert.equal(legacy.contents[0]?.mimeType, "text/html;profile=mcp-app");
+});
+
+test("an undated task's internal upcoming group is described as Later", async (t) => {
+  const client = await connect(t, {
+    read: async () => ({}),
+    mutate: async () => ({
+      task: { id: task, content: "Plan the week", revision: "1", date: null, target_group: "upcoming" },
+    }),
+  });
+  const result = await client.callTool({
+    name: "create_task",
+    arguments: { content: "Plan the week", request_key: "create-later-1" },
+  });
+  assert.equal(object(result.structuredContent).ok, true);
+  assert.match(JSON.stringify(result.content), /undated task is in Later/);
+  assert.equal(object(object(object(result.structuredContent).data).task).target_group, "upcoming");
 });
 
 test("read-only permissions and ambiguous selectors cannot reach writes or leak errors", async (t) => {
