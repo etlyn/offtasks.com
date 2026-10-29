@@ -20,7 +20,13 @@ test("the public package requires a separate client and never overwrites a desti
   execFileSync(process.execPath, [script, client, target]);
   const mcp = JSON.parse(await readFile(join(target, "mcp.json"), "utf8"));
   const auth = mcp.mcpServers.offtasks.extensions["com.openai"].auth;
-  assert.deepEqual(auth, { type: "oauth", client: { mode: "provided", clientId: client, tokenEndpointAuthMethod: "none" } });
+  assert.deepEqual(auth, {
+    type: "oauth",
+    client: { mode: "provided", clientId: client, tokenEndpointAuthMethod: "none" },
+    baseScopes: ["openid", "offline_access"],
+    defaultScopes: [],
+    oidcScopesSupported: ["openid"],
+  });
   assert.equal(mcp.mcpServers.offtasks.url, "https://offtasks-mcp-qjloputrxa-ul.a.run.app/mcp");
   const manifest = JSON.parse(await readFile(join(target, "plugin.json"), "utf8"));
   const review = manifest.extensions["com.openai"].review;

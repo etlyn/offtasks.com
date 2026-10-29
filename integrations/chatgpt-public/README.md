@@ -1,10 +1,12 @@
 # Public ChatGPT plugin preparation
 
-This is a submission draft, not a published plugin. It uses the owner's chosen
-verified individual publisher name and the existing Offtasks icon. Its five
-positive and three negative review cases are proposals: run them against a
-dedicated sample account and record a reviewer-accessible video before review.
-Do not use the owner's account or include credentials in the package.
+This is a submission draft, not a published plugin. The portal selected a
+verified business identity whose displayed developer name is Giorgi
+Digmelashvili; it did not offer an Etlyn-named identity. The package uses the
+existing Offtasks icon. Its five positive and three negative review cases are
+proposals: run them against a dedicated sample account and record a
+reviewer-accessible video before review. Do not use the owner's account or
+include credentials in the package. See [the review walkthrough](./review-walkthrough.md).
 
 A portal draft needs a client ID before it can show its callback. One possible
 bootstrap is to register a separate public client with the temporary exact URI
@@ -35,12 +37,30 @@ upload a ZIP, authenticate a reviewer, submit for review, or publish a listing.
 Keep the live Connect action gated until OpenAI approves a public listing and
 the matching OAuth policy is configured and verified for independent accounts.
 
+The next package requests `openid` and `offline_access` for identity and token
+refresh, and attempts to limit additional identity scopes. Offtasks permissions
+are approved separately during the first-party consent flow. In an October 28,
+2026 portal test of draft 1.0.1, the authorization request also included `email`,
+`profile`, and `phone`. The reason is unconfirmed; OpenAI may retain existing
+connection settings or add provider-advertised scopes. Do not claim reduced
+identity access or durable connections until the actual request, sign-in,
+refresh, and revocation have been verified for the new version.
+
 Validation caveat (October 28, 2026): OpenAI's package guide documents the
 `extensions.com.openai.auth` server field used here, but the linked Agent
 Plugins 1.0.0 MCP JSON schema rejects that field as an additional property.
 The root plugin manifest passes its schema; the MCP configuration follows the
-OpenAI guide but does not pass the published portable MCP schema. Confirm the
-portal's actual ingestion and resolve any finding before submission.
+OpenAI guide but does not pass the published portable MCP schema. The portal
+accepted and displayed this field in the saved 1.0.1 draft. The sample account
+authorized that draft, but the actual requested scopes remain broader than the
+override, as noted above. The 1.0.2 source has not been uploaded or reviewed.
+
+The sample-only host rehearsal showed tasks, goals, creation, scheduling, and a
+proposed plan. One ambiguous task-completion request initially changed a sample
+task; later retests asked for clarification after guidance was tightened. That
+guidance is not a server-enforced proof of user intent. The host also speculated
+that shared tasks might be supported even though this integration returns only
+the connected account's owned records. Track these as review issues, not passes.
 
 Sources: [OpenAI package guide](https://developers.openai.com/plugins/build/plugins),
 [submission guide](https://developers.openai.com/plugins/deploy/submission), and

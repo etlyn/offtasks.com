@@ -23,7 +23,15 @@ const mcp = {
       url: "https://offtasks-mcp-qjloputrxa-ul.a.run.app/mcp",
       extensions: {
         "com.openai": {
-          auth: { type: "oauth", client: { mode: "provided", clientId, tokenEndpointAuthMethod: "none" } },
+          // Offtasks authorization uses the subject. Request offline access for
+          // refresh, and verify the actual request: discovery may add scopes.
+          auth: {
+            type: "oauth",
+            client: { mode: "provided", clientId, tokenEndpointAuthMethod: "none" },
+            baseScopes: ["openid", "offline_access"],
+            defaultScopes: [],
+            oidcScopesSupported: ["openid"],
+          },
         },
       },
     },
