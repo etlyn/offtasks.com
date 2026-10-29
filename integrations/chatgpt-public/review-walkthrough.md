@@ -1,16 +1,18 @@
 # Offtasks ChatGPT review walkthrough
 
-Status: **not recorded or run**. The public OAuth connection is not yet working,
-and no dedicated reviewer account or hosted recording is available. Complete
-those dependencies before using this as evidence for OpenAI review.
+Status: **not recorded or run**. A dedicated reviewer account has sample data,
+but its sign-in and the public OAuth connection have not yet been verified and
+no hosted recording is available. Complete those dependencies before using
+this as evidence for OpenAI review.
 
 ## Prepare
 
-- Create a dedicated account containing sample data only; keep it usable for
-  future reviews. Do not record the owner's personal account, credentials,
-  authorization codes, or unrelated content.
-- Add at least two open tasks, including a note-linked task, and a goal named
-  **Weekly planning**. The task **Review the weekly plan** should not exist yet.
+- Keep the dedicated sample-only account usable for future reviews. Do not
+  record the owner's personal account, credentials, authorization codes, or
+  unrelated content.
+- The account has two ordinary open tasks, a note-linked open task, and a goal
+  named **Weekly planning**. Confirm that **Review the weekly plan** does not
+  exist before the create-task case.
 - Connect the exact version being submitted and verify that the reviewer can
   sign in independently. Provide credentials and steps only in the portal's
   reviewer-access fields, not in the ZIP or listing.
