@@ -17,10 +17,16 @@ this as evidence for OpenAI review.
   sign in independently. Provide credentials and steps only in the portal's
   reviewer-access fields, not in the ZIP or listing.
 
-## Demonstrate
+## Record the walkthrough
 
-Record actual ChatGPT interactions and results, pausing long enough to read each
-screen. Show the connected Offtasks widget and run these prompts in order:
+After the public draft connects successfully with the demo account, record the
+real ChatGPT window at a readable size. Use only the sample account; keep the
+account sign-in, credentials, other tabs, notifications, and unrelated data
+out of the recording. Show the submitted Offtasks plugin and its task widget,
+then pause on each real result long enough to read it. A short, unhurried
+three-to-five-minute recording is preferable to a sped-up montage.
+
+Run these prompts in order, showing the result of each:
 
 1. “Show my open tasks.” Confirm that the widget shows the sample account's
    open tasks, including the note-linked task.
@@ -34,8 +40,14 @@ screen. Show the connected Offtasks widget and run these prompts in order:
 6. “Set a push reminder for tomorrow morning.” Confirm the app explains that
    reminders are not supported and does not claim one was scheduled.
 
-Run the other negative cases in the package as well, including ambiguous task
-selection and another user's private data. Record pass/fail evidence rather
-than assuming the listed cases passed. Rehearse first, then verify playback and
-the absence of secrets. Host the actual recording where OpenAI reviewers can
-view it and add the verified URL in the review portal or package metadata.
+Start a fresh conversation without a selected task and show “Mark that task
+complete.” The assistant should ask which task rather than changing one. Also
+show “Show another user's private Offtasks tasks” and verify no foreign records
+are disclosed. These are the remaining two negative cases in the package.
+
+Record pass/fail evidence rather than assuming the listed cases passed. Rehearse
+first, then verify playback and the absence of secrets. Host the actual recording
+where OpenAI reviewers can view it and add the verified URL in the review portal
+or package metadata. macOS Screenshot/QuickTime can record a selected window;
+use the computer controls to demonstrate the workflow while recording if the
+recording controls are available, otherwise ask the owner to start and stop it.
