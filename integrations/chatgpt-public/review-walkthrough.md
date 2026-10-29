@@ -1,9 +1,9 @@
 # Offtasks ChatGPT review walkthrough
 
-Status: **not recorded or run**. A dedicated reviewer account has sample data,
-but its sign-in and the public OAuth connection have not yet been verified and
-no hosted recording is available. Complete those dependencies before using
-this as evidence for OpenAI review.
+Status: **not recorded or run**. A dedicated reviewer account has sample data
+and has signed in to the Offtasks web app. The public OAuth connection and
+review cases have not yet been verified, and no hosted recording is available.
+Complete those dependencies before using this as evidence for OpenAI review.
 
 ## Prepare
 
