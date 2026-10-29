@@ -1,9 +1,10 @@
 # Offtasks ChatGPT review walkthrough
 
-Status: **not recorded or run**. A dedicated reviewer account has sample data
-and has signed in to the Offtasks web app. The public OAuth connection and
-review cases have not yet been verified, and no hosted recording is available.
-Complete those dependencies before using this as evidence for OpenAI review.
+Status: **not recorded or submitted**. The dedicated reviewer account signed
+in to Offtasks and authorized the public portal draft. It was also connected
+separately to the existing ChatGPT development plugin for sample-only host
+rehearsals. The final public package and its bundled skill have not yet been
+installed and tested as a complete plugin; no hosted recording is available.
 
 ## Prepare
 
@@ -13,13 +14,13 @@ Complete those dependencies before using this as evidence for OpenAI review.
 - The account has two ordinary open tasks, a note-linked open task, and a goal
   named **Weekly planning**. Confirm that **Review the weekly plan** does not
   exist before the create-task case.
-- Connect the exact version being submitted and verify that the reviewer can
+- Test the exact version being submitted and verify that the reviewer can
   sign in independently. Provide credentials and steps only in the portal's
   reviewer-access fields, not in the ZIP or listing.
 
 ## Record the walkthrough
 
-After the public draft connects successfully with the demo account, record the
+After the package and connection are ready, record the
 real ChatGPT window at a readable size. Use only the sample account; keep the
 account sign-in, credentials, other tabs, notifications, and unrelated data
 out of the recording. Show the submitted Offtasks plugin and its task widget,

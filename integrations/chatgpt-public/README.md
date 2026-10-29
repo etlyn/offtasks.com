@@ -50,8 +50,16 @@ Validation caveat (October 28, 2026): OpenAI's package guide documents the
 Plugins 1.0.0 MCP JSON schema rejects that field as an additional property.
 The root plugin manifest passes its schema; the MCP configuration follows the
 OpenAI guide but does not pass the published portable MCP schema. The portal
-accepted and displayed this field in the saved 1.0.1 draft; authorization and
-the actual requested scopes remain unverified or unresolved, as noted above.
+accepted and displayed this field in the saved 1.0.1 draft. The sample account
+authorized that draft, but the actual requested scopes remain broader than the
+override, as noted above. The 1.0.2 source has not been uploaded or reviewed.
+
+The sample-only host rehearsal showed tasks, goals, creation, scheduling, and a
+proposed plan. One ambiguous task-completion request initially changed a sample
+task; later retests asked for clarification after guidance was tightened. That
+guidance is not a server-enforced proof of user intent. The host also speculated
+that shared tasks might be supported even though this integration returns only
+the connected account's owned records. Track these as review issues, not passes.
 
 Sources: [OpenAI package guide](https://developers.openai.com/plugins/build/plugins),
 [submission guide](https://developers.openai.com/plugins/deploy/submission), and
