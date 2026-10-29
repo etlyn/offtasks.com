@@ -24,6 +24,7 @@ let hasData = false,
   busy = false;
 let needsFirstPage = false;
 let deferredResult: unknown = null;
+let refreshInChat = false;
 
 function element<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -131,6 +132,7 @@ function consume(value: unknown, append = false) {
   const entries = Array.isArray(data.tasks) ? data.tasks.map(object) : [];
   tasks = append ? [...tasks, ...entries] : entries;
   hasData = true;
+  refreshInChat = false;
   nextCursor = string(data.next_cursor);
   status.textContent = "";
   render();
@@ -138,7 +140,9 @@ function consume(value: unknown, append = false) {
 
 async function load(append = false) {
   if (!connected || !app.getHostCapabilities()?.serverTools) {
-    status.textContent = "Ask ChatGPT to refresh your Offtasks list.";
+    refreshInChat = true;
+    status.textContent = "Tap Refresh to ask ChatGPT for an updated list.";
+    refreshButton.disabled = !connected;
     return;
   }
   const current = ++sequence;
@@ -154,7 +158,8 @@ async function load(append = false) {
   } catch {
     if (current === sequence) {
       clear();
-      status.textContent = "Connection unavailable. Refresh to try again.";
+      refreshInChat = true;
+      status.textContent = "Direct refresh unavailable. Tap Refresh to ask ChatGPT for an updated list.";
     }
   } finally {
     if (current === sequence) {
@@ -187,9 +192,7 @@ function receiveToolResult(result: unknown) {
   }
 }
 
-async function plan() {
-  const message =
-    "Help me organize and schedule my current Offtasks tasks. Ask before making any changes, and do not claim that a scheduled date creates a reminder.";
+async function sendOrCopy(message: string) {
   handoff.hidden = true;
   if (app.getHostCapabilities()?.message?.text) {
     try {
@@ -208,10 +211,19 @@ async function plan() {
   instruction.select();
 }
 
-refreshButton.onclick = () => void load();
-planButton.onclick = () => void plan();
+refreshButton.onclick = () => {
+  if (refreshInChat || !app.getHostCapabilities()?.serverTools) {
+    void sendOrCopy(
+      "Refresh the Offtasks task list for the same connected account and filters as the previous card. If the account is unclear, ask me which one; do not access another account or change any tasks."
+    );
+  } else void load();
+};
+planButton.onclick = () => void sendOrCopy(
+  "Help me organize and schedule my current Offtasks tasks. Ask before making any changes, and do not claim that a scheduled date creates a reminder."
+);
 app.ontoolinput = ({ arguments: input }) => {
   clear();
+  refreshInChat = false;
   const { cursor, ...selection } = object(input);
   args = selection;
   needsFirstPage = string(cursor).length > 0;
@@ -225,11 +237,12 @@ app.onhostcontextchanged = (context) => {
 app.onteardown = async () => {
   clear();
   connected = false;
+  refreshInChat = false;
   return {};
 };
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) clear();
-  else if (connected) void load();
+  else if (connected && !refreshInChat) void load();
 });
 app
   .connect()
