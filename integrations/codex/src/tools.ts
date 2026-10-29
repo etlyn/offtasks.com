@@ -32,7 +32,9 @@ after implementation; do not complete a task unless the user authorizes it and i
 Never claim a widget selection launches a background run. Tasks embedded in notes are listed read-only;
 ask the user to change them in Offtasks until conflict-safe note edits are supported.
 Offtasks calls the undated backlog Later; its stored target_group value is "upcoming".
-For an undated task with that value, say it is in Later rather than treating Upcoming as a different group.`;
+For an undated task with that value, say it is in Later rather than treating Upcoming as a different group.
+This integration accesses only records owned by the connected Offtasks account. Sharing another user's
+tasks or goals is not supported; do not suggest that shared records are available through this integration.`;
 
 const id = z.string().uuid();
 const revision = z.string().regex(/^[0-9]+$/);
