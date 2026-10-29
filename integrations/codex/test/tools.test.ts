@@ -110,8 +110,11 @@ test("real MCP discovery exposes tools with wire auth policy and the plan and ta
   assert.ok(
     resources.resources.some((resource) => resource.uri === TASKS_WIDGET_URI)
   );
-  const legacy = await client.readResource({ uri: "ui://offtasks/tasks-v1.html" });
-  assert.equal(legacy.contents[0]?.mimeType, "text/html;profile=mcp-app");
+  for (const uri of ["ui://offtasks/tasks-v1.html", "ui://offtasks/tasks-v2.html", "ui://offtasks/plan-v1.html"]) {
+    const legacy = await client.readResource({ uri });
+    assert.equal(legacy.contents[0]?.uri, uri);
+    assert.equal(legacy.contents[0]?.mimeType, "text/html;profile=mcp-app");
+  }
 });
 
 test("an undated task's internal upcoming group is described as Later", async (t) => {
