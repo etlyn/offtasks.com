@@ -60,6 +60,11 @@ test("real MCP discovery exposes tools with wire auth policy and the plan and ta
     assert.equal(tool.inputSchema.type, "object");
     assert.equal(tool.outputSchema?.type, "object");
     assert.equal(tool.annotations?.openWorldHint, false);
+    assert.equal(
+      tool.annotations?.destructiveHint,
+      ["save_goal", "save_plan", "update_task"].includes(tool.name),
+      `${tool.name} must advertise whether it can overwrite existing content`
+    );
     if (!["render_plan_widget", "list_tasks"].includes(tool.name))
       assert.equal(object(tool._meta ?? {}).ui, undefined);
   }

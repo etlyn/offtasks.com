@@ -605,7 +605,9 @@ export function createOfftasksServer(
       outputSchema: resultShape,
       annotations: {
         readOnlyHint: definition.read,
-        destructiveHint: !definition.read && name === "update_task",
+        // These operations can overwrite existing user-authored content.
+        destructiveHint:
+          !definition.read && ["save_goal", "save_plan", "update_task"].includes(name),
         idempotentHint: true,
         openWorldHint: false,
       },
