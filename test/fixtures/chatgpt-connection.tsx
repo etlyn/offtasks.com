@@ -15,10 +15,10 @@ function Fixture() {
   const connection = useMemo<Connection>(() => ({
     read: async () => {
       if (mode === "race" && owner === "owner-a") await new Promise((resolve) => setTimeout(resolve, 500));
-      const connected = !revoked && (mode === "connected" || mode === "retry" || (mode === "race" && owner === "owner-a"));
+      const connected = !revoked && (mode === "connected" || mode === "connected-public" || mode === "retry" || (mode === "race" && owner === "owner-a"));
       return {
         status: connected ? "authorized" : "disconnected",
-        installUrl: mode === "public" ? "https://chatgpt.com/plugins/offtasks" : null,
+        installUrl: mode === "public" || mode === "connected-public" ? "https://chatgpt.com/plugins/offtasks" : null,
         permissions: connected ? ["read", "write"] : [],
         revision: connected ? "42" : null,
       } as ChatGPTStatus;

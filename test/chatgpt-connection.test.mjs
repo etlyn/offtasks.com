@@ -5,6 +5,7 @@ import { createChatGPTConnection, parseChatGPTStatus } from "../src/lib/chatgptC
 test("only a configured ChatGPT plugin URL is offered to users", () => {
   const parse = (install_url) => parseChatGPTStatus({ status: "disconnected", install_url }).installUrl;
   assert.equal(parse("https://chatgpt.com/plugins/offtasks-123"), "https://chatgpt.com/plugins/offtasks-123");
+  assert.equal(parse("https://chatgpt.com/plugins/plugin_asdk_app_6ae2a9f51cc881918ba295db7c71e250"), "https://chatgpt.com/plugins/plugin_asdk_app_6ae2a9f51cc881918ba295db7c71e250");
   for (const url of [null, "http://chatgpt.com/plugins/offtasks", "https://chatgpt.com.evil.test/plugins/offtasks", "https://user@chatgpt.com/plugins/offtasks", "https://chatgpt.com/plugins/offtasks?redirect=evil", "https://chatgpt.com/plugins/../settings"]) {
     assert.equal(parse(url), null);
   }

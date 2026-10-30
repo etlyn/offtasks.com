@@ -105,24 +105,31 @@ export function ChatGPTConnection({ ownerId, connection }: { ownerId: string; co
           </p>
         </div>
 
-        {view.phase === "error" && (
-          <button type="button" onClick={() => void refresh(true)} className={`${actionClass} text-teal-800 hover:bg-teal-100 dark:text-teal-300 dark:hover:bg-teal-900/40`}>Try again</button>
-        )}
-        {value && !hasGrant && (value.installUrl ? (
-          <a href={value.installUrl} target="_blank" rel="noopener noreferrer" className={`${actionClass} bg-teal-800 text-white hover:bg-teal-900 dark:bg-teal-700 dark:hover:bg-teal-600`}>
-            Connect ChatGPT <ExternalLink aria-hidden="true" className="size-3.5" />
-          </a>
-        ) : (
-          <button type="button" disabled className={`${actionClass} cursor-not-allowed bg-zinc-200 text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400`}>Connect ChatGPT</button>
-        ))}
-        {value?.status === "reconnect" && value.installUrl && (
-          <a href={value.installUrl} target="_blank" rel="noopener noreferrer" className={`${actionClass} text-teal-800 hover:bg-teal-100 dark:text-teal-300 dark:hover:bg-teal-900/40`}>
-            Reconnect <ExternalLink aria-hidden="true" className="size-3.5" />
-          </a>
-        )}
-        {hasGrant && !confirming && (
-          <button type="button" onClick={() => setConfirming(true)} className={`${actionClass} text-zinc-600 hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-700`}>Disconnect</button>
-        )}
+        <div className="flex flex-wrap items-center justify-end gap-x-1">
+          {view.phase === "error" && (
+            <button type="button" onClick={() => void refresh(true)} className={`${actionClass} text-teal-800 hover:bg-teal-100 dark:text-teal-300 dark:hover:bg-teal-900/40`}>Try again</button>
+          )}
+          {value && !hasGrant && (value.installUrl ? (
+            <a href={value.installUrl} target="_blank" rel="noopener noreferrer" className={`${actionClass} bg-teal-800 text-white hover:bg-teal-900 dark:bg-teal-700 dark:hover:bg-teal-600`}>
+              Connect ChatGPT <ExternalLink aria-hidden="true" className="size-3.5" />
+            </a>
+          ) : (
+            <button type="button" disabled className={`${actionClass} cursor-not-allowed bg-zinc-200 text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400`}>Connect ChatGPT</button>
+          ))}
+          {value?.status === "reconnect" && value.installUrl && (
+            <a href={value.installUrl} target="_blank" rel="noopener noreferrer" className={`${actionClass} text-teal-800 hover:bg-teal-100 dark:text-teal-300 dark:hover:bg-teal-900/40`}>
+              Reconnect <ExternalLink aria-hidden="true" className="size-3.5" />
+            </a>
+          )}
+          {value?.status === "authorized" && value.installUrl && (
+            <a href={value.installUrl} target="_blank" rel="noopener noreferrer" className={`${actionClass} text-teal-800 hover:bg-teal-100 dark:text-teal-300 dark:hover:bg-teal-900/40`}>
+              Open in ChatGPT <ExternalLink aria-hidden="true" className="size-3.5" />
+            </a>
+          )}
+          {hasGrant && !confirming && (
+            <button type="button" onClick={() => setConfirming(true)} className={`${actionClass} text-zinc-600 hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-700`}>Disconnect</button>
+          )}
+        </div>
       </div>
 
       {confirming && (
