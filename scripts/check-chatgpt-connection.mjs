@@ -20,6 +20,11 @@ try {
   await page.screenshot({ path: "/tmp/offtasks-chatgpt-web-available-light.png" });
   await page.goto(`${base}?mode=public`);
   assert.equal(await page.getByRole("link", { name: "Connect ChatGPT" }).getAttribute("href"), "https://chatgpt.com/plugins/offtasks");
+  await page.goto(`${base}?mode=connected-public`);
+  assert.equal(await page.getByRole("link", { name: "Open in ChatGPT" }).getAttribute("href"), "https://chatgpt.com/plugins/offtasks");
+  assert.equal(await page.getByRole("button", { name: "Disconnect" }).isVisible(), true);
+  assert.equal(await page.locator("html").evaluate((node) => node.scrollWidth <= node.clientWidth), true);
+  await page.screenshot({ path: "/tmp/offtasks-chatgpt-web-connected-public.png" });
   await page.goto(`${base}?mode=connected&dark`);
   await page.getByText("Access allowed · Read and edit").waitFor();
   await page.screenshot({ path: "/tmp/offtasks-chatgpt-web-connected-dark.png" });
