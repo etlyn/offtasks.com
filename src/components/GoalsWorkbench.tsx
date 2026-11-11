@@ -9,6 +9,13 @@ import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Flag, Plus, RefreshCw } from "lucide-react";
 import { goalIntegration } from "@/lib/goalIntegration";
 import {
+  goalLogoSource,
+  listGoalLogos,
+  prepareGoalLogo,
+  setGoalLogo,
+  type GoalLogo,
+} from "@/lib/goalLogos";
+import {
   goalRoute,
   integrationError,
   integrationRequestKey,
@@ -26,6 +33,26 @@ interface GoalDraft {
   outcome: string;
   markdown: string;
   criteria: string;
+}
+
+function GoalMark({ logo }: { logo?: GoalLogo | null }) {
+  return (
+    <span className="goal-mark" aria-hidden="true">
+      <Flag size={18} />
+      {logo ? (
+        <img
+          alt=""
+          src={goalLogoSource(logo)}
+          onError={(event) => {
+            event.currentTarget.hidden = true;
+          }}
+          onLoad={(event) => {
+            event.currentTarget.hidden = false;
+          }}
+        />
+      ) : null}
+    </span>
+  );
 }
 function useRequestKey() {
   const previous = useRef<{ payload: string; key: string } | null>(null);
@@ -50,6 +77,7 @@ export function GoalsWorkbench({
   const goalId = params.get("goal");
   const taskId = params.get("task");
   const [goals, setGoals] = useState<FeatureGoal[]>([]);
+  const [logos, setLogos] = useState<Record<string, GoalLogo>>({});
   const goalsRef = useRef<FeatureGoal[]>([]);
   const [nextOffset, setNextOffset] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -87,6 +115,12 @@ export function GoalsWorkbench({
         setGoals(next);
         callbacks.current.onGoalsLoaded(next);
         setNextOffset(result.next_offset);
+        void listGoalLogos(result.goals.map((goal) => goal.id))
+          .catch(() => ({}))
+          .then((page) => {
+            if (!active.current || version !== listVersion.current) return;
+            setLogos((previous) => offset ? { ...previous, ...page } : page);
+          });
       } catch (caught) {
         if (active.current && version === listVersion.current)
           setError(integrationError(caught));
@@ -168,7 +202,14 @@ export function GoalsWorkbench({
           goalId={goalId}
           version={contextVersion}
           initialDraft={drafts.current.get(goalId)}
+          initialLogo={logos[goalId]}
           onDraft={(draft) => drafts.current.set(goalId, draft)}
+          onLogoChanged={(logo) => {
+            setLogos(({ [goalId]: previous, ...other }) =>
+              logo ? { ...other, [goalId]: logo } : other,
+            );
+            void refresh();
+          }}
           onChanged={changed}
         />
       ) : (
@@ -258,9 +299,7 @@ export function GoalsWorkbench({
             {goals.map((goal) => (
               <li key={goal.id}>
                 <Link to={goalRoute(goal.id)} className="goal-list-item">
-                  <span className="goal-mark">
-                    <Flag size={18} />
-                  </span>
+                  <GoalMark logo={logos[goal.id]} />
                   <span>
                     <strong>{goal.title}</strong>
                     {goal.outcome ? (
@@ -293,16 +332,23 @@ function GoalDetail({
   goalId,
   version,
   initialDraft,
+  initialLogo,
   onDraft,
+  onLogoChanged,
   onChanged,
 }: {
   goalId: string;
   version: number;
   initialDraft?: GoalDraft;
+  initialLogo?: GoalLogo;
   onDraft: (draft: GoalDraft) => void;
+  onLogoChanged: (logo: GoalLogo | null) => void;
   onChanged: (goal?: FeatureGoal) => void;
 }) {
   const [context, setContext] = useState<GoalContext | null>(null);
+  const [logo, setLogo] = useState<GoalLogo | null>(initialLogo ?? null);
+  const logoPicker = useRef<HTMLInputElement>(null);
+  const logoGeneration = useRef(0);
   const [draft, setDraft] = useState<GoalDraft | null>(initialDraft ?? null);
   const [section, setSection] = useState<"tasks" | "brief" | "plan">("tasks");
   const [codexOnly, setCodexOnly] = useState(false);
@@ -318,11 +364,19 @@ function GoalDetail({
   const hydrated = useRef(!!initialDraft);
   const draftRef = useRef(draft);
   draftRef.current = draft;
-  const callbacks = useRef({ onDraft, onChanged });
-  callbacks.current = { onDraft, onChanged };
+  const callbacks = useRef({ onDraft, onLogoChanged, onChanged });
+  callbacks.current = { onDraft, onLogoChanged, onChanged };
   const requestKey = useRequestKey();
   const refresh = useCallback(async () => {
     const current = ++generation.current;
+    const currentLogo = ++logoGeneration.current;
+    void listGoalLogos([goalId]).then(
+      (loaded) => {
+        if (active.current && currentLogo === logoGeneration.current)
+          setLogo(loaded[goalId] ?? null);
+      },
+      () => {},
+    );
     setLoading(true);
     setError("");
     try {
@@ -355,8 +409,38 @@ function GoalDetail({
     return () => {
       active.current = false;
       generation.current += 1;
+      logoGeneration.current += 1;
     };
   }, [refresh, version]);
+  const saveLogo = async (file: File | null) => {
+    if (lock.current || context?.goal.status !== "active") return;
+    lock.current = true;
+    setBusy(true);
+    setError("");
+    setNotice(file ? "Uploading logo…" : "");
+    let prepared = false;
+    try {
+      const next = file ? await prepareGoalLogo(file) : null;
+      prepared = true;
+      if (!active.current) return;
+      await setGoalLogo(goalId, next);
+      if (!active.current) return;
+      logoGeneration.current += 1;
+      setLogo(next);
+      setNotice(file ? "Logo saved." : "Logo removed.");
+      callbacks.current.onLogoChanged(next);
+    } catch (caught) {
+      if (active.current) {
+        const imageError =
+          caught instanceof Error ? caught.message : "The image could not be opened.";
+        setError(prepared ? integrationError(caught) : imageError);
+        setNotice("");
+      }
+    } finally {
+      lock.current = false;
+      if (active.current) setBusy(false);
+    }
+  };
   const change = (patch: Partial<GoalDraft>) => {
     if (!draft) return;
     const next = { ...draft, ...patch };
@@ -429,7 +513,10 @@ function GoalDetail({
         <ArrowLeft size={16} /> Goals
       </Link>
       <div className="goal-workbench-heading">
-        <h1>{context?.goal.title ?? "Goal"}</h1>
+        <div className="goal-title">
+          <GoalMark logo={logo} />
+          <h1>{context?.goal.title ?? "Goal"}</h1>
+        </div>
         <button
           type="button"
           disabled={busy || loading}
@@ -492,6 +579,38 @@ function GoalDetail({
                   onChange={(event) => change({ outcome: event.target.value })}
                 />
               </label>
+              {context.goal.status === "active" ? (
+                <div className="goal-logo-actions">
+                  <input
+                    ref={logoPicker}
+                    type="file"
+                    accept="image/png,image/jpeg"
+                    aria-label="Goal logo"
+                    hidden
+                    onChange={(event) => {
+                      const file = event.currentTarget.files?.[0];
+                      event.currentTarget.value = "";
+                      if (file) void saveLogo(file);
+                    }}
+                  />
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => logoPicker.current?.click()}
+                  >
+                    {logo ? "Change logo" : "Upload logo"}
+                  </button>
+                  {logo ? (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void saveLogo(null)}
+                    >
+                      Remove logo
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
               <button
                 type="submit"
                 className="goal-primary"
