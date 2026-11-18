@@ -1,20 +1,8 @@
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type FormEvent,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Flag, Plus, RefreshCw } from "lucide-react";
+import { ArrowLeft, ArrowUpDown, Check, Flag, MoreHorizontal, RefreshCw, Shuffle, X } from "lucide-react";
 import { goalIntegration } from "@/lib/goalIntegration";
-import {
-  goalLogoSource,
-  listGoalLogos,
-  prepareGoalLogo,
-  setGoalLogo,
-  type GoalLogo,
-} from "@/lib/goalLogos";
+import { goalLogoSource, listGoalLogos, prepareGoalLogo, setGoalLogo, type GoalLogo } from "@/lib/goalLogos";
 import {
   goalRoute,
   integrationError,
@@ -24,9 +12,24 @@ import {
   taskStageLabel,
   type FeatureGoal,
   type GoalContext,
-  type TaskContext,
 } from "@/lib/goalWorkbench";
-import "./GoalsWorkbench.css";
+import { PlannerStatus } from "@/planner/PlanPages";
+import { TaskList } from "@/planner/TaskList";
+import {
+  defaultGoalAppearance,
+  goalColors,
+  goalEmoji,
+  goalInitials,
+  readGoalAppearances,
+  surpriseGoalAppearance,
+  writeGoalAppearance,
+  type GoalAppearance,
+  type GoalAppearances,
+} from "@/planner/goalAppearance";
+import { goalKey, openFirst, tasksForGoal, type GoalSummary, type PlannerTask } from "@/planner/model";
+import { notify } from "@/planner/notices";
+import { usePlanner } from "@/planner/store";
+import { Confirm, Empty, Segmented, Sheet } from "@/planner/ui";
 
 interface GoalDraft {
   title: string;
@@ -35,31 +38,46 @@ interface GoalDraft {
   criteria: string;
 }
 
-function GoalMark({ logo }: { logo?: GoalLogo | null }) {
+/** A goal's tile: its logo, emoji or initials on its own soft colour. */
+export function GoalAvatar({
+  name,
+  appearance,
+  logo,
+  size = 48,
+}: {
+  name: string;
+  appearance: GoalAppearance;
+  logo?: GoalLogo | null;
+  size?: number;
+}) {
+  const color = goalColors[appearance.color] ?? goalColors[0];
+  const [failed, setFailed] = useState<string | null>(null);
+  const source = logo ? goalLogoSource(logo) : null;
+  const showLogo = !!source && failed !== source;
   return (
-    <span className="goal-mark" aria-hidden="true">
-      <Flag size={18} />
-      {logo ? (
-        <img
-          alt=""
-          src={goalLogoSource(logo)}
-          onError={(event) => {
-            event.currentTarget.hidden = true;
-          }}
-          onLoad={(event) => {
-            event.currentTarget.hidden = false;
-          }}
-        />
-      ) : null}
+    <span
+      className="goal-avatar"
+      aria-hidden="true"
+      data-emoji={!showLogo && appearance.emoji ? "" : undefined}
+      style={
+        {
+          "--size": `${size / 16}rem`,
+          "--goal-light": color.light,
+          "--goal-dark": color.dark,
+          "--goal-ink": color.ink,
+        } as React.CSSProperties
+      }
+    >
+      {showLogo ? <img alt="" src={source} onError={() => setFailed(source)} /> : (appearance.emoji ?? goalInitials(name))}
     </span>
   );
 }
+
 function useRequestKey() {
   const previous = useRef<{ payload: string; key: string } | null>(null);
   return (payload: unknown) => {
     const serialized = JSON.stringify(payload);
-    if (previous.current?.payload !== serialized)
-      previous.current = { payload: serialized, key: integrationRequestKey() };
+    if (previous.current?.payload !== serialized) previous.current = { payload: serialized, key: integrationRequestKey() };
     return previous.current.key;
   };
 }
@@ -68,69 +86,65 @@ export function GoalsWorkbench({
   ownerId,
   onChanged,
   onGoalsLoaded,
+  onEditTask,
+  onGoalOpen,
+  createRequest,
+  openRequest,
 }: {
   ownerId: string;
   onChanged: () => void;
   onGoalsLoaded: (goals: FeatureGoal[]) => void;
+  /** Opens the task composer; `goal` keeps the task inside that goal. */
+  onEditTask: (task: PlannerTask, goal: string | null) => void;
+  /** Tells the planner which goal is on screen, so the plus button adds to it. */
+  onGoalOpen: (name: string | null) => void;
+  /** Changes each time the plus button asks for a new goal. */
+  createRequest: number;
+  /** Asks for a goal by name, from search or Statistics. */
+  openRequest: { name: string; requestId: number } | null;
 }) {
+  const planner = usePlanner();
   const [params, setParams] = useSearchParams();
   const goalId = params.get("goal");
   const taskId = params.get("task");
   const [goals, setGoals] = useState<FeatureGoal[]>([]);
+  const [goalsLoaded, setGoalsLoaded] = useState(false);
   const [logos, setLogos] = useState<Record<string, GoalLogo>>({});
-  const goalsRef = useRef<FeatureGoal[]>([]);
-  const [nextOffset, setNextOffset] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [appearances, setAppearances] = useState<GoalAppearances>(() => readGoalAppearances(ownerId));
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
-  const [newOutcome, setNewOutcome] = useState("");
+  const [styling, setStyling] = useState<string | null>(null);
   const [contextVersion, setContextVersion] = useState(0);
   const drafts = useRef(new Map<string, GoalDraft>());
   const listVersion = useRef(0);
   const active = useRef(true);
-  const lock = useRef(false);
-  const callbacks = useRef({ onChanged, onGoalsLoaded });
-  callbacks.current = { onChanged, onGoalsLoaded };
-  const requestKey = useRequestKey();
+  const callbacks = useRef({ onChanged, onGoalsLoaded, onEditTask, onGoalOpen });
+  callbacks.current = { onChanged, onGoalsLoaded, onEditTask, onGoalOpen };
 
-  const refresh = useCallback(
-    async (offset = 0) => {
-      const version = ++listVersion.current;
-      setLoading(true);
-      setError("");
-      try {
+  const refresh = useCallback(async () => {
+    const version = ++listVersion.current;
+    setError("");
+    try {
+      // Goal records carry the ids that logos, briefs and plans hang on.
+      const all: FeatureGoal[] = [];
+      for (let offset: number | null = 0, page = 0; offset !== null && page < 20; page += 1) {
         const result = await goalIntegration.listGoals(offset);
         if (!active.current || version !== listVersion.current) return;
-        const next = offset
-          ? [
-              ...goalsRef.current.filter(
-                (goal) => !result.goals.some((item) => item.id === goal.id),
-              ),
-              ...result.goals,
-            ]
-          : result.goals;
-        goalsRef.current = next;
-        setGoals(next);
-        callbacks.current.onGoalsLoaded(next);
-        setNextOffset(result.next_offset);
-        void listGoalLogos(result.goals.map((goal) => goal.id))
-          .catch(() => ({}))
-          .then((page) => {
-            if (!active.current || version !== listVersion.current) return;
-            setLogos((previous) => offset ? { ...previous, ...page } : page);
-          });
-      } catch (caught) {
-        if (active.current && version === listVersion.current)
-          setError(integrationError(caught));
-      } finally {
-        if (active.current && version === listVersion.current)
-          setLoading(false);
+        all.push(...result.goals);
+        offset = result.next_offset;
       }
-    },
-    [ownerId],
-  );
+      setGoals(all);
+      setGoalsLoaded(true);
+      callbacks.current.onGoalsLoaded(all);
+      void listGoalLogos(all.filter((goal) => goal.status === "active").map((goal) => goal.id))
+        .catch(() => ({}))
+        .then((loaded) => {
+          if (active.current && version === listVersion.current) setLogos(loaded);
+        });
+    } catch (caught) {
+      if (active.current && version === listVersion.current) setError(integrationError(caught));
+    }
+  }, [ownerId]);
   useEffect(() => {
     active.current = true;
     void refresh();
@@ -141,217 +155,538 @@ export function GoalsWorkbench({
   }, [refresh]);
   useEffect(() => {
     const visible = () => {
-      if (document.visibilityState === "visible" && !lock.current) {
-        void refresh();
-        setContextVersion((value) => value + 1);
-      }
+      if (document.visibilityState !== "visible") return;
+      void refresh();
+      setContextVersion((value) => value + 1);
     };
     document.addEventListener("visibilitychange", visible);
     return () => document.removeEventListener("visibilitychange", visible);
   }, [refresh]);
-  const changed = (updatedGoal?: FeatureGoal) => {
-    if (updatedGoal) {
-      const next = [
-        ...goalsRef.current.filter((goal) => goal.id !== updatedGoal.id),
-        updatedGoal,
-      ];
-      goalsRef.current = next;
-      setGoals(next);
-      callbacks.current.onGoalsLoaded(next);
-    }
+
+  const changed = useCallback(() => {
     callbacks.current.onChanged();
     void refresh();
-  };
-  const createGoal = async (event: FormEvent) => {
-    event.preventDefault();
-    if (!newTitle.trim() || lock.current) return;
-    lock.current = true;
-    setBusy(true);
-    setError("");
-    const values = { title: newTitle.trim(), outcome: newOutcome.trim() };
+  }, [refresh]);
+
+  const featureByKey = useMemo(() => new Map(goals.map((goal) => [goalKey(goal.title), goal])), [goals]);
+  const openGoal = goalId ? goals.find((goal) => goal.id === goalId) : undefined;
+  const appearanceFor = (name: string) => appearances[goalKey(name)] ?? defaultGoalAppearance(name);
+
+  useEffect(() => {
+    callbacks.current.onGoalOpen(goalId ? (openGoal?.title ?? null) : null);
+  }, [goalId, openGoal?.title]);
+  useEffect(() => () => callbacks.current.onGoalOpen(null), []);
+
+  // The plus button on the Goals page asks for a new goal.
+  const seenRequest = useRef(createRequest);
+  useEffect(() => {
+    if (createRequest === seenRequest.current) return;
+    seenRequest.current = createRequest;
+    setCreating(true);
+  }, [createRequest]);
+
+  // Search and Statistics know a goal by its name; its page is addressed by id.
+  const handledOpen = useRef(0);
+  useEffect(() => {
+    if (!openRequest || handledOpen.current === openRequest.requestId || !(goalsLoaded || error)) return;
+    handledOpen.current = openRequest.requestId;
+    const goal = featureByKey.get(goalKey(openRequest.name));
+    if (goal) setParams({ view: "goals", goal: goal.id });
+    else notify("Goal unavailable", "This goal may have been removed.");
+  }, [openRequest, goalsLoaded, error, featureByKey, setParams]);
+
+  // A link straight to a task opens its goal with the task ready to edit.
+  const handledTask = useRef<string | null>(null);
+  useEffect(() => {
+    if (!taskId) handledTask.current = null;
+    if (!taskId || !planner.loaded || !(goalsLoaded || error) || handledTask.current === taskId) return;
+    handledTask.current = taskId;
+    const task = planner.tasks.find((item) => item.id === taskId);
+    const goal = task?.label ? featureByKey.get(goalKey(task.label)) : undefined;
+    const target = goal?.id ?? goalId;
+    setParams(target ? { view: "goals", goal: target } : { view: "goals" }, { replace: true });
+    if (task) callbacks.current.onEditTask(task, task.label ?? null);
+    else notify("Task unavailable", "This task may have been removed.");
+  }, [taskId, planner.loaded, planner.tasks, goalsLoaded, error, featureByKey, goalId, setParams]);
+
+  const saveAppearance = (name: string, appearance: GoalAppearance | null) => {
     try {
-      const result = await goalIntegration.saveGoal(
-        values,
-        requestKey(["create", values]),
-      );
-      if (!active.current) return;
-      setCreating(false);
-      setNewTitle("");
-      setNewOutcome("");
-      setParams({ view: "goals", goal: result.goal.id });
-      changed(result.goal);
-    } catch (caught) {
-      if (active.current) setError(integrationError(caught));
-    } finally {
-      lock.current = false;
-      if (active.current) setBusy(false);
+      setAppearances(writeGoalAppearance(ownerId, name, appearance));
+    } catch {
+      notify("Could not save appearance", "Your choices are still here. Please try again.");
+      throw new Error("appearance");
     }
   };
 
+  const stylingSummary = styling ? planner.summaries.find((goal) => goalKey(goal.name) === goalKey(styling)) : undefined;
+  const stylingFeature = styling ? featureByKey.get(goalKey(styling)) : undefined;
+
   return (
-    <section className="goal-workbench" aria-label="Goals workspace">
-      {taskId ? (
-        <TaskDetail
-          key={`${ownerId}:${taskId}`}
-          taskId={taskId}
-          onChanged={changed}
-        />
-      ) : goalId ? (
+    <section className="page page--goals" aria-label="Goals">
+      {goalId ? (
         <GoalDetail
           key={`${ownerId}:${goalId}`}
           goalId={goalId}
+          knownTitle={openGoal?.title}
           version={contextVersion}
           initialDraft={drafts.current.get(goalId)}
-          initialLogo={logos[goalId]}
+          logo={logos[goalId]}
+          appearanceFor={appearanceFor}
           onDraft={(draft) => drafts.current.set(goalId, draft)}
-          onLogoChanged={(logo) => {
-            setLogos(({ [goalId]: previous, ...other }) =>
-              logo ? { ...other, [goalId]: logo } : other,
-            );
-            void refresh();
+          onStyle={(name) => setStyling(name)}
+          onRenamed={(previous, next) => {
+            // A goal's colour and emoji follow it to its new name.
+            const kept = appearances[goalKey(previous)];
+            if (kept && goalKey(previous) !== goalKey(next)) {
+              try {
+                writeGoalAppearance(ownerId, previous, null);
+                setAppearances(writeGoalAppearance(ownerId, next, kept));
+              } catch {
+                // The default colour for the new name is used instead.
+              }
+            }
           }}
+          onEditTask={(task, goal) => callbacks.current.onEditTask(task, goal)}
           onChanged={changed}
         />
       ) : (
         <>
-          <div className="goal-workbench-heading">
-            <h1>Goals</h1>
-            <div className="goal-actions">
-              <button
-                type="button"
-                onClick={() => void refresh()}
-                disabled={loading || busy}
-                aria-label="Refresh goals"
-              >
-                <RefreshCw size={16} />
+          {error ? (
+            <p role="alert" className="ot-notice ot-notice--error goals-notice">
+              {error}
+              <button type="button" className="ot-link" onClick={() => void refresh()}>
+                Retry
               </button>
-              <button
-                type="button"
-                className="goal-primary"
-                onClick={() => setCreating((value) => !value)}
-                disabled={busy}
-              >
-                <Plus size={16} /> New goal
+            </p>
+          ) : null}
+          {!planner.loaded ? (
+            <PlannerStatus />
+          ) : planner.summaries.length ? (
+            <ul className="goals">
+              {planner.summaries.map((goal) => {
+                const feature = featureByKey.get(goalKey(goal.name));
+                const appearance = appearanceFor(goal.name);
+                const ink = goalColors[appearance.color]?.ink;
+                const body = (
+                  <>
+                    <GoalAvatar name={goal.name} appearance={appearance} logo={feature ? logos[feature.id] : null} />
+                    <span className="goal-text">
+                      <strong>{goal.name}</strong>
+                      <span>{goal.total ? `${goal.completed}/${goal.total} done` : "Ready for a first step"}</span>
+                      {goal.total ? (
+                        <span
+                          className="ot-progress"
+                          role="progressbar"
+                          aria-label="Goal progress"
+                          aria-valuemin={0}
+                          aria-valuemax={goal.total}
+                          aria-valuenow={goal.completed}
+                          style={{ "--goal-ink": ink } as React.CSSProperties}
+                        >
+                          <i style={{ width: `${(goal.completed / goal.total) * 100}%` }} />
+                        </span>
+                      ) : null}
+                    </span>
+                  </>
+                );
+                return (
+                  <li key={goalKey(goal.name)} className="goal">
+                    {feature ? (
+                      <Link to={goalRoute(feature.id)} className="goal-open">
+                        {body}
+                      </Link>
+                    ) : (
+                      <button type="button" className="goal-open" onClick={() => void refresh()}>
+                        {body}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="ot-round ot-round--plain"
+                      aria-label={`Appearance for goal: ${goal.name}`}
+                      onClick={() => setStyling(goal.name)}
+                    >
+                      <MoreHorizontal size={18} strokeWidth={1.8} aria-hidden="true" />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <div className="goals-empty">
+              <div aria-hidden="true">
+                <GoalAvatar name="Explore" appearance={{ color: 5, emoji: "🌎" }} size={44} />
+                <GoalAvatar name="Grow" appearance={{ color: 0, emoji: "🌱" }} size={56} />
+                <GoalAvatar name="Make" appearance={{ color: 2, emoji: "🎨" }} size={44} />
+              </div>
+              <h2>Something worth working toward</h2>
+              <p>Give your first goal a little personality.</p>
+              <button type="button" className="ot-link" onClick={() => setCreating(true)}>
+                Create a goal
               </button>
             </div>
-          </div>
-          {error ? (
-            <p role="alert" className="goal-notice">
-              {error}
-              {goals.length ? " Showing the last loaded goals." : ""}
-            </p>
-          ) : null}
-          {creating ? (
-            <form
-              className="goal-form"
-              onSubmit={(event) => void createGoal(event)}
-            >
-              <label>
-                Goal name
-                <input
-                  value={newTitle}
-                  onChange={(event) => setNewTitle(event.target.value)}
-                  maxLength={200}
-                  required
-                  disabled={busy}
-                  autoFocus
-                />
-              </label>
-              <label>
-                Outcome <span className="goal-muted">optional</span>
-                <textarea
-                  value={newOutcome}
-                  onChange={(event) => setNewOutcome(event.target.value)}
-                  maxLength={16000}
-                  disabled={busy}
-                  rows={3}
-                />
-              </label>
-              <div className="goal-actions">
-                <button
-                  type="button"
-                  onClick={() => setCreating(false)}
-                  disabled={busy}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="goal-primary"
-                  type="submit"
-                  disabled={busy || !newTitle.trim()}
-                >
-                  {busy ? "Saving…" : "Create goal"}
-                </button>
-              </div>
-            </form>
-          ) : null}
-          {loading ? (
-            <p role="status" className="goal-muted">
-              Refreshing goals…
-            </p>
-          ) : null}
-          {!loading && !error && goals.length === 0 ? (
-            <p className="goal-empty">
-              <Flag size={22} /> No goals yet.
-            </p>
-          ) : null}
-          <ul className="goal-list">
-            {goals.map((goal) => (
-              <li key={goal.id}>
-                <Link to={goalRoute(goal.id)} className="goal-list-item">
-                  <GoalMark logo={logos[goal.id]} />
-                  <span>
-                    <strong>{goal.title}</strong>
-                    {goal.outcome ? (
-                      <span className="goal-muted goal-outcome">
-                        {goal.outcome}
-                      </span>
-                    ) : null}
-                  </span>
-                  <span className="goal-meta">{goal.status}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-          {nextOffset !== null ? (
-            <button
-              type="button"
-              disabled={loading}
-              onClick={() => void refresh(nextOffset)}
-            >
-              Load more
-            </button>
-          ) : null}
+          )}
         </>
       )}
+
+      <NewGoalSheet
+        open={creating}
+        onClose={() => setCreating(false)}
+        onCreated={(goal) => {
+          setCreating(false);
+          setGoals((current) => [...current.filter((item) => item.id !== goal.id), goal]);
+          setParams({ view: "goals", goal: goal.id });
+          changed();
+        }}
+      />
+      <GoalAppearanceSheet
+        name={styling}
+        summary={stylingSummary}
+        feature={stylingFeature}
+        logo={stylingFeature ? logos[stylingFeature.id] : undefined}
+        appearance={styling ? appearanceFor(styling) : null}
+        onClose={() => setStyling(null)}
+        onSave={(appearance) => styling && saveAppearance(styling, appearance)}
+        onLogo={(logo) => {
+          if (!stylingFeature) return;
+          setLogos(({ [stylingFeature.id]: _previous, ...other }) => (logo ? { ...other, [stylingFeature.id]: logo } : other));
+        }}
+        onRemoved={() => {
+          if (styling) {
+            try {
+              setAppearances(writeGoalAppearance(ownerId, styling, null));
+            } catch {
+              // Nothing else depends on the stored appearance.
+            }
+          }
+          setStyling(null);
+          if (goalId) setParams({ view: "goals" });
+          changed();
+        }}
+      />
     </section>
   );
 }
 
+function NewGoalSheet({
+  open,
+  onClose,
+  onCreated,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onCreated: (goal: FeatureGoal) => void;
+}) {
+  const [name, setName] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const requestKey = useRequestKey();
+  useEffect(() => {
+    if (open) {
+      setName("");
+      setError("");
+    }
+  }, [open]);
+  const create = async (event: FormEvent) => {
+    event.preventDefault();
+    const title = name.trim();
+    if (!title || busy) return;
+    setBusy(true);
+    setError("");
+    const values = { title, outcome: "" };
+    try {
+      const result = await goalIntegration.saveGoal(values, requestKey(["create", values]));
+      onCreated(result.goal);
+    } catch (caught) {
+      const message = caught instanceof Error ? caught.message : "";
+      setError(/already exists|revision_conflict/.test(message) ? "Goal already exists" : "Could not save goal");
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Sheet open={open} onClose={onClose} title="New goal" size="small">
+      <form className="composer" onSubmit={(event) => void create(event)}>
+        <header className="sheet-head">
+          <button type="button" className="ot-round ot-round--plain" aria-label="Close" disabled={busy} onClick={onClose}>
+            <X size={18} strokeWidth={1.8} aria-hidden="true" />
+          </button>
+          <span className="sheet-head-spacer" />
+          <button type="submit" className="ot-button ot-button--small" disabled={busy || !name.trim()}>
+            {busy ? <i className="composer-saving" aria-hidden="true" /> : "Add"}
+          </button>
+        </header>
+        <input
+          className="composer-line"
+          placeholder="Goal name"
+          aria-label="Goal name"
+          maxLength={80}
+          value={name}
+          disabled={busy}
+          autoFocus
+          onChange={(event) => setName(event.target.value)}
+        />
+        {error ? (
+          <p role="alert" className="ot-notice ot-notice--error">
+            {error}
+          </p>
+        ) : null}
+      </form>
+    </Sheet>
+  );
+}
+
+/** "Make it yours": logo, initials or an emoji, and one of six colours. */
+function GoalAppearanceSheet(props: {
+  name: string | null;
+  summary?: GoalSummary;
+  feature?: FeatureGoal;
+  logo?: GoalLogo;
+  appearance: GoalAppearance | null;
+  onClose: () => void;
+  onSave: (appearance: GoalAppearance) => void;
+  onLogo: (logo: GoalLogo | null) => void;
+  onRemoved: () => void;
+}) {
+  // The last goal stays on screen while the sheet eases out.
+  const [last, setLast] = useState<{ name: string; appearance: GoalAppearance } | null>(null);
+  useEffect(() => {
+    if (props.name && props.appearance) setLast({ name: props.name, appearance: props.appearance });
+  }, [props.name, props.appearance]);
+  const shown = props.name && props.appearance ? { name: props.name, appearance: props.appearance } : last;
+  return (
+    <Sheet open={!!props.name} onClose={props.onClose} title={shown ? `Appearance for ${shown.name}` : "Goal appearance"} size="regular">
+      {shown ? <GoalAppearanceBody key={shown.name} {...props} shown={shown.name} appearance={shown.appearance} /> : null}
+    </Sheet>
+  );
+}
+
+function GoalAppearanceBody({
+  shown,
+  summary,
+  feature,
+  logo,
+  appearance,
+  onClose,
+  onSave,
+  onLogo,
+  onRemoved,
+}: {
+  shown: string;
+  summary?: GoalSummary;
+  feature?: FeatureGoal;
+  logo?: GoalLogo;
+  appearance: GoalAppearance;
+  onClose: () => void;
+  onSave: (appearance: GoalAppearance) => void;
+  onLogo: (logo: GoalLogo | null) => void;
+  onRemoved: () => void;
+}) {
+  const planner = usePlanner();
+  const [draft, setDraft] = useState<GoalAppearance>(appearance);
+  const [busy, setBusy] = useState(false);
+  const [logoError, setLogoError] = useState("");
+  const [removing, setRemoving] = useState(false);
+  const picker = useRef<HTMLInputElement>(null);
+
+  const canHaveLogo = feature?.status === "active";
+  const saveLogo = async (file: File | null) => {
+    if (!feature || busy) return;
+    setBusy(true);
+    setLogoError("");
+    let prepared = false;
+    try {
+      const next = file ? await prepareGoalLogo(file) : null;
+      prepared = true;
+      await setGoalLogo(feature.id, next);
+      onLogo(next);
+    } catch (caught) {
+      setLogoError(
+        prepared
+          ? "Could not save the logo. Try again."
+          : caught instanceof Error
+            ? caught.message
+            : "The image could not be opened.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+  const done = () => {
+    try {
+      onSave(draft);
+      onClose();
+    } catch {
+      // The draft stays on screen so it can be saved again.
+    }
+  };
+  const remove = async () => {
+    setRemoving(false);
+    setBusy(true);
+    try {
+      await planner.removeGoal(shown);
+      onRemoved();
+    } catch {
+      // The failure has already been reported.
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="appearance">
+        <header className="sheet-head">
+          <button type="button" className="ot-round ot-round--plain" aria-label="Close" disabled={busy} onClick={onClose}>
+            <X size={18} strokeWidth={1.8} aria-hidden="true" />
+          </button>
+          <span className="sheet-head-spacer" />
+          <button type="button" className="ot-button ot-button--small" disabled={busy} onClick={done}>
+            Done
+          </button>
+        </header>
+        <div className="appearance-goal">
+          <GoalAvatar name={shown} appearance={draft} logo={logo} size={64} />
+          <div>
+            <strong>{shown}</strong>
+            <span>Make it yours</span>
+          </div>
+          <button
+            type="button"
+            className="ot-round ot-round--plain"
+            aria-label="Surprise me"
+            data-tip="Surprise me"
+            data-tip-align="end"
+            onClick={() => setDraft(surpriseGoalAppearance(draft))}
+          >
+            <Shuffle size={18} strokeWidth={1.8} aria-hidden="true" />
+          </button>
+        </div>
+
+        {canHaveLogo ? (
+          <div className="appearance-logo">
+            <input
+              ref={picker}
+              type="file"
+              accept="image/png,image/jpeg"
+              aria-label="Goal logo"
+              hidden
+              onChange={(event) => {
+                const file = event.currentTarget.files?.[0];
+                event.currentTarget.value = "";
+                if (file) void saveLogo(file);
+              }}
+            />
+            <button type="button" className="ot-chip" disabled={busy} onClick={() => picker.current?.click()}>
+              {logo ? "Replace logo" : "Add logo"}
+            </button>
+            {logo ? (
+              <button type="button" className="ot-chip" disabled={busy} onClick={() => void saveLogo(null)}>
+                Remove logo
+              </button>
+            ) : null}
+            {busy ? <span role="status">Saving…</span> : null}
+          </div>
+        ) : null}
+        {logoError ? (
+          <p role="alert" className="ot-notice ot-notice--error">
+            {logoError}
+          </p>
+        ) : null}
+
+        <p className="appearance-label">Icon</p>
+        <div className="appearance-icons" role="group" aria-label="Icon">
+          <button
+            type="button"
+            aria-pressed={draft.emoji === null}
+            className="appearance-initials"
+            onClick={() => setDraft({ ...draft, emoji: null })}
+          >
+            Initials
+          </button>
+          {goalEmoji.map((emoji) => (
+            <button
+              key={emoji}
+              type="button"
+              aria-pressed={draft.emoji === emoji}
+              aria-label={emoji}
+              onClick={() => setDraft({ ...draft, emoji })}
+            >
+              {emoji}
+            </button>
+          ))}
+        </div>
+
+        <p className="appearance-label">Color</p>
+        <div className="appearance-swatches" role="group" aria-label="Color">
+          {goalColors.map((color, index) => (
+            <button
+              key={color.name}
+              type="button"
+              aria-pressed={draft.color === index}
+              aria-label={color.name}
+              style={{ "--tone-light": color.light, "--tone-dark": color.dark, "--tone-accent": color.ink } as React.CSSProperties}
+              onClick={() => setDraft({ ...draft, color: index })}
+            >
+              {draft.color === index ? <Check size={15} strokeWidth={2} aria-hidden="true" /> : null}
+            </button>
+          ))}
+        </div>
+
+        <p className="appearance-note">Logos sync to your account. Colors and emoji stay on this device.</p>
+        {summary && !summary.total ? (
+          <button type="button" className="ot-button ot-button--danger ot-button--small appearance-remove" disabled={busy} onClick={() => setRemoving(true)}>
+            Remove empty goal
+          </button>
+        ) : (
+          <p className="appearance-note">To remove this goal, move its tasks out of it first.</p>
+        )}
+      </div>
+      <Confirm
+        open={removing}
+        title="Remove empty goal?"
+        message="Tasks will not be deleted."
+        confirmLabel="Remove"
+        onCancel={() => setRemoving(false)}
+        onConfirm={() => void remove()}
+      />
+    </>
+  );
+}
+
+const sortLabels = { none: "Default order", desc: "Highest first", asc: "Lowest first" } as const;
+
 function GoalDetail({
   goalId,
+  knownTitle,
   version,
   initialDraft,
-  initialLogo,
+  logo,
+  appearanceFor,
   onDraft,
-  onLogoChanged,
+  onStyle,
+  onRenamed,
+  onEditTask,
   onChanged,
 }: {
   goalId: string;
+  knownTitle?: string;
   version: number;
   initialDraft?: GoalDraft;
-  initialLogo?: GoalLogo;
+  logo?: GoalLogo;
+  appearanceFor: (name: string) => GoalAppearance;
   onDraft: (draft: GoalDraft) => void;
-  onLogoChanged: (logo: GoalLogo | null) => void;
-  onChanged: (goal?: FeatureGoal) => void;
+  onStyle: (name: string) => void;
+  onRenamed: (previous: string, next: string) => void;
+  onEditTask: (task: PlannerTask, goal: string) => void;
+  onChanged: () => void;
 }) {
+  const planner = usePlanner();
   const [context, setContext] = useState<GoalContext | null>(null);
-  const [logo, setLogo] = useState<GoalLogo | null>(initialLogo ?? null);
-  const logoPicker = useRef<HTMLInputElement>(null);
-  const logoGeneration = useRef(0);
   const [draft, setDraft] = useState<GoalDraft | null>(initialDraft ?? null);
   const [section, setSection] = useState<"tasks" | "brief" | "plan">("tasks");
   const [codexOnly, setCodexOnly] = useState(false);
+  const [sort, setSort] = useState<keyof typeof sortLabels>("none");
   const [editingGoal, setEditingGoal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -364,19 +699,12 @@ function GoalDetail({
   const hydrated = useRef(!!initialDraft);
   const draftRef = useRef(draft);
   draftRef.current = draft;
-  const callbacks = useRef({ onDraft, onLogoChanged, onChanged });
-  callbacks.current = { onDraft, onLogoChanged, onChanged };
+  const callbacks = useRef({ onDraft, onChanged, onRenamed });
+  callbacks.current = { onDraft, onChanged, onRenamed };
   const requestKey = useRequestKey();
+
   const refresh = useCallback(async () => {
     const current = ++generation.current;
-    const currentLogo = ++logoGeneration.current;
-    void listGoalLogos([goalId]).then(
-      (loaded) => {
-        if (active.current && currentLogo === logoGeneration.current)
-          setLogo(loaded[goalId] ?? null);
-      },
-      () => {},
-    );
     setLoading(true);
     setError("");
     try {
@@ -394,11 +722,9 @@ function GoalDetail({
         draftRef.current = next;
         setDraft(next);
         callbacks.current.onDraft(next);
-      } else if (draftRef.current?.markdown !== (result.prd?.markdown ?? ""))
-        setCompare(true);
+      } else if (draftRef.current?.markdown !== (result.prd?.markdown ?? "")) setCompare(true);
     } catch (caught) {
-      if (active.current && current === generation.current)
-        setError(integrationError(caught));
+      if (active.current && current === generation.current) setError(integrationError(caught));
     } finally {
       if (active.current && current === generation.current) setLoading(false);
     }
@@ -409,38 +735,9 @@ function GoalDetail({
     return () => {
       active.current = false;
       generation.current += 1;
-      logoGeneration.current += 1;
     };
   }, [refresh, version]);
-  const saveLogo = async (file: File | null) => {
-    if (lock.current || context?.goal.status !== "active") return;
-    lock.current = true;
-    setBusy(true);
-    setError("");
-    setNotice(file ? "Uploading logo…" : "");
-    let prepared = false;
-    try {
-      const next = file ? await prepareGoalLogo(file) : null;
-      prepared = true;
-      if (!active.current) return;
-      await setGoalLogo(goalId, next);
-      if (!active.current) return;
-      logoGeneration.current += 1;
-      setLogo(next);
-      setNotice(file ? "Logo saved." : "Logo removed.");
-      callbacks.current.onLogoChanged(next);
-    } catch (caught) {
-      if (active.current) {
-        const imageError =
-          caught instanceof Error ? caught.message : "The image could not be opened.";
-        setError(prepared ? integrationError(caught) : imageError);
-        setNotice("");
-      }
-    } finally {
-      lock.current = false;
-      if (active.current) setBusy(false);
-    }
-  };
+
   const change = (patch: Partial<GoalDraft>) => {
     if (!draft) return;
     const next = { ...draft, ...patch };
@@ -456,7 +753,6 @@ function GoalDetail({
     setError("");
     setNotice("");
     try {
-      let savedGoal: FeatureGoal;
       if (kind === "goal") {
         const values = {
           goal_id: goalId,
@@ -464,42 +760,26 @@ function GoalDetail({
           title: draft.title.trim(),
           outcome: draft.outcome.trim(),
         };
-        const result = await goalIntegration.saveGoal(
-          values,
-          requestKey([kind, values]),
-        );
+        const previous = context.goal.title;
+        const result = await goalIntegration.saveGoal(values, requestKey([kind, values]));
         if (!active.current) return;
-        setContext((previous) =>
-          previous ? { ...previous, goal: result.goal } : previous,
-        );
+        setContext((current) => (current ? { ...current, goal: result.goal } : current));
         setEditingGoal(false);
-        savedGoal = result.goal;
+        callbacks.current.onRenamed(previous, result.goal.title);
       } else {
         const criteria = splitCriteria(draft.criteria);
         const result = await goalIntegration.savePrd(
           context,
           draft.markdown,
           criteria,
-          requestKey([
-            kind,
-            goalId,
-            context.goal.revision,
-            context.prd?.revision,
-            draft.markdown,
-            criteria,
-          ]),
+          requestKey([kind, goalId, context.goal.revision, context.prd?.revision, draft.markdown, criteria]),
         );
         if (!active.current) return;
-        setContext((previous) =>
-          previous
-            ? { ...previous, goal: result.goal, prd: result.prd }
-            : previous,
-        );
+        setContext((current) => (current ? { ...current, goal: result.goal, prd: result.prd } : current));
         setCompare(false);
-        savedGoal = result.goal;
       }
       setNotice(kind === "goal" ? "Goal saved." : "Brief saved.");
-      callbacks.current.onChanged(savedGoal);
+      callbacks.current.onChanged();
     } catch (caught) {
       if (active.current) setError(integrationError(caught));
     } finally {
@@ -507,447 +787,222 @@ function GoalDetail({
       if (active.current) setBusy(false);
     }
   };
+
+  const title = context?.goal.title ?? knownTitle ?? "Goal";
+  const goalTasks = useMemo(() => tasksForGoal(planner.tasks, title), [planner.tasks, title]);
+  const visibleTasks = useMemo(() => {
+    const filtered = codexOnly ? goalTasks.filter((task) => task.execution_target === "codex") : goalTasks;
+    if (sort === "none") return openFirst(filtered);
+    return [...filtered].sort((a, b) => (sort === "desc" ? b.priority - a.priority : a.priority - b.priority));
+  }, [goalTasks, codexOnly, sort]);
+  const done = goalTasks.filter((task) => task.isComplete).length;
+  const appearance = appearanceFor(title);
+
   return (
-    <>
-      <Link className="goal-back" to={goalRoute()}>
-        <ArrowLeft size={16} /> Goals
-      </Link>
-      <div className="goal-workbench-heading">
-        <div className="goal-title">
-          <GoalMark logo={logo} />
-          <h1>{context?.goal.title ?? "Goal"}</h1>
-        </div>
+    <div className="goal-detail">
+      <header className="goal-head">
+        <Link className="ot-round" to={goalRoute()} aria-label="Back to goals">
+          <ArrowLeft size={18} strokeWidth={1.8} aria-hidden="true" />
+        </Link>
+        <button type="button" className="goal-head-avatar" aria-label={`Appearance for goal: ${title}`} onClick={() => onStyle(title)}>
+          <GoalAvatar name={title} appearance={appearance} logo={logo} size={40} />
+        </button>
+        <h1>{title}</h1>
         <button
           type="button"
-          disabled={busy || loading}
-          onClick={() => void refresh()}
+          className="ot-round ot-round--plain"
           aria-label="Refresh goal"
+          data-tip="Refresh"
+          data-tip-align="end"
+          disabled={busy || loading}
+          onClick={() => {
+            void refresh();
+            void planner.refresh();
+          }}
         >
-          <RefreshCw size={16} />
+          <RefreshCw size={16} strokeWidth={1.8} aria-hidden="true" />
         </button>
-      </div>
+      </header>
+
+      <nav aria-label="Goal sections" className="goal-tabs">
+        {(["tasks", "brief", "plan"] as const).map((value) => (
+          <button type="button" key={value} aria-pressed={section === value} disabled={busy} onClick={() => setSection(value)}>
+            {value === "tasks" ? "Tasks" : value === "brief" ? "Brief" : "Plan"}
+          </button>
+        ))}
+        {section === "tasks" ? (
+          <Segmented
+            label="Tasks shown"
+            options={[
+              { value: "all", label: "All tasks" },
+              { value: "codex", label: "Codex" },
+            ]}
+            value={codexOnly ? "codex" : "all"}
+            onChange={(value) => setCodexOnly(value === "codex")}
+          />
+        ) : null}
+      </nav>
+
       {error ? (
-        <p role="alert" className="goal-notice">
+        <p role="alert" className="ot-notice ot-notice--error">
           {error}
         </p>
       ) : null}
       {notice ? (
-        <p role="status" className="goal-muted">
+        <p role="status" className="ot-notice">
           {notice}
         </p>
       ) : null}
-      {loading ? (
-        <p role="status" className="goal-muted">
-          Refreshing goal…
-        </p>
-      ) : null}
-      {context && draft ? (
-        <>
-          {context.goal.outcome ? (
-            <p className="goal-muted">{context.goal.outcome}</p>
-          ) : null}
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => setEditingGoal((value) => !value)}
-            aria-expanded={editingGoal}
-          >
-            Edit goal
-          </button>
-          {editingGoal ? (
-            <form
-              className="goal-form"
-              onSubmit={(event) => void save("goal", event)}
-            >
-              <label>
-                Goal name
-                <input
-                  value={draft.title}
-                  maxLength={200}
-                  required
-                  disabled={busy}
-                  onChange={(event) => change({ title: event.target.value })}
-                />
-              </label>
-              <label>
-                Outcome
-                <textarea
-                  value={draft.outcome}
-                  maxLength={16000}
-                  rows={3}
-                  disabled={busy}
-                  onChange={(event) => change({ outcome: event.target.value })}
-                />
-              </label>
-              {context.goal.status === "active" ? (
-                <div className="goal-logo-actions">
-                  <input
-                    ref={logoPicker}
-                    type="file"
-                    accept="image/png,image/jpeg"
-                    aria-label="Goal logo"
-                    hidden
-                    onChange={(event) => {
-                      const file = event.currentTarget.files?.[0];
-                      event.currentTarget.value = "";
-                      if (file) void saveLogo(file);
-                    }}
-                  />
+
+      <div className="goal-section" key={section}>
+        {section === "tasks" ? (
+          <section className="plan" aria-label="Tasks">
+            <header className="plan-head">
+              <h2>Tasks</h2>
+              {goalTasks.length ? (
+                <span aria-label={`${done} of ${goalTasks.length} tasks completed`}>
+                  {done}/{goalTasks.length}
+                </span>
+              ) : null}
+              <div className="plan-head-tools">
+                {goalTasks.length > 1 ? (
                   <button
                     type="button"
-                    disabled={busy}
-                    onClick={() => logoPicker.current?.click()}
+                    className="ot-round ot-round--plain"
+                    aria-label={`Sort by priority: ${sortLabels[sort]}`}
+                    data-tip={sortLabels[sort]}
+                    data-tip-align="end"
+                    data-active={sort !== "none" || undefined}
+                    onClick={() => setSort(sort === "none" ? "desc" : sort === "desc" ? "asc" : "none")}
                   >
-                    {logo ? "Change logo" : "Upload logo"}
+                    <ArrowUpDown size={16} strokeWidth={1.8} aria-hidden="true" />
                   </button>
-                  {logo ? (
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => void saveLogo(null)}
-                    >
-                      Remove logo
-                    </button>
-                  ) : null}
-                </div>
-              ) : null}
-              <button
-                type="submit"
-                className="goal-primary"
-                disabled={busy || loading || !draft.title.trim()}
-              >
-                {busy ? "Saving…" : "Save goal"}
-              </button>
-            </form>
-          ) : null}
-          <nav aria-label="Goal sections" className="goal-section-nav">
-            {(["tasks", "brief", "plan"] as const).map((value) => (
-              <button
-                type="button"
-                key={value}
-                aria-pressed={section === value}
-                disabled={busy}
-                onClick={() => setSection(value)}
-              >
-                {value === "tasks"
-                  ? "Tasks"
-                  : value === "brief"
-                  ? "Brief"
-                  : "Plan"}
-              </button>
-            ))}
-          </nav>
-          <div className="goal-section-body" key={section}>
-            {section === "tasks" ? (
-              <>
-                <div className="goal-task-tools">
-                  <span className="goal-muted">
-                    {context.tasks.length} tasks
-                  </span>
-                  <label className="goal-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={codexOnly}
-                      onChange={(event) => setCodexOnly(event.target.checked)}
-                    />{" "}
-                    For Codex
-                  </label>
-                </div>
-                <ul className="goal-list">
-                  {context.tasks
-                    .filter(
-                      (task) => !codexOnly || task.execution_target === "codex",
-                    )
-                    .map((task) => (
-                      <li key={task.id}>
-                        <Link
-                          to={goalRoute(goalId, task.id)}
-                          className="goal-list-item"
-                        >
-                          <span
-                            className={`goal-task-check${
-                              task.isComplete ? " is-complete" : ""
-                            }`}
-                            aria-label={task.isComplete ? "Completed" : "Open"}
-                          >
-                            {task.isComplete ? "✓" : ""}
-                          </span>
-                          <span>
-                            <strong>{task.content}</strong>
-                            <span className="goal-meta">
-                              {taskStageLabel(task)}
-                              {task.execution_target === "codex"
-                                ? " · Codex"
-                                : ""}
-                            </span>
-                          </span>
-                        </Link>
-                      </li>
-                    ))}
-                </ul>
-                {!context.tasks.some(
-                  (task) => !codexOnly || task.execution_target === "codex",
-                ) ? (
-                  <p className="goal-muted">
-                    {codexOnly
-                      ? "No tasks marked for Codex."
-                      : "No tasks yet. Use Add New Task to add one to this goal."}
-                  </p>
                 ) : null}
-              </>
-            ) : section === "brief" ? (
-              <form
-                className="goal-form"
-                onSubmit={(event) => void save("prd", event)}
-              >
-                <span className="goal-meta">
-                  Brief {context.prd?.revision ?? "not written"}
-                </span>
-                {compare ? (
-                  <details>
-                    <summary>
-                      Current saved brief — your draft is kept below
-                    </summary>
-                    <pre className="goal-prose">
-                      {context.prd?.markdown || "No saved brief."}
-                    </pre>
-                  </details>
-                ) : null}
-                <label>
-                  Requirements
-                  <textarea
-                    value={draft.markdown}
-                    onChange={(event) =>
-                      change({ markdown: event.target.value })
-                    }
-                    rows={10}
-                    maxLength={200000}
-                    required
-                    disabled={busy}
-                  />
+              </div>
+            </header>
+            {goalTasks.length ? (
+              <div className="ot-progress goal-progress" style={{ "--goal-ink": goalColors[appearance.color]?.ink } as React.CSSProperties}>
+                <i style={{ width: `${(done / goalTasks.length) * 100}%` }} />
+              </div>
+            ) : null}
+            {!planner.loaded ? (
+              <PlannerStatus />
+            ) : visibleTasks.length ? (
+              <TaskList
+                tasks={visibleTasks}
+                detail="goal"
+                keepOrder
+                onEdit={(task) => onEditTask(task, title)}
+                meta={(task) =>
+                  [
+                    task.work_stage && task.work_stage !== "not_started" && !task.isComplete ? task.work_stage.replace(/_/g, " ") : "",
+                    task.execution_target === "codex" ? "Codex" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" · ") || undefined
+                }
+              />
+            ) : (
+              <Empty icon={Flag}>{codexOnly ? "No tasks marked for Codex." : "No tasks planned"}</Empty>
+            )}
+          </section>
+        ) : !context || !draft ? (
+          loading ? (
+            <p role="status" className="goal-muted">
+              Refreshing goal…
+            </p>
+          ) : null
+        ) : section === "brief" ? (
+          <div className="goal-brief">
+            <div className="goal-brief-head">
+              <span className="goal-meta">Brief {context.prd?.revision ?? "not written"}</span>
+              <button type="button" className="ot-link" disabled={busy} aria-expanded={editingGoal} onClick={() => setEditingGoal((value) => !value)}>
+                Edit goal
+              </button>
+            </div>
+            {context.goal.outcome && !editingGoal ? <p className="goal-outcome">{context.goal.outcome}</p> : null}
+            {editingGoal ? (
+              <form className="goal-form" onSubmit={(event) => void save("goal", event)}>
+                <label className="ot-field">
+                  <span>Goal name</span>
+                  <input className="ot-input" value={draft.title} maxLength={200} required disabled={busy} onChange={(event) => change({ title: event.target.value })} />
                 </label>
-                <label>
-                  Acceptance criteria
-                  <textarea
-                    value={draft.criteria}
-                    onChange={(event) =>
-                      change({ criteria: event.target.value })
-                    }
-                    rows={4}
-                    placeholder="One clear criterion per line"
-                    disabled={busy}
-                  />
+                <label className="ot-field">
+                  <span>Outcome</span>
+                  <textarea className="ot-input" value={draft.outcome} maxLength={16000} rows={3} disabled={busy} onChange={(event) => change({ outcome: event.target.value })} />
                 </label>
-                <button
-                  type="submit"
-                  className="goal-primary"
-                  disabled={busy || loading || !draft.markdown.trim()}
-                >
-                  {busy ? "Saving…" : "Save brief"}
+                <button type="submit" className="ot-button ot-button--small" disabled={busy || loading || !draft.title.trim()}>
+                  {busy ? "Saving…" : "Save goal"}
                 </button>
               </form>
-            ) : context.plan ? (
-              <>
-                {planIsStale(context) ? (
-                  <p role="alert" className="goal-notice">
-                    Requirements changed. Reconcile this plan before starting
-                    work.
-                  </p>
-                ) : null}
-                <p className="goal-meta">
-                  Plan {context.plan.revision} · Brief{" "}
-                  {context.plan.source_prd_revision}
-                </p>
-                <p className="goal-prose">{context.plan.summary}</p>
-                <ol className="goal-plan">
-                  {context.plan.items.map((item) => (
-                    <li key={item.id}>
-                      <strong>{item.title}</strong>
-                      {item.description ? (
-                        <p className="goal-prose goal-muted">
-                          {item.description}
-                        </p>
-                      ) : null}
-                      {context.tasks
-                        .filter(
-                          (task) =>
-                            task.source_plan_id === context.plan?.id &&
-                            task.source_plan_item_id === item.id,
-                        )
-                        .map((task) => (
-                          <Link key={task.id} to={goalRoute(goalId, task.id)}>
-                            {task.content} · {taskStageLabel(task)}
-                          </Link>
-                        ))}
-                    </li>
-                  ))}
-                </ol>
-              </>
-            ) : (
-              <p className="goal-muted">No saved plan yet.</p>
-            )}
+            ) : null}
+            <form className="goal-form" onSubmit={(event) => void save("prd", event)}>
+              {compare ? (
+                <details>
+                  <summary>Current saved brief — your draft is kept below</summary>
+                  <pre className="goal-prose">{context.prd?.markdown || "No saved brief."}</pre>
+                </details>
+              ) : null}
+              <label className="ot-field">
+                <span>Requirements</span>
+                <textarea
+                  className="ot-input"
+                  value={draft.markdown}
+                  onChange={(event) => change({ markdown: event.target.value })}
+                  rows={10}
+                  maxLength={200000}
+                  placeholder="What should this goal achieve?"
+                  required
+                  disabled={busy}
+                />
+              </label>
+              <label className="ot-field">
+                <span>Acceptance criteria</span>
+                <textarea
+                  className="ot-input"
+                  value={draft.criteria}
+                  onChange={(event) => change({ criteria: event.target.value })}
+                  rows={4}
+                  placeholder="One clear criterion per line"
+                  disabled={busy}
+                />
+              </label>
+              <button type="submit" className="ot-button ot-button--small" disabled={busy || loading || !draft.markdown.trim()}>
+                {busy ? "Saving…" : "Save brief"}
+              </button>
+            </form>
           </div>
-        </>
-      ) : null}
-    </>
-  );
-}
-
-function TaskDetail({
-  taskId,
-  onChanged,
-}: {
-  taskId: string;
-  onChanged: () => void;
-}) {
-  const [context, setContext] = useState<TaskContext | null>(null);
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const active = useRef(true);
-  const lock = useRef(false);
-  const generation = useRef(0);
-  const changed = useRef(onChanged);
-  changed.current = onChanged;
-  const requestKey = useRequestKey();
-  const refresh = useCallback(async () => {
-    const current = ++generation.current;
-    setLoading(true);
-    setError("");
-    try {
-      const result = await goalIntegration.getTask(taskId);
-      if (active.current && current === generation.current) setContext(result);
-    } catch (caught) {
-      if (active.current && current === generation.current)
-        setError(integrationError(caught));
-    } finally {
-      if (active.current && current === generation.current) setLoading(false);
-    }
-  }, [taskId]);
-  useEffect(() => {
-    active.current = true;
-    void refresh();
-    return () => {
-      active.current = false;
-      generation.current += 1;
-    };
-  }, [refresh]);
-  const toggleTarget = async () => {
-    if (!context || lock.current) return;
-    lock.current = true;
-    setBusy(true);
-    setError("");
-    const target = context.task.execution_target === "codex" ? null : "codex";
-    try {
-      const result = await goalIntegration.setTarget(
-        context.task,
-        target,
-        requestKey([taskId, context.task.revision, target]),
-      );
-      if (!active.current) return;
-      setContext((previous) =>
-        previous ? { ...previous, task: result.task } : previous,
-      );
-      changed.current();
-    } catch (caught) {
-      if (active.current) setError(integrationError(caught));
-    } finally {
-      lock.current = false;
-      if (active.current) setBusy(false);
-    }
-  };
-  return (
-    <>
-      <Link className="goal-back" to={goalRoute(context?.goal?.id)}>
-        <ArrowLeft size={16} /> {context?.goal?.title ?? "Goals"}
-      </Link>
-      <div className="goal-workbench-heading">
-        <h1>{context?.task.content ?? "Task"}</h1>
-        <button
-          type="button"
-          aria-label="Refresh task context"
-          disabled={busy || loading}
-          onClick={() => void refresh()}
-        >
-          <RefreshCw size={16} />
-        </button>
+        ) : context.plan ? (
+          <div className="goal-plan-view">
+            {planIsStale(context) ? (
+              <p role="alert" className="ot-notice ot-notice--error">
+                Requirements changed. Reconcile this plan before starting work.
+              </p>
+            ) : null}
+            <p className="goal-meta">
+              Plan {context.plan.revision} · Brief {context.plan.source_prd_revision}
+            </p>
+            {context.plan.summary ? <p className="goal-prose">{context.plan.summary}</p> : null}
+            <ol className="goal-plan">
+              {context.plan.items.map((item) => (
+                <li key={item.id}>
+                  <strong>{item.title}</strong>
+                  {item.description ? <p className="goal-prose goal-muted">{item.description}</p> : null}
+                  {context.tasks
+                    .filter((task) => task.source_plan_id === context.plan?.id && task.source_plan_item_id === item.id)
+                    .map((task) => (
+                      <Link key={task.id} className="ot-link" to={goalRoute(goalId, task.id)}>
+                        {task.content} · {taskStageLabel(task)}
+                      </Link>
+                    ))}
+                </li>
+              ))}
+            </ol>
+          </div>
+        ) : (
+          <p className="goal-muted">No saved plan yet.</p>
+        )}
       </div>
-      {error ? (
-        <p role="alert" className="goal-notice">
-          {error}
-        </p>
-      ) : null}
-      {loading ? (
-        <p role="status" className="goal-muted">
-          Refreshing task…
-        </p>
-      ) : null}
-      {context ? (
-        <>
-          <p className="goal-meta">
-            {taskStageLabel(context.task)} · Revision {context.task.revision}
-          </p>
-          <label className="goal-checkbox goal-target">
-            <input
-              type="checkbox"
-              checked={context.task.execution_target === "codex"}
-              disabled={busy || loading}
-              onChange={() => void toggleTarget()}
-            />{" "}
-            For Codex
-          </label>
-          <p className="goal-muted">
-            Available when you request work in a connected session. This does
-            not start a run.
-          </p>
-          {context.task.acceptance_criteria.length ? (
-            <>
-              <h2>Acceptance criteria</h2>
-              <ul className="goal-criteria">
-                {context.task.acceptance_criteria.map((criterion, index) => (
-                  <li key={index}>{criterion}</li>
-                ))}
-              </ul>
-            </>
-          ) : null}
-          <h2>Progress & results</h2>
-          {!context.recent_updates.length ? (
-            <p className="goal-muted">No work updates yet.</p>
-          ) : null}
-          <ol className="goal-updates">
-            {context.recent_updates.map((update) => (
-              <li key={update.id}>
-                <p className="goal-prose">{update.summary}</p>
-                <time className="goal-meta" dateTime={update.created_at}>
-                  {new Date(update.created_at).toLocaleString()}
-                </time>
-                {update.blockers.length ? (
-                  <p className="goal-prose goal-muted">
-                    Blocked: {update.blockers.join("; ")}
-                  </p>
-                ) : null}
-                {update.validation.length ? (
-                  <p className="goal-prose goal-muted">
-                    Validation: {update.validation.join("; ")}
-                  </p>
-                ) : null}
-                {update.links
-                  .filter((link) => /^https:\/\//i.test(link.url))
-                  .map((link, index) => (
-                    <a
-                      key={`${link.url}-${index}`}
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {link.label || link.url}
-                    </a>
-                  ))}
-              </li>
-            ))}
-          </ol>
-        </>
-      ) : null}
-    </>
+    </div>
   );
 }

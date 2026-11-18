@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
 import { ArrowUpRight, Check, LockKeyhole } from "lucide-react";
-import { LogoWordmark } from "@/components/LogoWordmark";
+import { Wordmark } from "@/components/LogoWordmark";
 import { authReturnRoute, integrationRequestKey } from "@/lib/goalWorkbench";
 import {
   authorizationIdFromSearch,
@@ -31,7 +31,7 @@ export function OAuthConsentScreen() {
     <div className="oauth-consent-page">
       <header>
         <Link to="/" aria-label="Offtasks home">
-          <LogoWordmark width={126} height={32} />
+          <Wordmark large />
         </Link>
       </header>
       <main>

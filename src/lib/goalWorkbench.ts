@@ -69,7 +69,7 @@ export const goalRoute = (goalId?: string | null, taskId?: string | null) => {
   if (taskId) params.set("task", taskId);
   return `/app?${params}`;
 };
-/** Only first-party planner selectors or the provider's opaque consent request ID. */
+/** Only first-party planner selectors, the planner's own page names, or the provider's opaque consent request ID. */
 export function safePlannerReturn(value: unknown): string {
   if (
     typeof value !== "string" ||
@@ -94,8 +94,11 @@ export function safePlannerReturn(value: unknown): string {
       const id = url.searchParams.get(key);
       if (id && uuid.test(id)) params.set(key, id);
     }
-    if (url.searchParams.get("view") === "goals" || params.size)
-      params.set("view", "goals");
+    const view = url.searchParams.get("view");
+    if (view === "goals" || params.size) params.set("view", "goals");
+    // The planner's other pages are a fixed set of names, never free text.
+    else if (view === "notes" || view === "later" || view === "statistics")
+      params.set("view", view);
     return params.size ? `/app?${params}` : "/app";
   } catch {
     return "/app";

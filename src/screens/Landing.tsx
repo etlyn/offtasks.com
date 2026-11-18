@@ -1,135 +1,117 @@
 import { Apple, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import { LandingIllustration } from "@/components/public/LandingIllustration";
+import { PlannerPreview } from "@/components/public/PlannerPreview";
 import { PublicFooter } from "@/components/public/PublicFooter";
 import { PublicSiteShell } from "@/components/public/PublicSiteShell";
-import { Button } from "@/components/ui/button";
-import {
-  IOS_APP_STORE_URL,
-  SHOW_IOS_APP_STORE_DOWNLOAD,
-} from "@/config/publicSite";
+import { IOS_APP_STORE_URL, SHOW_IOS_APP_STORE_DOWNLOAD } from "@/config/publicSite";
 import { useAuth } from "@/providers/auth";
+import calendarLarge from "@/assets/onboarding/calendar-1120.webp";
+import calendarSmall from "@/assets/onboarding/calendar-640.webp";
+import captureLarge from "@/assets/onboarding/capture-1120.webp";
+import captureSmall from "@/assets/onboarding/capture-640.webp";
+import growLarge from "@/assets/onboarding/grow-1120.webp";
+import growSmall from "@/assets/onboarding/grow-640.webp";
 
-const features = [
-  "Quick capture",
-  "Check tasks off",
-  "Today / Tomorrow / Later",
-  "Priorities",
-  "Labels",
-  "Stats",
-];
+const Art = ({ small, large, eager }: { small: string; large: string; eager?: boolean }) => (
+  <img
+    className="landing-art"
+    src={large}
+    srcSet={`${small} 640w, ${large} 1120w`}
+    sizes="(max-width: 56.1875em) min(84vw, 26rem), 30rem"
+    width={1120}
+    height={1120}
+    alt=""
+    loading={eager ? "eager" : "lazy"}
+    decoding="async"
+  />
+);
 
 export const LandingScreen = () => {
   const { user } = useAuth();
-
   const primaryHref = user ? "/app" : "/signup";
-  const primaryLabel = user ? "Open workspace" : "Start free";
+  const primaryLabel = user ? "Open planner" : "Start free";
 
   return (
     <PublicSiteShell
       actionSlot={
         <>
           {!user ? (
-            <Button
-              asChild
-              variant="ghost"
-              className="rounded-full px-4 text-[#0f172a] hover:bg-white/70 hover:text-[#009689]"
-            >
-              <Link to="/login">Sign in</Link>
-            </Button>
+            <Link className="ot-button ot-button--quiet ot-button--small" to="/login">
+              Sign in
+            </Link>
           ) : null}
-          <Button
-            asChild
-            className="rounded-full bg-[#09090b] px-5 text-white shadow-[0_16px_36px_-24px_rgba(15,23,42,0.45)] hover:bg-[#18181b]"
-          >
-            <Link to={primaryHref}>{primaryLabel}</Link>
-          </Button>
+          <Link className="ot-button ot-button--small" to={primaryHref}>
+            {primaryLabel}
+          </Link>
         </>
       }
     >
-      <main className="pb-10 pt-4 sm:pb-14 lg:pb-16">
-        <section className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-12">
-          <div className="animate-[rise-in_700ms_ease-out_both]">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#009689]">
-              Get tasks off your mind
-            </p>
-
-            <h1 className="mt-5 max-w-2xl font-['Sora',_sans-serif] text-5xl font-semibold leading-[0.96] tracking-[-0.065em] text-[#0f172a] sm:text-6xl lg:text-[5.2rem]">
-              To-Do, without noise
-            </h1>
-
-            <p className="mt-5 max-w-lg text-base leading-7 text-[#64748b] sm:text-lg sm:leading-8">
-              Capture tasks as soon as they appear, keep today focused, and feel
-              the simple relief of checking each one off.
-            </p>
-
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Button
-                asChild
-                size="lg"
-                className="h-12 rounded-full bg-[#009689] px-6 text-sm font-semibold text-white shadow-[0_22px_46px_-28px_rgba(0,150,137,0.55)] hover:bg-[#00786f]"
-              >
-                <Link to={primaryHref}>
-                  {primaryLabel}
-                  <ArrowRight className="size-4" />
-                </Link>
-              </Button>
+      <main className="landing">
+        <section className="landing-hero">
+          <div className="landing-hero-copy">
+            <h1>A little less on your mind.</h1>
+            <p>Catch a thought, add a task. Keep it in Later until you’re ready.</p>
+            <div className="landing-actions">
+              <Link className="ot-button ot-button--large" to={primaryHref} data-analytics-target="open_planner">
+                {primaryLabel}
+                <ArrowRight size={18} strokeWidth={1.8} aria-hidden="true" />
+              </Link>
               {SHOW_IOS_APP_STORE_DOWNLOAD ? (
-                <Button
-                  asChild
-                  size="lg"
-                  className="h-12 rounded-full bg-[#09090b] px-5 text-sm font-semibold text-white shadow-[0_20px_44px_-30px_rgba(15,23,42,0.5)] hover:bg-[#18181b]"
+                <a
+                  className="ot-button ot-button--large ot-button--outline"
+                  data-analytics-target="download_ios"
+                  href={IOS_APP_STORE_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="Download Offtasks on the App Store"
                 >
-                  <a
-                    data-analytics-target="download_ios"
-                    href={IOS_APP_STORE_URL}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label="Download Offtasks on the App Store"
-                  >
-                    <Apple className="size-4.5" />
-                    App Store
-                  </a>
-                </Button>
+                  <Apple size={18} strokeWidth={1.8} aria-hidden="true" />
+                  App Store
+                </a>
               ) : null}
             </div>
           </div>
-
-          <LandingIllustration />
+          <Art small={captureSmall} large={captureLarge} eager />
         </section>
 
-        <section id="features" className="mt-16 sm:mt-20">
-          <div className="rounded-[30px] border border-white/70 bg-white/62 p-5 shadow-[0_24px_56px_-46px_rgba(15,23,42,0.24)] backdrop-blur-2xl sm:p-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#009689]">
-                  Features
-                </p>
-                <h2 className="mt-2 font-['Sora',_sans-serif] text-3xl font-semibold tracking-[-0.055em] text-[#0f172a]">
-                  Built for that check-off feeling.
-                </h2>
-              </div>
-              <p className="max-w-sm text-sm leading-6 text-[#64748b]">
-                Move tasks from your head to done without feeds, clutter, or a
-                system that gets in the way.
-              </p>
-            </div>
+        <section className="landing-product" aria-label="The planner">
+          <PlannerPreview />
+        </section>
 
-            <div className="mt-6 flex flex-wrap gap-2">
-              {features.map((feature) => (
-                <span
-                  key={feature}
-                  className="rounded-full border border-[#e4e7ee] bg-white/74 px-4 py-2 text-sm font-semibold text-[#334155]"
-                >
-                  {feature}
-                </span>
-              ))}
-            </div>
+        <section className="landing-row">
+          <Art small={calendarSmall} large={calendarLarge} />
+          <div>
+            <h2>Make room for your day.</h2>
+            <p>See your day in Calendar. Check things off at your own pace.</p>
           </div>
         </section>
 
-        <PublicFooter />
+        <section className="landing-row landing-row--flip">
+          <Art small={growSmall} large={growLarge} />
+          <div>
+            <h2>Space for what matters.</h2>
+            <p>Keep ideas in Notes and move toward your Goals.</p>
+          </div>
+        </section>
+
+        <section className="landing-close">
+          <span className="ot-wordmark ot-wordmark--large" aria-hidden="true">
+            offtasks<i>.</i>
+          </span>
+          <Link className="ot-button ot-button--large" to={primaryHref}>
+            {primaryLabel}
+          </Link>
+          {!user ? (
+            <p>
+              Already have an account?{" "}
+              <Link className="ot-link" to="/login">
+                Sign in
+              </Link>
+            </p>
+          ) : null}
+        </section>
       </main>
+      <PublicFooter />
     </PublicSiteShell>
   );
 };

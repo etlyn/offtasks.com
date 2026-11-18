@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { lazy, Suspense, type ReactNode } from "react";
 import {
   BrowserRouter,
   Navigate,
@@ -6,26 +6,28 @@ import {
   Routes,
   useLocation,
 } from "react-router-dom";
+import { WordmarkLoader } from "@/components/LogoWordmark";
 import { authReturnRoute, safePlannerReturn } from "@/lib/goalWorkbench";
-import { AuthProvider, useAuth } from "@/providers/auth";
-import { DashboardScreen } from "@/screens/Dashboard";
-import { ForgotPasswordScreen } from "@/screens/ForgotPassword";
-import { LandingScreen } from "@/screens/Landing";
-import { PrivacyScreen, SupportScreen, TermsScreen } from "@/screens/Legal";
-import { LoginScreen } from "@/screens/Login";
-import { SignupScreen } from "@/screens/Signup";
-import { ResetPasswordScreen } from "@/screens/ResetPassword";
-import { OAuthConsentScreen } from "@/screens/OAuthConsent";
-import { SignInCallbackScreen } from "@/screens/SignInCallback";
 import { isManagedSignInCallback } from "@/lib/googleAuth";
+import { AuthProvider, useAuth } from "@/providers/auth";
+import { LandingScreen } from "@/screens/Landing";
+
+// The landing page loads at once; everything behind it arrives when it is first opened.
+const DashboardScreen = lazy(() => import("@/screens/Dashboard").then((module) => ({ default: module.DashboardScreen })));
+const ForgotPasswordScreen = lazy(() => import("@/screens/ForgotPassword").then((module) => ({ default: module.ForgotPasswordScreen })));
+const PrivacyScreen = lazy(() => import("@/screens/Legal").then((module) => ({ default: module.PrivacyScreen })));
+const SupportScreen = lazy(() => import("@/screens/Legal").then((module) => ({ default: module.SupportScreen })));
+const TermsScreen = lazy(() => import("@/screens/Legal").then((module) => ({ default: module.TermsScreen })));
+const LoginScreen = lazy(() => import("@/screens/Login").then((module) => ({ default: module.LoginScreen })));
+const SignupScreen = lazy(() => import("@/screens/Signup").then((module) => ({ default: module.SignupScreen })));
+const ResetPasswordScreen = lazy(() => import("@/screens/ResetPassword").then((module) => ({ default: module.ResetPasswordScreen })));
+const OAuthConsentScreen = lazy(() => import("@/screens/OAuthConsent").then((module) => ({ default: module.OAuthConsentScreen })));
+const SignInCallbackScreen = lazy(() => import("@/screens/SignInCallback").then((module) => ({ default: module.SignInCallbackScreen })));
 
 const LoadingView = () => (
-  <div className="flex min-h-screen items-center justify-center bg-[#f3fbf8] px-6 text-[#123532]">
-    <div className="rounded-full border border-[#d9ece6] bg-white/85 px-5 py-3 shadow-[0_24px_60px_-32px_rgba(9,48,43,0.28)] backdrop-blur-xl">
-      <p className="font-['Sora',_sans-serif] text-sm font-semibold tracking-[0.18em] text-[#134E4A] uppercase">
-        Loading Offtasks
-      </p>
-    </div>
+  <div className="ot-loading-page">
+    <div className="ot-backdrop" aria-hidden="true" />
+    <WordmarkLoader />
   </div>
 );
 
@@ -82,6 +84,7 @@ const LoadingAwareRoute = ({ children }: { children: ReactNode }) => {
 const AppRoutes = () => {
   const location = useLocation();
   return (
+    <Suspense fallback={<LoadingView />}>
     <Routes>
       <Route path="/" element={<LandingScreen />} />
       <Route path="/privacy" element={<PrivacyScreen />} />
@@ -136,6 +139,7 @@ const AppRoutes = () => {
       />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </Suspense>
   );
 };
 

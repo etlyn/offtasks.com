@@ -6,7 +6,6 @@ import {
   AuthPasswordInput,
   AuthTextInput,
 } from "@/components/public/AuthFields";
-import { Button } from "@/components/ui/button";
 import { supabaseClient } from "@/lib/supabase";
 import { mapAuthErrorMessage, normalizeEmail } from "@/utils/auth";
 import { authReturnRoute, safePlannerReturn } from "@/lib/goalWorkbench";
@@ -69,14 +68,9 @@ export const LoginScreen = () => {
 
   return (
     <AuthLayout
-      eyebrow="Sign in"
       title="Sign in"
-      subtitle="Open your task list."
-      heroTitle=""
-      heroDescription=""
-      heroBullets={[]}
       switchHref={authReturnRoute("/signup", returnTo)}
-      switchLabel="Create account"
+      switchLabel="Create an account"
       switchPrompt="New here?"
     >
       {accountDeleted ? (
@@ -88,13 +82,12 @@ export const LoginScreen = () => {
 
       {error ? <AuthNotice tone="error">{error}</AuthNotice> : null}
 
-      <GoogleSignInButton returnTo={returnTo} disabled={isLoading} onBusyChange={setIsLoading} onError={setError} />
-      <form className="space-y-5" onSubmit={handleLogin} noValidate>
+      <form className="auth-form" onSubmit={handleLogin} noValidate>
         <AuthTextInput
           id="email"
           type="email"
           autoComplete="email"
-          label="Email address"
+          label="Email"
           placeholder="you@example.com"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
@@ -108,28 +101,24 @@ export const LoginScreen = () => {
           autoComplete="current-password"
           label="Password"
           labelAction={
-            <Link
-              to={authReturnRoute("/forgot-password", returnTo)}
-              className="font-medium text-[#134E4A] transition hover:text-[#0f3f3b]"
-            >
+            <Link to={authReturnRoute("/forgot-password", returnTo)} className="ot-link">
               Forgot password?
             </Link>
           }
-          placeholder="Enter your password"
+          placeholder="Your password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           disabled={isLoading}
           required
         />
 
-        <Button
-          type="submit"
-          disabled={isLoading}
-          className="h-12 w-full rounded-2xl bg-[#134E4A] text-sm font-semibold text-white shadow-[0_24px_56px_-32px_rgba(9,48,43,0.72)] hover:bg-[#0f3f3b]"
-        >
+        <button type="submit" disabled={isLoading} className="ot-button ot-button--block">
           {isLoading ? "Signing in..." : "Sign in"}
-        </Button>
+        </button>
       </form>
+
+      <p className="auth-or">or</p>
+      <GoogleSignInButton returnTo={returnTo} disabled={isLoading} onBusyChange={setIsLoading} onError={setError} />
     </AuthLayout>
   );
 };

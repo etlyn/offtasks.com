@@ -6,10 +6,7 @@ import {
   AuthPasswordInput,
   AuthTextInput,
   PasswordChecklist,
-  authInputClassName,
 } from "@/components/public/AuthFields";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import {
   getPasswordRecoveryRequirement,
   verifyPasswordRecoveryFactor,
@@ -254,43 +251,34 @@ export const ResetPasswordScreen = () => {
 
   return (
     <AuthLayout
-      eyebrow="Secure access"
-      title="Choose a new password"
+      title="New password"
       subtitle="Choose a strong password to secure your account."
-      heroTitle="Reset access without losing momentum."
-      heroDescription="Use the link from your email to set a new password. If two-factor authentication is enabled, you’ll also verify your identity."
-      heroBullets={[
-        "Open the newest password reset email on this device.",
-        "Keep your authenticator or registered phone nearby.",
-        "Sign in with your new password when you’re done.",
-      ]}
       switchHref="/login"
       switchLabel="Back to sign in"
-      switchPrompt="Want to return to the login screen?"
     >
       {error ? <AuthNotice tone="error">{error}</AuthNotice> : null}
       {message ? <AuthNotice tone="success">{message}</AuthNotice> : null}
       {isComplete && !isSignedOut ? (
-        <Button type="button" variant="outline" className="h-11" disabled={isLoading} onClick={retrySignOut}>
+        <button type="button" className="ot-button ot-button--soft" disabled={isLoading} onClick={retrySignOut}>
           {isLoading ? "Signing out..." : "Retry sign out"}
-        </Button>
+        </button>
       ) : null}
       {!isTokenReady && !isComplete ? (
         <AuthNotice tone="info">
           Open the newest reset link from your email, or{" "}
-          <Link to="/forgot-password" className="underline">request a new link</Link>.
+          <Link to="/forgot-password" className="ot-link">request a new link</Link>.
         </AuthNotice>
       ) : null}
       {isCheckingMfa ? (
-        <p role="status" className="text-sm text-[#5a7671]">Checking account security...</p>
+        <p role="status" className="auth-status">Checking account security...</p>
       ) : isTokenReady && !requirement && !isComplete ? (
-        <Button type="button" variant="outline" className="h-11" onClick={() => {
+        <button type="button" className="ot-button ot-button--soft" onClick={() => {
           setError(null);
           setCheckAttempt((attempt) => attempt + 1);
-        }}>Retry security check</Button>
+        }}>Retry security check</button>
       ) : null}
 
-      <form className="space-y-5" onSubmit={handleSubmit} noValidate>
+      <form className="auth-form" onSubmit={handleSubmit} noValidate>
         <AuthPasswordInput
           id="password"
           autoComplete="new-password"
@@ -317,15 +305,15 @@ export const ResetPasswordScreen = () => {
         />
 
         {requirement?.required && selectedFactor ? (
-          <fieldset className="space-y-4" disabled={isLoading || isComplete}>
-            <legend className="text-sm font-semibold text-[#244642]">Verify your identity</legend>
-            <p className="text-sm text-[#5a7671]">
+          <fieldset className="auth-verify" disabled={isLoading || isComplete}>
+            <legend>Verify your identity</legend>
+            <p>
               Two-factor authentication is enabled. Enter a code to finish resetting your password.
             </p>
             {requirement.factors.length > 1 ? (
-              <div className="space-y-2.5">
-                <Label htmlFor="verification-method">Verification method</Label>
-                <select id="verification-method" className={`${authInputClassName} text-base`}
+              <div className="ot-field">
+                <label htmlFor="verification-method" className="ot-label">Verification method</label>
+                <select id="verification-method" className="ot-input"
                   value={selectedFactor.id} onChange={(event) => {
                     setSelectedFactorId(event.target.value);
                     setCode("");
@@ -344,9 +332,9 @@ export const ResetPasswordScreen = () => {
               </div>
             ) : null}
             {selectedFactor.factor_type === "phone" ? (
-              <Button type="button" variant="outline" className="h-11" onClick={sendPhoneCode}>
+              <button type="button" className="ot-button ot-button--soft" onClick={sendPhoneCode}>
                 {phoneChallenge?.factorId === selectedFactor.id ? "Resend code" : "Send verification code"}
-              </Button>
+              </button>
             ) : null}
             <AuthTextInput
               id="verification-code"
@@ -358,23 +346,22 @@ export const ResetPasswordScreen = () => {
               placeholder="000000"
               value={code}
               onChange={(event) => setCode(event.target.value)}
-              className="text-base"
               required
             />
-            <p className="text-sm text-[#5a7671]">
+            <p>
               Lost access to your verification method?{" "}
-              <Link to="/support" className="underline">Contact support</Link> for help recovering your account.
+              <Link to="/support" className="ot-link">Contact support</Link> for help recovering your account.
             </p>
           </fieldset>
         ) : null}
 
-        <Button
+        <button
           type="submit"
           disabled={isLoading || !isTokenReady || isCheckingMfa || !requirement || isComplete}
-          className="h-12 w-full rounded-2xl bg-[#134E4A] text-sm font-semibold text-white shadow-[0_24px_56px_-32px_rgba(9,48,43,0.72)] hover:bg-[#0f3f3b]"
+          className="ot-button ot-button--block"
         >
           {isComplete ? "Password updated" : isSendingCode ? "Sending code..." : isLoading ? "Saving password..." : requirement?.required ? "Verify and save password" : "Save new password"}
-        </Button>
+        </button>
       </form>
     </AuthLayout>
   );

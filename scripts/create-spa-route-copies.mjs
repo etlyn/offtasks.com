@@ -38,9 +38,12 @@ const privacyMarkup = `<main style="max-width: 52rem; margin: 0 auto; padding: 2
 if (!indexHtml.includes('<div id="root"></div>')) {
   throw new Error("Cannot add the privacy fallback: the SPA root is missing.");
 }
+if (!/<title>[^<]*<\/title>/.test(indexHtml) || !indexHtml.includes('<link rel="canonical" href="https://offtasks.com/" />')) {
+  throw new Error("Cannot add the privacy fallback: the page title or canonical link is missing.");
+}
 const privacyHtml = indexHtml
   .replace('<div id="root"></div>', `<div id="root">${privacyMarkup}</div>`)
-  .replace("<title>Offtasks: To-Do without noise</title>", "<title>Privacy Policy | Offtasks</title>")
+  .replace(/<title>[^<]*<\/title>/, "<title>Privacy Policy | Offtasks</title>")
   .replace('<link rel="canonical" href="https://offtasks.com/" />', '<link rel="canonical" href="https://www.offtasks.com/privacy" />');
 
 const appRoutes = [

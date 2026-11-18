@@ -43,6 +43,7 @@ jobs:
           yarn test:database
           yarn test:delete-account
           yarn test:analytics
+          yarn test:planner
 
       - name: Build
         run: |

@@ -1,35 +1,17 @@
-import svgPaths from "@/imports/svg-gcwartiq9w";
+/** The lowercase wordmark with its small teal dot, as in the mobile app's header. */
+export const Wordmark = ({ large }: { large?: boolean }) => (
+  <span className={`ot-wordmark${large ? " ot-wordmark--large" : ""}`}>
+    offtasks<i>.</i>
+  </span>
+);
 
-interface LogoWordmarkProps {
-  width?: number;
-  height?: number;
-}
-
-export const LogoWordmark = ({ width = 160, height = 40 }: LogoWordmarkProps) => (
-  <svg
-    width={width}
-    height={height}
-    viewBox="0 0 162 40"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <g transform="scale(1.25 1.25) translate(0 -1)">
-      <path d={svgPaths.p9c53700} fill="#99F6E4" />
-      <path d={svgPaths.p79ae300} fill="#134E4A" />
-      <g>
-        <rect fill="#FAFAFA" height="24.0802" rx="5.07009" width="24.814" x="3.58887" y="3.08118" />
-        <path clipRule="evenodd" d={svgPaths.p32a3f280} fill="#134E4A" fillRule="evenodd" />
-      </g>
-    </g>
-    <text
-      x="50"
-      y="26"
-      fill="#134E4A"
-      fontFamily="'Poppins', sans-serif"
-      fontSize="18"
-      fontWeight="600"
-    >
-      Offtasks
-    </text>
-  </svg>
+/** Shown while a page decides where to go: the wordmark's letters settle one by one. */
+export const WordmarkLoader = ({ label = "Loading Offtasks" }: { label?: string }) => (
+  <span className="ot-loader" role="status" aria-label={label}>
+    {Array.from("offtasks.").map((letter, index) => (
+      <span key={index} aria-hidden="true" style={{ "--i": index } as React.CSSProperties}>
+        {letter}
+      </span>
+    ))}
+  </span>
 );

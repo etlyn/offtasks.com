@@ -8,7 +8,6 @@ import {
   AuthTextInput,
   PasswordChecklist,
 } from "@/components/public/AuthFields";
-import { Button } from "@/components/ui/button";
 import { supabaseClient } from "@/lib/supabase";
 import { GoogleSignInButton } from "@/components/public/GoogleSignInButton";
 import {
@@ -90,26 +89,20 @@ export const SignupScreen = () => {
 
   return (
     <AuthLayout
-      eyebrow="Start free"
       title="Create account"
-      subtitle="Start with a calm task list."
-      heroTitle=""
-      heroDescription=""
-      heroBullets={[]}
       switchHref={authReturnRoute("/login", returnTo)}
       switchLabel="Sign in"
-      switchPrompt="Already joined?"
+      switchPrompt="Already have an account?"
     >
       {error ? <AuthNotice tone="error">{error}</AuthNotice> : null}
       {message ? <AuthNotice tone="success">{message}</AuthNotice> : null}
 
-      <GoogleSignInButton returnTo={returnTo} disabled={isLoading} onBusyChange={setIsLoading} onError={setError} />
-      <form className="space-y-5" onSubmit={submitHandler} noValidate>
+      <form className="auth-form" onSubmit={submitHandler} noValidate>
         <AuthTextInput
           id="email"
           type="email"
           autoComplete="email"
-          label="Email address"
+          label="Email"
           placeholder="you@example.com"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
@@ -142,14 +135,13 @@ export const SignupScreen = () => {
           required
         />
 
-        <Button
-          type="submit"
-          disabled={isLoading}
-          className="h-12 w-full rounded-2xl bg-[#134E4A] text-sm font-semibold text-white shadow-[0_24px_56px_-32px_rgba(9,48,43,0.72)] hover:bg-[#0f3f3b]"
-        >
+        <button type="submit" disabled={isLoading} className="ot-button ot-button--block">
           {isLoading ? "Creating account..." : "Create account"}
-        </Button>
+        </button>
       </form>
+
+      <p className="auth-or">or</p>
+      <GoogleSignInButton returnTo={returnTo} disabled={isLoading} onBusyChange={setIsLoading} onError={setError} />
     </AuthLayout>
   );
 };

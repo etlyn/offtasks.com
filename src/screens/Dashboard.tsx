@@ -1,787 +1,353 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import type { User } from "@supabase/supabase-js";
+import { Menu, Plus, Search, X } from "lucide-react";
 import { GoalsWorkbench } from "@/components/GoalsWorkbench";
 import type { FeatureGoal } from "@/lib/goalWorkbench";
-import { Header } from "@/components/Header";
-import { TaskDialog } from "@/components/TaskDialog";
-import { TaskHistorySheet } from "@/components/TaskHistorySheet";
-import { StatsSheet } from "@/components/StatsSheet";
-import { SettingsSheet } from "@/components/SettingsSheet";
-import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { QuickView } from "@/components/QuickView";
-import { StatisticsView } from "@/components/StatisticsView";
-import { EmptyState } from "@/components/EmptyState";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { ArrowLeft, ClipboardList } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import type { Task } from "@/types/task";
-import type { TaskGroup } from "@/types/supabase";
+import { clearLocalOfftasksState } from "@/lib/offtasksLocalState";
+import { deleteAccount, fetchUserPreferences, supabaseClient, upsertUserPreferences } from "@/lib/supabase";
+import { getTheme, setTheme, type ThemeMode } from "@/lib/theme";
+import { AccountPanel } from "@/planner/AccountPanel";
+import { NotesPage, type NoteRequest } from "@/planner/NotesPage";
+import { CalendarPage, LaterPage } from "@/planner/PlanPages";
+import { SearchOverlay } from "@/planner/SearchOverlay";
+import { StatisticsPage } from "@/planner/StatisticsPage";
+import { TaskComposer, type ComposerRequest } from "@/planner/TaskComposer";
+import { today } from "@/planner/dates";
+import { goalKey, scheduledDay, type PlannerTask } from "@/planner/model";
+import { dismissNotice, notify, useNotices } from "@/planner/notices";
+import type { SearchResult } from "@/planner/search";
+import { PlannerProvider, usePlanner } from "@/planner/store";
+import { NavIcon } from "@/planner/ui";
 import { useAuth } from "@/providers/auth";
-import {
-  createTask,
-  deleteAccount,
-  deleteTask as deleteTaskFromSupabase,
-  fetchAllTasks,
-  fetchUserPreferences,
-  supabaseClient,
-  updateTask,
-  upsertUserPreferences,
-} from "@/lib/supabase";
-import {
-  clearLocalOfftasksState,
-  OFFTASKS_STORAGE_KEYS,
-} from "@/lib/offtasksLocalState";
-import {
-  fromSupabaseTask,
-  getDefaultDateForGroup,
-  getTargetGroupForDate,
-  normalizeScheduledDate,
-  priorityLabelToNumber,
-  shouldAutoMoveTaskToToday,
-} from "@/utils/taskMapping";
-import { getCurrentDate } from "@/hooks/useDate";
-import { normalizeCategory } from "@/utils/categoryConfig";
+import "@/styles/planner.css";
 
-const DEFAULT_CATEGORIES = [
-  "Work",
-  "Personal",
-  "Home",
-  "Shopping",
-  "Health",
-  "Finance",
-];
+type View = "calendar" | "notes" | "goals" | "later" | "statistics";
 
-type DialogCategory = "today" | "tomorrow" | "upcoming";
+const destinations = [
+  { view: "calendar", label: "Calendar" },
+  { view: "notes", label: "Notes" },
+  { view: "goals", label: "Goals" },
+  { view: "later", label: "Later" },
+] as const;
 
-type TabId = "quick-view" | "statistics";
+const NARROW = "(max-width: 56.1875em)";
+
+function useNarrow() {
+  const [narrow, setNarrow] = useState(() => window.matchMedia(NARROW).matches);
+  useEffect(() => {
+    const query = window.matchMedia(NARROW);
+    const update = () => setNarrow(query.matches);
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  return narrow;
+}
+
+const initials = (name?: string, email?: string) => {
+  const source = name?.trim() || email?.split("@")[0]?.replace(/[._-]+/g, " ") || "";
+  const parts = source.split(/\s+/).filter(Boolean);
+  return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? parts[0]?.[1] ?? "")).toUpperCase() || "•";
+};
 
 export const DashboardScreen = () => {
   const { user } = useAuth();
+  if (!user) return null;
+  return (
+    <PlannerProvider key={user.id} owner={user.id}>
+      <Planner user={user} />
+    </PlannerProvider>
+  );
+};
+
+function Planner({ user }: { user: User }) {
+  const planner = usePlanner();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const narrow = useNarrow();
   const goalsView =
-    searchParams.get("view") === "goals" ||
-    searchParams.has("goal") ||
-    searchParams.has("task");
+    searchParams.get("view") === "goals" || searchParams.has("goal") || searchParams.has("task");
+  const requested = searchParams.get("view");
+  const view: View = goalsView
+    ? "goals"
+    : requested === "notes" || requested === "later" || requested === "statistics"
+      ? requested
+      : "calendar";
+
   const [goalsVisited, setGoalsVisited] = useState(goalsView);
-  const [featureGoals, setFeatureGoals] = useState<{
-    owner: string;
-    goals: FeatureGoal[];
-  }>({ owner: "", goals: [] });
   useEffect(() => {
     if (goalsView) setGoalsVisited(true);
   }, [goalsView]);
-  const noteGoals = useCallback(
-    (goals: FeatureGoal[]) => {
-      if (!user) return;
-      setFeatureGoals({ owner: user.id, goals });
-    },
-    [user?.id],
+  const [featureGoals, setFeatureGoals] = useState<FeatureGoal[]>([]);
+  const noteGoals = useCallback((goals: FeatureGoal[]) => setFeatureGoals(goals), []);
+  const [openGoal, setOpenGoal] = useState<string | null>(null);
+  const [goalCreateRequest, setGoalCreateRequest] = useState(0);
+  const [goalOpenRequest, setGoalOpenRequest] = useState<{ name: string; requestId: number } | null>(null);
+
+  const [day, setDay] = useState(today());
+  const [composer, setComposer] = useState<ComposerRequest | null>(null);
+  const [noteRequest, setNoteRequest] = useState<NoteRequest | null>(null);
+  const clearNoteRequest = useCallback(() => setNoteRequest(null), []);
+  const [searching, setSearching] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const go = useCallback(
+    (next: View) => setSearchParams(next === "calendar" ? {} : { view: next }),
+    [setSearchParams],
   );
 
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [isLoadingTasks, setIsLoadingTasks] = useState(true);
-
-  const [isDark, setIsDark] = useState(() => {
-    if (typeof window === "undefined") {
-      return true;
-    }
-
-    const saved = localStorage.getItem(OFFTASKS_STORAGE_KEYS.theme);
-    return saved ? saved === "dark" : true;
-  });
-
-  const [availableCategories, setAvailableCategories] = useState<string[]>(
-    () => {
-      if (typeof window === "undefined") {
-        return DEFAULT_CATEGORIES;
-      }
-
-      const saved = localStorage.getItem(OFFTASKS_STORAGE_KEYS.categories);
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length) {
-            return Array.from(
-              new Set(
-                parsed
-                  .filter((value) => typeof value === "string")
-                  .map(normalizeCategory)
-                  .filter(Boolean),
-              ),
-            ).sort((left, right) => left.localeCompare(right));
-          }
-        } catch (error) {
-          console.warn("Failed to parse stored categories", error);
-        }
-      }
-
-      return DEFAULT_CATEGORIES;
-    },
-  );
-
-  const [advancedMode, setAdvancedMode] = useState(() => {
-    if (typeof window === "undefined") {
-      return false;
-    }
-
-    const saved = localStorage.getItem(OFFTASKS_STORAGE_KEYS.advancedMode);
-    return saved ? saved === "true" : false;
-  });
-
-  const [hideCompleted, setHideCompleted] = useState(() => {
-    if (typeof window === "undefined") {
-      return false;
-    }
-
-    const saved = localStorage.getItem(OFFTASKS_STORAGE_KEYS.hideCompleted);
-    return saved ? saved === "true" : false;
-  });
-
-  const [autoArrange, setAutoArrange] = useState(() => {
-    if (typeof window === "undefined") {
-      return false;
-    }
-
-    const saved = localStorage.getItem(OFFTASKS_STORAGE_KEYS.autoArrange);
-    return saved ? saved === "true" : false;
-  });
-  const [preferencesHydrated, setPreferencesHydrated] = useState(false);
-
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [dialogCategory, setDialogCategory] = useState<DialogCategory>("today");
-  const [historySheetOpen, setHistorySheetOpen] = useState(false);
-  const [statsSheetOpen, setStatsSheetOpen] = useState(false);
-  const [settingsSheetOpen, setSettingsSheetOpen] = useState(false);
-  const [deleteAccountDialogOpen, setDeleteAccountDialogOpen] = useState(false);
-  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
-  const [currentTab, setCurrentTab] = useState<TabId>("quick-view");
-
-  const refreshTasks = useCallback(async () => {
-    if (!user) {
-      setTasks([]);
-      return;
-    }
-
-    setIsLoadingTasks(true);
-    try {
-      const data = await fetchAllTasks();
-      const today = getCurrentDate();
-
-      let needsRefresh = false;
-
-      if (autoArrange) {
-        for (const task of data) {
-          if (shouldAutoMoveTaskToToday(task)) {
-            needsRefresh = true;
-            await updateTask(task.id, {
-              targetGroup: "today",
-              date: today,
-            });
-          }
-        }
-      }
-
-      const mapped = (needsRefresh ? await fetchAllTasks() : data).map(
-        fromSupabaseTask,
-      );
-      setTasks(mapped);
-
-      const labels = new Set<string>();
-      mapped.forEach((task) => {
-        if (task.label) {
-          labels.add(task.label);
-        }
-      });
-
-      if (labels.size) {
-        setAvailableCategories((prev: string[]) => {
-          const merged = Array.from(
-            new Set(
-              [...prev, ...labels].map(normalizeCategory).filter(Boolean),
-            ),
-          ).sort((left, right) => left.localeCompare(right));
-          localStorage.setItem(
-            OFFTASKS_STORAGE_KEYS.categories,
-            JSON.stringify(merged),
-          );
-          return merged;
-        });
-      }
-    } catch (error) {
-      console.error("Failed to fetch tasks", error);
-    } finally {
-      setIsLoadingTasks(false);
-    }
-  }, [autoArrange, user]);
-
-  useEffect(() => {
-    refreshTasks();
-  }, [refreshTasks]);
-
+  // The account's saved appearance wins over this browser's when they differ.
   useEffect(() => {
     let active = true;
-
-    const hydratePreferences = async () => {
-      if (!user?.id) {
-        setPreferencesHydrated(false);
-        return;
-      }
-
-      setPreferencesHydrated(false);
-
-      const preferences = await fetchUserPreferences(user.id);
-
-      if (!active) {
-        return;
-      }
-
-      if (preferences) {
-        setHideCompleted(!!preferences.hide_completed);
-        setAdvancedMode(!!preferences.advanced_mode);
-        setAutoArrange(!!preferences.auto_arrange);
-        if (
-          preferences.theme_mode === "Dark" ||
-          preferences.theme_mode === "Light"
-        ) {
-          setIsDark(preferences.theme_mode === "Dark");
-        }
-      }
-
-      setPreferencesHydrated(true);
-    };
-
-    hydratePreferences();
-
+    void fetchUserPreferences(user.id).then((preferences) => {
+      if (!active) return;
+      const saved = preferences?.theme_mode;
+      if ((saved === "Dark" || saved === "Light") && saved !== getTheme()) setTheme(saved);
+    });
     return () => {
       active = false;
     };
-  }, [user?.id]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    localStorage.setItem(
-      OFFTASKS_STORAGE_KEYS.theme,
-      isDark ? "dark" : "light",
-    );
-    if (isDark) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [isDark]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    localStorage.setItem(
-      OFFTASKS_STORAGE_KEYS.advancedMode,
-      advancedMode.toString(),
-    );
-  }, [advancedMode]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    localStorage.setItem(
-      OFFTASKS_STORAGE_KEYS.hideCompleted,
-      hideCompleted.toString(),
-    );
-  }, [hideCompleted]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    localStorage.setItem(
-      OFFTASKS_STORAGE_KEYS.autoArrange,
-      autoArrange.toString(),
-    );
-  }, [autoArrange]);
-
-  useEffect(() => {
-    if (!user?.id || !preferencesHydrated) {
-      return;
-    }
-
+  }, [user.id]);
+  const saveTheme = (mode: ThemeMode) => {
     upsertUserPreferences({
       user_id: user.id,
-      hide_completed: hideCompleted,
-      advanced_mode: advancedMode,
-      theme_mode: isDark ? "Dark" : "Light",
-      auto_arrange: autoArrange,
-    }).catch((error) => {
-      console.warn("Failed to sync preferences", error);
-    });
-  }, [
-    advancedMode,
-    autoArrange,
-    hideCompleted,
-    isDark,
-    preferencesHydrated,
-    user?.id,
-  ]);
+      theme_mode: mode,
+      hide_completed: false,
+      advanced_mode: false,
+      auto_arrange: false,
+    }).catch(() => notify("Couldn’t save preference", "Your choice is kept on this device."));
+  };
 
-  const handleAddTask = useCallback((category: DialogCategory) => {
-    setEditingTask(null);
-    setDialogCategory(category);
-    setDialogOpen(true);
-  }, []);
+  const add = useCallback(() => {
+    if (view === "notes") setNoteRequest({ id: "new", requestId: Date.now() });
+    else if (view === "goals" && !openGoal) setGoalCreateRequest((value) => value + 1);
+    else if (view === "goals") setComposer({ date: null, goal: openGoal });
+    else setComposer({ date: view === "later" ? null : view === "calendar" ? day : today() });
+  }, [view, openGoal, day]);
+  const addLabel =
+    view === "notes" ? "Add note" : view === "goals" && !openGoal ? "Add goal" : "Add task";
 
+  const editTask = useCallback((task: PlannerTask, goal: string | null = null) => setComposer({ task, goal }), []);
+
+  const showGoal = useCallback(
+    (name?: string) => {
+      if (!name) return setSearchParams({ view: "goals" });
+      const goal = featureGoals.find((item) => goalKey(item.title) === goalKey(name));
+      if (goal) return setSearchParams({ view: "goals", goal: goal.id });
+      // The Goals page finds the goal once its list has loaded.
+      setGoalOpenRequest({ name, requestId: Date.now() });
+      setSearchParams({ view: "goals" });
+    },
+    [featureGoals, setSearchParams],
+  );
+
+  const openResult = (result: SearchResult) => {
+    if (result.kind === "note") {
+      go("notes");
+      setNoteRequest({ id: result.note.id, requestId: Date.now() });
+    } else if (result.kind === "goal") showGoal(result.goal);
+    else {
+      const when = scheduledDay(result.task);
+      if (when) {
+        setDay(when);
+        go("calendar");
+      } else go("later");
+      setComposer({ task: result.task });
+    }
+  };
+
+  // Quick add with ⌘+ / Ctrl+, search with "/" or ⌘K.
   useEffect(() => {
-    const handleQuickAdd = (event: KeyboardEvent) => {
+    const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
-      const isTypingTarget =
-        !!target &&
-        (target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.isContentEditable);
-
-      if (isTypingTarget) {
+      const typing = !!target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
+      const layered = !!document.querySelector('[role="dialog"],[role="alertdialog"]');
+      const command = event.metaKey || event.ctrlKey;
+      if (command && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        if (!layered || searching) setSearching((value) => !value);
         return;
       }
-
-      const isQuickAdd =
-        (event.metaKey || event.ctrlKey) &&
-        (event.key === "+" || event.key === "=");
-      if (isQuickAdd) {
+      if (typing || layered) return;
+      if (command && (event.key === "+" || event.key === "=")) {
         event.preventDefault();
-        handleAddTask("today");
+        add();
+      } else if (event.key === "/" && !command && !event.altKey) {
+        event.preventDefault();
+        setSearching(true);
       }
     };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [add, searching]);
 
-    window.addEventListener("keydown", handleQuickAdd);
-    return () => window.removeEventListener("keydown", handleQuickAdd);
-  }, [handleAddTask]);
-
-  const handleEditTask = (id: string) => {
-    const task = tasks.find((t: Task) => t.id === id);
-    if (task) {
-      setEditingTask(task);
-      setDialogCategory((task.category as DialogCategory) ?? "today");
-      setDialogOpen(true);
-    }
-  };
-
-  const handleSaveTask = async (
-    text: string,
-    category: string,
-    priority?: "low" | "medium" | "high",
-    label?: string,
-    scheduledDate?: string | null,
-  ) => {
-    if (!user) {
-      throw new Error("Sign in before saving a task.");
-    }
-
-    const normalizedDate = normalizeScheduledDate(
-      typeof scheduledDate === "undefined"
-        ? getDefaultDateForGroup(category as DialogCategory)
-        : scheduledDate,
-    );
-    const targetGroup = getTargetGroupForDate(normalizedDate) as TaskGroup;
-    const priorityValue = priorityLabelToNumber(priority);
-    const normalizedLabel = label ? normalizeCategory(label) : undefined;
-
-    try {
-      if (editingTask) {
-        await updateTask(editingTask.id, {
-          content: text,
-          targetGroup,
-          priority: priorityValue,
-          isComplete: editingTask.completed,
-          date: normalizedDate,
-          label: normalizedLabel ?? null,
-        });
-      } else {
-        await createTask({
-          content: text,
-          targetGroup,
-          priority: priorityValue,
-          date: normalizedDate,
-          label: normalizedLabel ?? null,
-        });
-      }
-
-      if (normalizedLabel && !availableCategories.includes(normalizedLabel)) {
-        setAvailableCategories((prev: string[]) => {
-          const next = Array.from(new Set([...prev, normalizedLabel])).sort(
-            (left, right) => left.localeCompare(right),
-          );
-          localStorage.setItem(
-            OFFTASKS_STORAGE_KEYS.categories,
-            JSON.stringify(next),
-          );
-          return next;
-        });
-      }
-
-      await refreshTasks();
-    } catch (error) {
-      console.error("Failed to save task", error);
-      throw error;
-    }
-  };
-
-  const handleToggleTask = async (id: string) => {
-    const task = tasks.find((t: Task) => t.id === id);
-    if (!task) {
-      return;
-    }
-
-    const nextCompleted = !task.completed;
-
-    try {
-      await updateTask(task.id, {
-        isComplete: nextCompleted,
-        completedAt: nextCompleted ? getCurrentDate() : null,
-        targetGroup: nextCompleted ? "today" : (task.category as TaskGroup),
-        date: nextCompleted ? getCurrentDate() : task.raw?.date ?? null,
-      });
-      await refreshTasks();
-    } catch (error) {
-      console.error("Failed to toggle task", error);
-    }
-  };
-
-  const handleDeleteTask = async () => {
-    if (!editingTask) {
-      return;
-    }
-
-    try {
-      await deleteTaskFromSupabase(editingTask.id);
-      await refreshTasks();
-    } catch (error) {
-      console.error("Failed to delete task", error);
-      throw error;
-    }
-  };
-
-  const handleLogout = async () => {
-    await supabaseClient.auth.signOut({ scope: "local" });
-    setTasks([]);
+  const signOut = async () => {
+    const { error } = await supabaseClient.auth.signOut({ scope: "local" });
+    if (error) throw error;
     navigate("/login");
   };
-
-  const handleDeleteAccount = async () => {
-    if (isDeletingAccount) {
-      return;
-    }
-
-    setIsDeletingAccount(true);
-
+  const deleteData = async () => {
+    if (deleting) return;
+    setDeleting(true);
     try {
       await deleteAccount();
       const { error } = await supabaseClient.auth.signOut({ scope: "local" });
-
-      if (error) {
-        console.warn(
-          "Account deleted, but local sign out reported an error",
-          error,
-        );
-      }
-
+      if (error) console.warn("Offtasks data was deleted, but signing out on this device reported an error", error);
       clearLocalOfftasksState();
-      setTasks([]);
-      navigate("/login", {
-        replace: true,
-        state: { accountDeleted: true },
-      });
-    } catch (error) {
-      console.error("Failed to delete account", error);
-      window.alert(
-        error instanceof Error
-          ? error.message
-          : "Unable to delete Offtasks data right now. Please try again.",
+      navigate("/login", { replace: true, state: { accountDeleted: true } });
+    } catch (caught) {
+      notify(
+        "Couldn’t delete Offtasks data",
+        caught instanceof Error ? caught.message : "Unable to delete Offtasks data right now. Please try again.",
       );
     } finally {
-      setIsDeletingAccount(false);
+      setDeleting(false);
     }
   };
 
-  const totalCompleted = useMemo(
-    () => tasks.filter((t: Task) => t.completed).length,
-    [tasks],
-  );
-  const totalTasks = tasks.length;
-
-  const renderTabs = () => (
-    <Tabs
-      defaultValue="quick-view"
-      value={currentTab}
-      onValueChange={(value: string) => setCurrentTab(value as TabId)}
-      className="w-full"
-    >
-      {currentTab !== "quick-view" && (
-        <div className="mb-8">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setCurrentTab("quick-view")}
-            className="size-16 rounded-full border border-white/40 dark:border-zinc-700/60 bg-white/60 dark:bg-zinc-800/50 backdrop-blur-md shadow-[0px_14px_34px_rgba(0,0,0,0.16)] hover:bg-white/80 dark:hover:bg-zinc-700/60"
-          >
-            <ArrowLeft className="size-[22px]" />
-          </Button>
-        </div>
-      )}
-
-      <TabsContent value="quick-view" className="mt-0">
-        <QuickView
-          tasks={tasks}
-          onToggleTask={handleToggleTask}
-          onEditTask={handleEditTask}
-          advancedMode={advancedMode}
-          hideCompleted={hideCompleted}
-          onToggleHideCompleted={setHideCompleted}
-        />
-      </TabsContent>
-
-      <TabsContent value="statistics" className="mt-0">
-        <StatisticsView
-          tasks={tasks}
-          onOpenSearch={() => {
-            setSearchParams({});
-            setCurrentTab("quick-view");
-            setAdvancedMode(true);
-          }}
-        />
-      </TabsContent>
-    </Tabs>
-  );
-
-  const renderEmptyState = () => (
-    <EmptyState
-      icon={ClipboardList}
-      title={isLoadingTasks ? "Loading your tasks" : "No tasks yet"}
-      description={
-        isLoadingTasks
-          ? "We are pulling in your latest list."
-          : "Create your first task to start filling today, tomorrow, and later views."
-      }
-      className="min-h-[320px] border-none bg-transparent shadow-none dark:bg-transparent"
-      action={
-        !isLoadingTasks ? (
-          <Button variant="secondary" onClick={() => handleAddTask("today")}>
-            Add Task
-          </Button>
-        ) : undefined
-      }
-    />
-  );
+  const name = (user.user_metadata as { full_name?: string } | null)?.full_name;
 
   return (
-    <div className="bg-gradient-to-br from-zinc-50 via-white to-zinc-100/80 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-800/30 min-h-screen relative transition-colors duration-300">
-      <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(120,119,198,0.03),rgba(255,255,255,0))] dark:bg-[radial-gradient(circle_at_50%_120%,rgba(14,165,233,0.05),rgba(0,0,0,0))] pointer-events-none" />
-
-      <div className="relative z-10">
-        <Header
-          totalCompleted={totalCompleted}
-          totalTasks={totalTasks}
-          isDark={isDark}
-          onToggleTheme={() => setIsDark((prev: boolean) => !prev)}
-          onLogout={handleLogout}
-          onDeleteAccount={() => setDeleteAccountDialogOpen(true)}
-          isDeletingAccount={isDeletingAccount}
-          advancedMode={advancedMode}
-          hideCompleted={hideCompleted}
-          onToggleAdvancedMode={() => setAdvancedMode((prev: boolean) => !prev)}
-          onToggleHideCompleted={setHideCompleted}
-          autoArrange={autoArrange}
-          onToggleAutoArrange={setAutoArrange}
-          onOpenSearch={() => {
-            setSearchParams({});
-            setCurrentTab("quick-view");
-            setAdvancedMode(true);
-          }}
-          onViewQuickView={() => {
-            setSearchParams({});
-            setCurrentTab("quick-view");
-          }}
-          onViewStatistics={() => {
-            setSearchParams({});
-            setCurrentTab("statistics");
-          }}
-          onViewHistory={() => setHistorySheetOpen(true)}
-          onViewStats={() => setStatsSheetOpen(true)}
-          onViewSettings={() => setSettingsSheetOpen(true)}
-          userEmail={user?.email ?? undefined}
-          userName={
-            (user?.user_metadata as { full_name?: string } | null)?.full_name
-          }
-        />
-
-        <div className="px-[40px] md:px-[80px] py-[32px] pb-[120px]">
-          <nav
-            aria-label="Planner sections"
-            className="mb-6 flex gap-6 border-b border-border"
-          >
-            <button
-              type="button"
-              aria-pressed={!goalsView}
-              onClick={() => setSearchParams({})}
-              className={`min-h-11 border-b-2 px-1 text-sm transition-colors duration-200 ease-in-out ${
-                !goalsView
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground"
-              }`}
-            >
-              Tasks
-            </button>
-            <button
-              type="button"
-              aria-pressed={goalsView}
-              onClick={() => {
-                setGoalsVisited(true);
-                setSearchParams({ view: "goals" });
-              }}
-              className={`min-h-11 border-b-2 px-1 text-sm transition-colors duration-200 ease-in-out ${
-                goalsView
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground"
-              }`}
-            >
-              Goals
-            </button>
-          </nav>
-          {goalsVisited && user ? (
-            <div hidden={!goalsView}>
-              <GoalsWorkbench
-                key={user.id}
-                ownerId={user.id}
-                onChanged={() => {
-                  void refreshTasks();
-                }}
-                onGoalsLoaded={noteGoals}
-              />
-            </div>
-          ) : null}
-          {!goalsView &&
-            (tasks.length === 0 && !isLoadingTasks
-              ? renderEmptyState()
-              : renderTabs())}
-        </div>
-
-        <button
-          onClick={() => handleAddTask(goalsView ? "upcoming" : "today")}
-          className={
-            goalsView
-              ? "goal-workbench-fab"
-              : "fixed bottom-[100px] right-[40px] md:right-[80px] px-[24px] py-[14px] bg-sky-600 hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-600 rounded-full shadow-md hover:shadow-lg dark:shadow-lg dark:hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-[10px] group z-50"
-          }
-          aria-label="Add new task"
-          title="Add new task (⌘+)"
-        >
-          <svg className="size-[20px]" fill="none" viewBox="0 0 24 24">
-            <path
-              d="M12 5V19"
-              stroke={goalsView ? "currentColor" : "white"}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2.5"
-            />
-            <path
-              d="M5 12H19"
-              stroke={goalsView ? "currentColor" : "white"}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2.5"
-            />
-          </svg>
-          <span className="font-['Poppins',_sans-serif] text-[14px] text-white">
-            Add New Task
-          </span>
+    <div className="pl" data-view={view}>
+      <div className="ot-backdrop" aria-hidden="true" />
+      <a className="pl-skip" href="#planner-main">
+        Skip to content
+      </a>
+      <header className="pl-top">
+        <button type="button" className="ot-round pl-menu" aria-label="Open account menu" onClick={() => setPanelOpen(true)}>
+          <Menu size={18} strokeWidth={1.8} aria-hidden="true" />
         </button>
-
-        <div className="fixed bottom-0 left-0 right-0 box-border flex gap-[10px] items-center justify-between px-[40px] md:px-[80px] py-[24px] border-t-[0.5px] border-zinc-300 dark:border-zinc-700/50 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md shadow-[0_-4px_16px_rgba(0,0,0,0.04)] dark:shadow-[0_-4px_16px_rgba(0,0,0,0.2)]">
-          <p className="font-['Poppins',_sans-serif] leading-[1.3] not-italic text-[14px] text-nowrap text-zinc-400 tracking-[0.14px] whitespace-pre">
-            © {new Date().getFullYear()} offtasks.com
-          </p>
-          <p className="hidden md:block font-['Poppins',_sans-serif] leading-[1.3] not-italic text-[12px] text-zinc-400">
-            <kbd className="px-[6px] py-[2px] bg-zinc-200 dark:bg-zinc-700 rounded-[4px] text-[11px]">
-              ⌘+
-            </kbd>{" "}
-            Quick add
-          </p>
+        <Link to="/app" className="ot-wordmark pl-wordmark" aria-label="Offtasks, go to Calendar" onClick={() => setDay(today())}>
+          offtasks<i>.</i>
+        </Link>
+        <div className="pl-dockbar">
+          <Dock view={view} onChange={go} />
+          <button
+            type="button"
+            className="pl-plus"
+            aria-label={addLabel}
+            data-tip={`${addLabel} (${/Mac|iPhone|iPad/.test(navigator.platform) ? "⌘" : "Ctrl"}+)`}
+            data-tip-side="top"
+            data-tip-align="end"
+            onClick={add}
+          >
+            <Plus size={22} strokeWidth={1.8} aria-hidden="true" />
+          </button>
         </div>
+        <div className="pl-tools">
+          <button type="button" className="ot-round" aria-label="Search" data-tip="Search ( / )" data-tip-align="end" onClick={() => setSearching(true)}>
+            <Search size={18} strokeWidth={1.8} aria-hidden="true" />
+          </button>
+          <button type="button" className="pl-account" aria-label="Open account menu" data-tip="Account" data-tip-align="end" onClick={() => setPanelOpen(true)}>
+            {initials(name, user.email)}
+          </button>
+        </div>
+      </header>
 
-        <TaskDialog
-          isOpen={dialogOpen}
-          onClose={() => {
-            setDialogOpen(false);
-            setEditingTask(null);
-          }}
-          onSave={handleSaveTask}
-          onDelete={editingTask ? handleDeleteTask : undefined}
-          initialText={editingTask?.text}
-          initialCategory={dialogCategory}
-          initialPriority={editingTask?.priority}
-          initialLabel={
-            editingTask?.label ??
-            (goalsView && featureGoals.owner === user?.id
-              ? featureGoals.goals.find(
-                  (goal) => goal.id === searchParams.get("goal"),
-                )?.title
-              : undefined)
-          }
-          initialDate={
-            editingTask
-              ? editingTask.raw?.date ??
-                getDefaultDateForGroup(editingTask.category as DialogCategory)
-              : getDefaultDateForGroup(dialogCategory)
-          }
-          availableCategories={Array.from(
-            new Set([
-              ...availableCategories,
-              ...(featureGoals.owner === user?.id
-                ? featureGoals.goals.map((goal) => goal.title)
-                : []),
-            ]),
-          )}
-          isEditing={!!editingTask}
-        />
+      <main id="planner-main" className="pl-main" tabIndex={-1}>
+        {goalsVisited ? (
+          <div hidden={!goalsView} className="pl-view">
+            <GoalsWorkbench
+              key={user.id}
+              ownerId={user.id}
+              onChanged={() => void planner.refresh()}
+              onGoalsLoaded={noteGoals}
+              onEditTask={editTask}
+              onGoalOpen={setOpenGoal}
+              createRequest={goalCreateRequest}
+              openRequest={goalOpenRequest}
+            />
+          </div>
+        ) : null}
+        {view === "calendar" ? (
+          <div className="pl-view" key="calendar">
+            <CalendarPage day={day} onDay={setDay} onEdit={editTask} narrow={narrow} />
+          </div>
+        ) : view === "later" ? (
+          <div className="pl-view" key="later">
+            <LaterPage onEdit={editTask} />
+          </div>
+        ) : view === "notes" ? (
+          <div className="pl-view" key="notes">
+            <NotesPage request={noteRequest} onRequestHandled={clearNoteRequest} />
+          </div>
+        ) : view === "statistics" ? (
+          <div className="pl-view" key="statistics">
+            <StatisticsPage onEdit={editTask} onGoal={showGoal} />
+          </div>
+        ) : null}
+      </main>
 
-        <TaskHistorySheet
-          isOpen={historySheetOpen}
-          onClose={() => setHistorySheetOpen(false)}
-          tasks={tasks}
-          isDark={isDark}
-        />
-
-        <StatsSheet
-          isOpen={statsSheetOpen}
-          onClose={() => setStatsSheetOpen(false)}
-          tasks={tasks}
-        />
-
-        <SettingsSheet
-          isOpen={settingsSheetOpen}
-          onClose={() => setSettingsSheetOpen(false)}
-          isDark={isDark}
-          onToggleTheme={() => setIsDark((prev: boolean) => !prev)}
-          tasks={tasks}
-          onToggleTask={handleToggleTask}
-          onLogout={handleLogout}
-          userEmail={user?.email ?? undefined}
-          ownerId={user?.id}
-        />
-
-        <ConfirmDialog
-          isOpen={deleteAccountDialogOpen}
-          onClose={() => setDeleteAccountDialogOpen(false)}
-          onConfirm={handleDeleteAccount}
-          title="Delete Offtasks data?"
-          message="This permanently deletes your Offtasks tasks, notes, goals, and synced settings. Your Etlyn sign-in stays available for other apps, and this device signs out of Offtasks after deletion."
-          confirmText={isDeletingAccount ? "Deleting" : "Delete Offtasks Data"}
-          isDangerous
-        />
-      </div>
+      <TaskComposer request={composer} onClose={() => setComposer(null)} />
+      <SearchOverlay open={searching} onClose={() => setSearching(false)} onPick={openResult} />
+      <AccountPanel
+        open={panelOpen}
+        onClose={() => setPanelOpen(false)}
+        name={name}
+        email={user.email ?? undefined}
+        onStatistics={() => go("statistics")}
+        onThemeChange={saveTheme}
+        onSignOut={signOut}
+        onDeleteData={deleteData}
+        deleting={deleting}
+      />
+      <Notices />
     </div>
   );
-};
+}
+
+/** The four destinations in a glass capsule; a lens slides to the one on screen. */
+function Dock({ view, onChange }: { view: View; onChange: (view: View) => void }) {
+  const host = useRef<HTMLElement>(null);
+  const [lens, setLens] = useState<{ left: number; width: number } | null>(null);
+  useLayoutEffect(() => {
+    const measure = () => {
+      const active = host.current?.querySelector<HTMLElement>('[aria-current="page"]');
+      setLens(active ? { left: active.offsetLeft, width: active.offsetWidth } : null);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    if (host.current) observer.observe(host.current);
+    return () => observer.disconnect();
+  }, [view]);
+  return (
+    <nav ref={host} className="pl-dock ot-glass" aria-label="Planner sections">
+      <span
+        className="pl-lens"
+        aria-hidden="true"
+        style={lens ? { width: lens.width, translate: `${lens.left}px 0`, opacity: 1 } : { opacity: 0 }}
+      />
+      {destinations.map((item) => (
+        <button
+          key={item.view}
+          type="button"
+          aria-current={view === item.view ? "page" : undefined}
+          onClick={() => onChange(item.view)}
+        >
+          <NavIcon name={item.view} selected={view === item.view} />
+          <span>{item.label}</span>
+        </button>
+      ))}
+    </nav>
+  );
+}
+
+function Notices() {
+  const notices = useNotices();
+  return (
+    <div className="pl-notices" role="status" aria-live="polite">
+      {notices.map((notice) => (
+        <div key={notice.id} className="pl-notice">
+          <p>
+            <strong>{notice.title}</strong>
+            {notice.detail ? <span>{notice.detail}</span> : null}
+          </p>
+          <button type="button" className="ot-round ot-round--plain" aria-label="Dismiss" onClick={() => dismissNotice(notice.id)}>
+            <X size={15} strokeWidth={1.8} aria-hidden="true" />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}

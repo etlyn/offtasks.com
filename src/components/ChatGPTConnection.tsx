@@ -89,56 +89,54 @@ export function ChatGPTConnection({ ownerId, connection }: { ownerId: string; co
 
   const value = view.phase === "ready" ? view.value : null;
   const hasGrant = value?.status === "authorized" || value?.status === "reconnect";
-  const actionClass = "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg px-3 text-[13px] font-medium transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700";
 
   return (
-    <div className="border-t border-zinc-200 pt-3 font-['Poppins',_sans-serif] dark:border-zinc-700">
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <div className="min-w-0">
-          <p className="text-[14px] text-zinc-900 dark:text-zinc-100">ChatGPT</p>
-          <p className="text-[12px] text-zinc-500 dark:text-zinc-400" aria-live="polite">
+    <div className="chatgpt">
+      <div className="chatgpt-row">
+        <div>
+          <p>ChatGPT</p>
+          <span aria-live="polite">
             {view.phase === "loading" && "Checking connection…"}
             {view.phase === "error" && "Connection status unavailable"}
             {value?.status === "authorized" && (value.permissions.includes("write") ? "Access allowed · Read and edit" : "Access allowed · Read only")}
             {value?.status === "reconnect" && "Reconnect in ChatGPT"}
             {(value?.status === "unavailable" || value?.status === "disconnected") && (value.installUrl ? "Not connected" : "Coming soon")}
-          </p>
+          </span>
         </div>
-
-        <div className="flex flex-wrap items-center justify-end gap-x-1">
+        <div className="chatgpt-actions">
           {view.phase === "error" && (
-            <button type="button" onClick={() => void refresh(true)} className={`${actionClass} text-teal-800 hover:bg-teal-100 dark:text-teal-300 dark:hover:bg-teal-900/40`}>Try again</button>
+            <button type="button" className="ot-chip" onClick={() => void refresh(true)}>Try again</button>
           )}
           {value && !hasGrant && (value.installUrl ? (
-            <a href={value.installUrl} target="_blank" rel="noopener noreferrer" className={`${actionClass} bg-teal-800 text-white hover:bg-teal-900 dark:bg-teal-700 dark:hover:bg-teal-600`}>
-              Connect ChatGPT <ExternalLink aria-hidden="true" className="size-3.5" />
+            <a href={value.installUrl} target="_blank" rel="noopener noreferrer" className="ot-chip" data-set="">
+              Connect ChatGPT <ExternalLink aria-hidden="true" size={13} />
             </a>
           ) : (
-            <button type="button" disabled className={`${actionClass} cursor-not-allowed bg-zinc-200 text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400`}>Connect ChatGPT</button>
+            <button type="button" disabled className="ot-chip">Connect ChatGPT</button>
           ))}
           {value?.status === "reconnect" && value.installUrl && (
-            <a href={value.installUrl} target="_blank" rel="noopener noreferrer" className={`${actionClass} text-teal-800 hover:bg-teal-100 dark:text-teal-300 dark:hover:bg-teal-900/40`}>
-              Reconnect <ExternalLink aria-hidden="true" className="size-3.5" />
+            <a href={value.installUrl} target="_blank" rel="noopener noreferrer" className="ot-chip" data-set="">
+              Reconnect <ExternalLink aria-hidden="true" size={13} />
             </a>
           )}
           {value?.status === "authorized" && value.installUrl && (
-            <a href={value.installUrl} target="_blank" rel="noopener noreferrer" className={`${actionClass} text-teal-800 hover:bg-teal-100 dark:text-teal-300 dark:hover:bg-teal-900/40`}>
-              Open in ChatGPT <ExternalLink aria-hidden="true" className="size-3.5" />
+            <a href={value.installUrl} target="_blank" rel="noopener noreferrer" className="ot-chip" data-set="">
+              Open in ChatGPT <ExternalLink aria-hidden="true" size={13} />
             </a>
           )}
           {hasGrant && !confirming && (
-            <button type="button" onClick={() => setConfirming(true)} className={`${actionClass} text-zinc-600 hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-700`}>Disconnect</button>
+            <button type="button" className="ot-chip" onClick={() => setConfirming(true)}>Disconnect</button>
           )}
         </div>
       </div>
 
       {confirming && (
-        <div className="mt-2 rounded-lg bg-white p-3 dark:bg-zinc-900">
-          <p className="text-[12px] text-zinc-600 dark:text-zinc-300">Disconnect ChatGPT from your Offtasks account?</p>
-          {disconnectError && <p role="alert" className="mt-1 text-[12px] text-red-700 dark:text-red-300">Could not confirm disconnection. Try again.</p>}
-          <div className="mt-1 flex justify-end gap-1">
-            <button type="button" disabled={disconnecting} onClick={() => { setConfirming(false); setDisconnectError(false); }} className={`${actionClass} text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800`}>Cancel</button>
-            <button type="button" disabled={disconnecting} onClick={() => void disconnect()} className={`${actionClass} text-red-700 hover:bg-red-50 disabled:opacity-60 dark:text-red-300 dark:hover:bg-red-950/40`}>{disconnecting ? "Disconnecting…" : "Disconnect"}</button>
+        <div className="chatgpt-confirm">
+          <p>Disconnect ChatGPT from your Offtasks account?</p>
+          {disconnectError && <p role="alert" className="chatgpt-error">Could not confirm disconnection. Try again.</p>}
+          <div>
+            <button type="button" className="ot-button ot-button--soft ot-button--small" disabled={disconnecting} onClick={() => { setConfirming(false); setDisconnectError(false); }}>Cancel</button>
+            <button type="button" className="ot-button ot-button--danger ot-button--small" disabled={disconnecting} onClick={() => void disconnect()}>{disconnecting ? "Disconnecting…" : "Disconnect"}</button>
           </div>
         </div>
       )}

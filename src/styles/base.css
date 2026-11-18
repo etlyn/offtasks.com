@@ -1,0 +1,879 @@
+/*
+ * Offtasks web foundations.
+ * Colours, type, radii, shadows and motion follow the mobile app (see the
+ * "Offtasks Mobile" variables in the Offtasks Figma file). Sizes use rem so the
+ * interface follows the reader's text size; hairlines and shadows stay in px.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* Surfaces */
+  --ot-bg: #f4f6fb;
+  --ot-surface: #ffffff;
+  --ot-glass: rgb(255 255 255 / 62%);
+  --ot-glass-edge: rgb(255 255 255 / 95%);
+  --ot-glass-solid: #f7faf8;
+  --ot-card: rgb(255 255 255 / 60%);
+  --ot-card-edge: rgb(21 45 37 / 8%);
+  --ot-sheet: rgb(248 251 249 / 86%);
+  --ot-sheet-solid: #f8fbf9;
+  --ot-scrim: rgb(17 29 24 / 12%);
+  --ot-scrim-strong: rgb(17 29 24 / 28%);
+  --ot-input: rgb(21 45 37 / 4.5%);
+  --ot-input-edge: rgb(21 45 37 / 10%);
+
+  /* Ink */
+  --ot-text: #0f172a;
+  --ot-text-2: #4b5563;
+  --ot-text-3: #64748b;
+  --ot-brand: #152d25;
+  --ot-on-brand: #ffffff;
+  --ot-dot: #009689;
+  --ot-soft: rgb(21 45 37 / 4%);
+  --ot-soft-2: rgb(21 45 37 / 7%);
+  --ot-soft-3: rgb(21 45 37 / 11%);
+  --ot-divider: rgb(21 45 37 / 10%);
+  --ot-divider-faint: rgb(21 45 37 / 5.5%);
+  --ot-danger: #a83e3e;
+  --ot-danger-fill: #d33b43;
+  --ot-danger-soft: rgb(168 62 62 / 8%);
+
+  /* Planner details */
+  --ot-checkbox: #7e988b;
+  --ot-marker: #42715e;
+  --ot-today-ring: #86ad9c;
+  --ot-empty-icon: #628476;
+  --ot-ring: #244c3d;
+  --ot-ring-track: #dee8e1;
+  --ot-nav-active: #292b30;
+  --ot-nav-idle: #63666d;
+  --ot-lens: rgb(255 255 255 / 78%);
+  --ot-dock-edge: rgb(67 78 73 / 22%);
+  --ot-glow-mint: rgb(203 231 217 / 85%);
+  --ot-glow-warm: rgb(240 232 214 / 45%);
+  --ot-switch-off: #d4d4d8;
+
+  /* Elevation (one soft shadow per floating control) */
+  --ot-shadow-dock: 0 6px 12px rgb(16 17 22 / 12%);
+  --ot-shadow-plus: 0 5px 10px rgb(21 45 37 / 20%);
+  --ot-shadow-sheet: 0 6px 14px rgb(16 32 25 / 14%), 0 24px 60px rgb(16 32 25 / 12%);
+  --ot-shadow-search: 0 3px 8px rgb(21 45 37 / 6%);
+  --ot-shadow-panel: 0 0 0 1px rgb(21 45 37 / 5%), 0 24px 70px rgb(16 32 25 / 16%);
+
+  /* Shape */
+  --ot-radius-xs: 5px;
+  --ot-radius-sm: 0.75rem;
+  --ot-radius-md: 1rem;
+  --ot-radius-lg: 1.25rem;
+  --ot-radius-xl: 1.375rem;
+  --ot-radius-2xl: 1.75rem;
+
+  /* Motion: gentle ease-in/out everywhere */
+  --ot-ease: cubic-bezier(0.65, 0, 0.35, 1);
+  --ot-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ot-press: 160ms;
+  --ot-fade-in: 220ms;
+  --ot-fade-out: 180ms;
+  --ot-layout: 320ms;
+  --ot-sheet-in: 360ms;
+  --ot-sheet-out: 280ms;
+
+  --ot-font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --ot-gutter: 1.5rem;
+}
+
+:root.dark {
+  color-scheme: dark;
+
+  --ot-bg: #09090b;
+  --ot-surface: #101916;
+  --ot-glass: rgb(255 255 255 / 4.5%);
+  --ot-glass-edge: rgb(255 255 255 / 12%);
+  --ot-glass-solid: #1a2224;
+  --ot-card: rgb(255 255 255 / 3.5%);
+  --ot-card-edge: rgb(255 255 255 / 9%);
+  --ot-sheet: rgb(16 25 22 / 84%);
+  --ot-sheet-solid: #101916;
+  --ot-scrim: rgb(0 0 0 / 30%);
+  --ot-scrim-strong: rgb(0 0 0 / 52%);
+  --ot-input: rgb(255 255 255 / 5%);
+  --ot-input-edge: rgb(255 255 255 / 11%);
+
+  --ot-text: #f4f4f5;
+  --ot-text-2: #cbd5e1;
+  --ot-text-3: #94a3b8;
+  --ot-brand: #d8f3e5;
+  --ot-on-brand: #101916;
+  --ot-soft: rgb(216 243 229 / 6%);
+  --ot-soft-2: rgb(216 243 229 / 10%);
+  --ot-soft-3: rgb(216 243 229 / 15%);
+  --ot-divider: rgb(255 255 255 / 10%);
+  --ot-divider-faint: rgb(255 255 255 / 7%);
+  --ot-danger: #f4a5a5;
+  --ot-danger-fill: #d33b43;
+  --ot-danger-soft: rgb(244 165 165 / 10%);
+
+  --ot-checkbox: #78988a;
+  --ot-marker: #b2dbca;
+  --ot-today-ring: #709889;
+  --ot-empty-icon: #a9d9c7;
+  --ot-ring: #d8f3e5;
+  --ot-ring-track: #293b33;
+  --ot-nav-active: #f5f5f7;
+  --ot-nav-idle: #b9bbc2;
+  --ot-lens: rgb(255 255 255 / 9%);
+  --ot-dock-edge: rgb(255 255 255 / 12%);
+  --ot-glow-mint: rgb(23 71 61 / 70%);
+  --ot-glow-warm: rgb(56 48 29 / 45%);
+  --ot-switch-off: rgb(148 163 184 / 30%);
+
+  --ot-shadow-dock: 0 6px 12px rgb(0 0 0 / 28%);
+  --ot-shadow-plus: 0 5px 10px rgb(0 0 0 / 30%);
+  --ot-shadow-sheet: 0 6px 14px rgb(0 0 0 / 30%), 0 24px 60px rgb(0 0 0 / 34%);
+  --ot-shadow-search: 0 3px 8px rgb(0 0 0 / 20%);
+  --ot-shadow-panel: 0 0 0 1px rgb(255 255 255 / 6%), 0 24px 70px rgb(0 0 0 / 50%);
+}
+
+/* The older variable names stay available for screens that still use them. */
+:root {
+  --background: var(--ot-bg);
+  --foreground: var(--ot-text);
+  --card: var(--ot-surface);
+  --primary: var(--ot-brand);
+  --primary-foreground: var(--ot-on-brand);
+  --muted: var(--ot-soft-2);
+  --muted-foreground: var(--ot-text-2);
+  --border: var(--ot-divider);
+  --input: var(--ot-input);
+  --destructive: var(--ot-danger);
+  --ring: var(--ot-brand);
+}
+
+/* ---------- Reset ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html {
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--ot-bg);
+  color: var(--ot-text);
+  font-family: var(--ot-font);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+#root {
+  min-height: 100dvh;
+  isolation: isolate;
+}
+h1,
+h2,
+h3,
+h4,
+p,
+ul,
+ol,
+dl,
+dd,
+figure,
+blockquote {
+  margin: 0;
+}
+ul,
+ol {
+  padding: 0;
+  list-style: none;
+}
+h1,
+h2,
+h3,
+h4 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+}
+button {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  text-align: inherit;
+}
+button:disabled {
+  cursor: default;
+}
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+textarea {
+  resize: none;
+}
+[hidden] {
+  display: none !important;
+}
+::selection {
+  background: rgb(0 150 137 / 22%);
+}
+:focus {
+  outline: none;
+}
+:focus-visible {
+  outline: 2px solid var(--ot-brand);
+  outline-offset: 2px;
+}
+.ot-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- Page backdrop: two soft glows over the page colour ---------- */
+.ot-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(90% 55% at 95% 12%, var(--ot-glow-mint), transparent 100%),
+    radial-gradient(80% 48% at 0% 48%, var(--ot-glow-warm), transparent 100%),
+    var(--ot-bg);
+}
+
+/* ---------- Wordmark ---------- */
+.ot-wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  color: var(--ot-text);
+  font-size: 1.25rem;
+  line-height: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  white-space: nowrap;
+}
+.ot-wordmark i {
+  color: var(--ot-dot);
+  font-style: normal;
+}
+.ot-wordmark--large {
+  font-size: 1.375rem;
+  line-height: 1.75rem;
+}
+
+/* ---------- Glass ---------- */
+.ot-glass {
+  border: 1px solid var(--ot-glass-edge);
+  background: var(--ot-glass);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  backdrop-filter: blur(24px) saturate(1.5);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .ot-glass {
+    background: var(--ot-glass-solid);
+  }
+}
+
+/* ---------- Buttons ---------- */
+.ot-button {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0 1.25rem;
+  border-radius: 1.375rem;
+  background: var(--ot-brand);
+  color: var(--ot-on-brand);
+  font-size: 0.9375rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition:
+    opacity var(--ot-press) var(--ot-ease),
+    background-color var(--ot-press) var(--ot-ease),
+    transform var(--ot-press) var(--ot-ease);
+}
+.ot-button:active:not(:disabled) {
+  opacity: 0.65;
+}
+.ot-button:disabled {
+  opacity: 0.4;
+}
+.ot-button--soft {
+  background: var(--ot-soft-2);
+  color: var(--ot-text);
+}
+.ot-button--outline {
+  border: 1px solid var(--ot-input-edge);
+  background: var(--ot-surface);
+  color: var(--ot-text);
+}
+.ot-button--quiet {
+  background: transparent;
+  color: var(--ot-text);
+}
+.ot-button--danger {
+  background: transparent;
+  color: var(--ot-danger);
+}
+.ot-button--small {
+  min-height: 2.125rem;
+  padding: 0 1rem;
+  border-radius: 1.0625rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.ot-button--large {
+  min-height: 3.125rem;
+  padding: 0 1.75rem;
+  border-radius: 1.5625rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.ot-button--block {
+  width: 100%;
+}
+@media (hover: hover) {
+  .ot-button:hover:not(:disabled) {
+    opacity: 0.88;
+  }
+  .ot-button--soft:hover:not(:disabled),
+  .ot-button--quiet:hover:not(:disabled),
+  .ot-button--danger:hover:not(:disabled) {
+    opacity: 1;
+    background: var(--ot-soft-3);
+  }
+  .ot-button--outline:hover:not(:disabled) {
+    opacity: 1;
+    background: var(--ot-soft);
+  }
+  .ot-button--danger:hover:not(:disabled) {
+    background: var(--ot-danger-soft);
+  }
+}
+
+/* A round glass control with a 44px touch area around a 36px surface. */
+.ot-round {
+  position: relative;
+  display: inline-grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: none;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--ot-text);
+  transition: opacity var(--ot-press) var(--ot-ease);
+}
+.ot-round::before {
+  position: absolute;
+  inset: 0.25rem;
+  border: 1px solid var(--ot-glass-edge);
+  border-radius: 50%;
+  background: var(--ot-glass);
+  box-shadow: var(--ot-shadow-search);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  backdrop-filter: blur(20px) saturate(1.5);
+  content: "";
+  transition: background-color var(--ot-press) var(--ot-ease);
+}
+.ot-round > * {
+  position: relative;
+}
+.ot-round:active {
+  opacity: 0.65;
+}
+.ot-round--plain::before {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+@media (hover: hover) {
+  .ot-round:hover::before {
+    background: var(--ot-surface);
+  }
+  .ot-round--plain:hover::before {
+    background: var(--ot-soft-2);
+  }
+}
+
+.ot-link {
+  color: var(--ot-brand);
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.2em;
+  transition: text-decoration-color var(--ot-press) var(--ot-ease);
+}
+.ot-link:hover {
+  text-decoration-color: currentcolor;
+}
+
+/* ---------- Fields ---------- */
+.ot-field {
+  display: grid;
+  gap: 0.375rem;
+}
+.ot-field > span,
+.ot-label {
+  color: var(--ot-text-2);
+  font-size: 0.75rem;
+  line-height: 1.125rem;
+  font-weight: 500;
+}
+.ot-label-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0 0.75rem;
+}
+.ot-input {
+  width: 100%;
+  min-height: 3.125rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--ot-input-edge);
+  border-radius: var(--ot-radius-sm);
+  background: var(--ot-input);
+  color: var(--ot-text);
+  font-size: 1rem;
+  line-height: 1.5625rem;
+  transition:
+    border-color var(--ot-press) var(--ot-ease),
+    background-color var(--ot-press) var(--ot-ease),
+    box-shadow var(--ot-press) var(--ot-ease);
+}
+.ot-input::placeholder {
+  color: var(--ot-text-3);
+}
+.ot-input:hover:not(:disabled):not(:focus) {
+  border-color: var(--ot-soft-3);
+  background: var(--ot-soft-2);
+}
+.ot-input:focus {
+  border-color: var(--ot-brand);
+  background: var(--ot-surface);
+  box-shadow: 0 0 0 3px var(--ot-soft-2);
+  outline: none;
+}
+.ot-input:disabled {
+  opacity: 0.6;
+}
+.ot-input[aria-invalid="true"] {
+  border-color: var(--ot-danger);
+}
+textarea.ot-input {
+  min-height: 7.5rem;
+}
+.ot-input-wrap {
+  position: relative;
+}
+.ot-input-wrap .ot-input {
+  padding-right: 3.25rem;
+}
+.ot-input-wrap > button {
+  position: absolute;
+  top: 50%;
+  right: 0.25rem;
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--ot-text-3);
+  translate: 0 -50%;
+}
+.ot-input-wrap > button:hover {
+  color: var(--ot-text);
+}
+
+/* A text area as tall as its text: a hidden copy of the text sets the height. */
+.ot-autogrow {
+  display: grid;
+  min-width: 0;
+  cursor: text;
+}
+.ot-autogrow::after {
+  visibility: hidden;
+  white-space: pre-wrap;
+  content: attr(data-value);
+  pointer-events: none;
+}
+.ot-autogrow > textarea,
+.ot-autogrow::after {
+  grid-area: 1 / 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  overflow-wrap: anywhere;
+}
+.ot-autogrow > textarea {
+  overflow: hidden;
+  resize: none;
+}
+.ot-autogrow > textarea:focus-visible {
+  outline: none;
+}
+.ot-autogrow > textarea::placeholder {
+  color: var(--ot-text-3);
+}
+
+/* ---------- Notices ---------- */
+.ot-notice {
+  padding: 0.75rem 1rem;
+  border-radius: var(--ot-radius-md);
+  background: var(--ot-soft-2);
+  color: var(--ot-text);
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+}
+.ot-notice--error {
+  background: var(--ot-danger-soft);
+  color: var(--ot-danger);
+}
+
+/* ---------- Checkbox: a 20px rounded square, never a circle ---------- */
+.ot-check {
+  position: relative;
+  display: inline-grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: none;
+  place-items: center;
+  border-radius: 0.75rem;
+}
+.ot-check > i {
+  display: grid;
+  width: 1.25rem;
+  height: 1.25rem;
+  place-items: center;
+  border: 1.5px solid var(--ot-checkbox);
+  border-radius: var(--ot-radius-xs);
+  color: var(--ot-on-brand);
+  transition:
+    background-color 200ms var(--ot-ease),
+    border-color 200ms var(--ot-ease),
+    transform var(--ot-press) var(--ot-ease);
+}
+.ot-check svg {
+  width: 0.875rem;
+  height: 0.875rem;
+  stroke-dasharray: 20;
+  stroke-dashoffset: 20;
+  transition: stroke-dashoffset 240ms var(--ot-ease);
+}
+.ot-check[aria-checked="true"] > i {
+  border-color: var(--ot-brand);
+  background: var(--ot-brand);
+}
+.ot-check[aria-checked="true"] svg {
+  stroke-dashoffset: 0;
+}
+.ot-check:active > i {
+  transform: scale(0.9);
+}
+@media (hover: hover) {
+  .ot-check:hover:not([aria-checked="true"]) > i {
+    border-color: var(--ot-brand);
+    background: var(--ot-soft-2);
+  }
+}
+
+/* ---------- Switch ---------- */
+.ot-switch {
+  position: relative;
+  width: 2.75rem;
+  height: 1.625rem;
+  flex: none;
+  border-radius: 0.8125rem;
+  background: var(--ot-switch-off);
+  transition: background-color 220ms var(--ot-ease);
+}
+.ot-switch::after {
+  position: absolute;
+  top: 0.125rem;
+  left: 0.125rem;
+  width: 1.375rem;
+  height: 1.375rem;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 22%);
+  content: "";
+  transition: translate 220ms var(--ot-ease);
+}
+.ot-switch[aria-checked="true"] {
+  background: var(--ot-brand);
+}
+:root.dark .ot-switch[aria-checked="true"] {
+  background: var(--ot-dot);
+}
+.ot-switch[aria-checked="true"]::after {
+  translate: 1.125rem 0;
+}
+.ot-switch:disabled {
+  opacity: 0.5;
+}
+
+/* ---------- Segmented control with a sliding thumb ---------- */
+.ot-segments {
+  position: relative;
+  display: inline-grid;
+  grid-auto-columns: minmax(4rem, 1fr);
+  grid-auto-flow: column;
+  padding: 0.125rem;
+  border-radius: 1.0625rem;
+  background: var(--ot-soft-2);
+}
+.ot-segments > button {
+  position: relative;
+  z-index: 1;
+  min-height: 1.875rem;
+  padding: 0 0.875rem;
+  border-radius: 0.9375rem;
+  color: var(--ot-text-2);
+  font-size: 0.75rem;
+  line-height: 1.125rem;
+  font-weight: 500;
+  text-align: center;
+  transition: color 280ms var(--ot-ease);
+}
+.ot-segments > button[aria-pressed="true"],
+.ot-segments > button[aria-checked="true"] {
+  color: var(--ot-text);
+}
+.ot-segments > span {
+  position: absolute;
+  top: 0.125rem;
+  bottom: 0.125rem;
+  left: 0.125rem;
+  border-radius: 0.9375rem;
+  background: var(--ot-lens);
+  box-shadow: 0 1px 2px rgb(16 32 25 / 8%);
+  transition:
+    translate 280ms var(--ot-ease),
+    width 280ms var(--ot-ease);
+}
+:root.dark .ot-segments > span {
+  background: rgb(216 243 229 / 16%);
+  box-shadow: none;
+}
+
+/* ---------- Chips ---------- */
+.ot-chip {
+  display: inline-flex;
+  min-height: 2rem;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0 0.75rem;
+  border-radius: 1rem;
+  background: var(--ot-soft-2);
+  color: var(--ot-text-2);
+  font-size: 0.75rem;
+  line-height: 1rem;
+  white-space: nowrap;
+  transition:
+    background-color var(--ot-press) var(--ot-ease),
+    color var(--ot-press) var(--ot-ease);
+}
+.ot-chip[data-set],
+.ot-chip[aria-expanded="true"] {
+  color: var(--ot-brand);
+  font-weight: 500;
+}
+@media (hover: hover) {
+  button.ot-chip:hover {
+    background: var(--ot-soft-3);
+  }
+}
+
+/* ---------- Progress line ---------- */
+.ot-progress {
+  height: 3px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--ot-divider);
+}
+.ot-progress > i {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--ot-brand);
+  transition: width 360ms var(--ot-ease);
+}
+
+/* ---------- Tooltips for icon-only controls ---------- */
+[data-tip] {
+  position: relative;
+}
+@media (hover: hover) {
+  [data-tip]::after {
+    position: absolute;
+    top: calc(100% + 0.25rem);
+    left: 50%;
+    z-index: 60;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.5rem;
+    background: var(--ot-brand);
+    color: var(--ot-on-brand);
+    font-size: 0.6875rem;
+    line-height: 1rem;
+    font-weight: 500;
+    white-space: nowrap;
+    content: attr(data-tip);
+    opacity: 0;
+    pointer-events: none;
+    translate: var(--tip-shift, -50%) -0.125rem;
+    transition:
+      opacity 140ms var(--ot-ease),
+      translate 140ms var(--ot-ease);
+  }
+  [data-tip]:hover::after,
+  [data-tip]:focus-visible::after {
+    opacity: 1;
+    translate: var(--tip-shift, -50%) 0;
+    transition-delay: 350ms;
+  }
+  [data-tip][data-tip-side="top"]::after {
+    top: auto;
+    bottom: calc(100% + 0.25rem);
+  }
+  [data-tip][data-tip-align="end"]::after {
+    right: 0;
+    left: auto;
+    --tip-shift: 0%;
+  }
+  [data-tip][aria-expanded="true"]::after {
+    display: none;
+  }
+}
+
+/* ---------- Quiet empty states ---------- */
+.ot-empty {
+  display: flex;
+  min-height: 7.25rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0 1rem;
+  color: var(--ot-text-2);
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+}
+.ot-empty svg {
+  flex: none;
+  color: var(--ot-empty-icon);
+}
+
+/* ---------- Loader: the wordmark's letters settle one by one ---------- */
+.ot-loader {
+  display: inline-flex;
+  color: var(--ot-text);
+  font-size: 1.375rem;
+  line-height: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.ot-loader span {
+  display: inline-block;
+  animation: ot-letter 1.6s var(--ot-ease-out) infinite;
+  animation-delay: calc(var(--i) * 65ms);
+}
+.ot-loader span:last-child {
+  color: var(--ot-dot);
+}
+@keyframes ot-letter {
+  0% {
+    opacity: 0;
+    translate: 0 -0.625rem;
+  }
+  32%,
+  78% {
+    opacity: 1;
+    translate: 0 0;
+  }
+  100% {
+    opacity: 0;
+    translate: 0 0;
+  }
+}
+.ot-loading-page {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+}
+
+@keyframes ot-rise {
+  from {
+    opacity: 0;
+    translate: 0 0.75rem;
+  }
+}
+@keyframes ot-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Very large text on a small screen: labels may wrap instead of pushing the page wider. */
+@media (max-width: 24em) {
+  .ot-button {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    white-space: normal;
+    text-align: center;
+  }
+  .ot-wordmark,
+  .ot-wordmark--large {
+    font-size: 1.125rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+  .ot-loader span {
+    animation: none;
+  }
+}

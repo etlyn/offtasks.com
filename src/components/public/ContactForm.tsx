@@ -1,14 +1,10 @@
 import { recordConversion } from "@/analytics";
 import { useState, type FormEvent } from "react";
-import { Button } from "@/components/ui/button";
 import { submitContactMessage } from "@/lib/supabase";
 
 interface ContactFormProps {
   source?: string;
 }
-
-const inputClassName =
-  "h-11 w-full rounded-2xl border border-[#e4e7ee] bg-white/86 px-4 text-sm text-[#0f172a] outline-none transition placeholder:text-[#94a3b8] focus:border-[#009689]/50 focus:ring-4 focus:ring-[#99f6e4]/30 disabled:cursor-not-allowed disabled:opacity-60";
 
 export const ContactForm = ({ source = "landing" }: ContactFormProps) => {
   const [name, setName] = useState("");
@@ -45,14 +41,14 @@ export const ContactForm = ({ source = "landing" }: ContactFormProps) => {
   };
 
   return (
-    <form className="grid gap-3" onSubmit={handleSubmit} noValidate>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="sr-only" htmlFor={`${source}-contact-name`}>
+    <form className="contact-form" onSubmit={handleSubmit} noValidate>
+      <div className="contact-form-pair">
+        <label className="ot-visually-hidden" htmlFor={`${source}-contact-name`}>
           Name
         </label>
         <input
           id={`${source}-contact-name`}
-          className={inputClassName}
+          className="ot-input"
           placeholder="Name"
           value={name}
           onChange={(event) => setName(event.target.value)}
@@ -60,13 +56,12 @@ export const ContactForm = ({ source = "landing" }: ContactFormProps) => {
           autoComplete="name"
           required
         />
-
-        <label className="sr-only" htmlFor={`${source}-contact-email`}>
+        <label className="ot-visually-hidden" htmlFor={`${source}-contact-email`}>
           Email
         </label>
         <input
           id={`${source}-contact-email`}
-          className={inputClassName}
+          className="ot-input"
           type="email"
           placeholder="Email"
           value={email}
@@ -76,13 +71,12 @@ export const ContactForm = ({ source = "landing" }: ContactFormProps) => {
           required
         />
       </div>
-
-      <label className="sr-only" htmlFor={`${source}-contact-message`}>
+      <label className="ot-visually-hidden" htmlFor={`${source}-contact-message`}>
         Message
       </label>
       <textarea
         id={`${source}-contact-message`}
-        className="min-h-28 w-full resize-none rounded-2xl border border-[#e4e7ee] bg-white/86 px-4 py-3 text-sm leading-6 text-[#0f172a] outline-none transition placeholder:text-[#94a3b8] focus:border-[#009689]/50 focus:ring-4 focus:ring-[#99f6e4]/30 disabled:cursor-not-allowed disabled:opacity-60"
+        className="ot-input"
         placeholder="How can we help?"
         value={message}
         onChange={(event) => setMessage(event.target.value)}
@@ -90,20 +84,14 @@ export const ContactForm = ({ source = "landing" }: ContactFormProps) => {
         maxLength={2000}
         required
       />
-
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Button
-          type="submit"
-          disabled={isSubmitting}
-          className="h-11 rounded-full bg-[#09090b] px-5 text-sm font-semibold text-white hover:bg-[#18181b]"
-        >
+      <div className="contact-form-foot">
+        <button type="submit" className="ot-button" disabled={isSubmitting}>
           {isSubmitting ? "Sending..." : "Send message"}
-        </Button>
-
+        </button>
         {status === "success" ? (
-          <p className="text-sm font-semibold text-[#009689]">Message sent.</p>
+          <p role="status">Message sent.</p>
         ) : status === "validation-error" || status === "submit-error" ? (
-          <p className="text-sm font-semibold text-[#b42318]">
+          <p role="alert" data-error="">
             {status === "validation-error"
               ? "Fill out every field and try again."
               : "We couldn't send that message. Please try again."}

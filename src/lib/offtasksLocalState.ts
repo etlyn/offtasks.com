@@ -1,13 +1,10 @@
-import { resetCustomCategoryColors } from "@/utils/categoryConfig";
+import { resetTheme } from "./theme";
 
 export const OFFTASKS_STORAGE_KEYS = {
-  categories: "offtasks-categories",
   theme: "offtasks-theme",
-  advancedMode: "offtasks-advanced-mode",
-  hideCompleted: "offtasks-hide-completed",
-  autoArrange: "offtasks-auto-arrange",
 } as const;
 
+/** Removes everything Offtasks keeps in this browser: appearance, goal colours and preferences. */
 export const clearLocalOfftasksState = () => {
   if (typeof window === "undefined") {
     return;
@@ -26,6 +23,5 @@ export const clearLocalOfftasksState = () => {
     window.localStorage.removeItem(key);
   }
 
-  resetCustomCategoryColors();
-  document.documentElement.classList.remove("dark");
+  resetTheme();
 };

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { AuthLayout } from "@/components/AuthLayout";
 import { AuthNotice } from "@/components/public/AuthNotice";
 import { supabaseClient } from "@/lib/supabase";
@@ -36,28 +36,12 @@ export function SignInCallbackScreen() {
   }, [navigate]);
   return (
     <AuthLayout
-      eyebrow="Sign in"
       title={error ? "Sign-in unavailable" : "Completing sign-in"}
-      subtitle={
-        error ? "Start a new sign-in to try again." : "Opening your workspace."
-      }
-      heroTitle=""
-      heroDescription=""
-      heroBullets={[]}
-      switchHref="/login"
-      switchLabel="Sign in"
-      switchPrompt=""
+      subtitle={error ? "Start a new sign-in to try again." : "Opening your planner."}
+      switchHref={error ? "/login" : undefined}
+      switchLabel="Back to sign in"
     >
-      {error ? (
-        <>
-          <AuthNotice tone="error">{error}</AuthNotice>
-          <Link to="/login" className="font-medium text-[#134E4A]">
-            Back to sign in
-          </Link>
-        </>
-      ) : (
-        <p role="status">One moment…</p>
-      )}
+      {error ? <AuthNotice tone="error">{error}</AuthNotice> : <p role="status" className="auth-status">One moment…</p>}
     </AuthLayout>
   );
 }
