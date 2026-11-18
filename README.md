@@ -159,11 +159,27 @@ Enable Row Level Security on these tables and add policies that grant users acce
 - `npm run preview` – preview the production build locally
 - `yarn test:planner` – check the planner's date, note, goal and search rules
 
-The existing GitHub Pages workflow builds `main` and publishes `build/` to the
-`public` branch. Its existing `NEXT_PUBLIC_SUPABASE_URL` and
-`NEXT_PUBLIC_SUPABASE_ANON_KEY` secret names are retained and mapped to Vite
-variables. Domain and Vercel configuration remain unchanged. The native Xcode
-Cloud workflow must be reconnected to the new mobile repository separately.
+### Branches and deployment
+
+`main` is staging and `release` is production, as for the other Etlyn sites.
+
+- A push to `main` builds a Vercel Preview served at `stg.offtasks.com`, behind
+  Vercel sign-in. Staging uses the live Offtasks backend: signing in there shows
+  and changes real data. Website analytics is switched off in Preview builds.
+- A push to `release` builds Vercel Production for `www.offtasks.com`. Advance it
+  to the reviewed commit with a fast-forward:
+  `git push origin <sha>:refs/heads/release`.
+- The GitHub workflow runs the checks on both branches and publishes `build/` to
+  the `public` branch from `release` only. Its `NEXT_PUBLIC_SUPABASE_URL` and
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY` secret names are retained and mapped to Vite
+  variables.
+- Continue with Google, sign-up confirmation and password reset return to the
+  host they started on. `https://stg.offtasks.com/app` and
+  `https://stg.offtasks.com/reset-password` must be in the sign-in provider's
+  list of allowed return addresses for those to work on staging.
+
+The native Xcode Cloud workflow must be reconnected to the new mobile repository
+separately.
 
 ### Troubleshooting
 

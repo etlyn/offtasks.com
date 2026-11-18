@@ -1,8 +1,9 @@
-name: GitHub Pages deploy
+name: Checks and GitHub Pages deploy
 
+# main is staging and release is production. Both are checked; only release is published.
 on:
   push:
-    branches: [main]
+    branches: [main, release]
 permissions:
   contents: write
 
@@ -60,6 +61,7 @@ jobs:
           VITE_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
       - name: Deploy 🚀
+        if: github.ref == 'refs/heads/release'
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: public
