@@ -5,6 +5,7 @@ import { PublicFooter } from "@/components/public/PublicFooter";
 import { PublicSiteShell } from "@/components/public/PublicSiteShell";
 import { PRIVACY_URL, SUPPORT_URL } from "@/config/publicSite";
 import privacyPolicy from "@/config/privacyPolicy.json";
+import { usePageTitle } from "@/lib/pageTitle";
 import { useAuth } from "@/providers/auth";
 
 interface LegalSection {
@@ -29,6 +30,7 @@ const LegalPage = ({
   updatedLabel = "Updated September 26, 2026",
 }: LegalPageProps) => {
   const { user } = useAuth();
+  usePageTitle(title);
   return (
     <PublicSiteShell
       actionSlot={

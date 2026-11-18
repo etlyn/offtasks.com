@@ -4,15 +4,15 @@ import { isManagedSignInCallback } from "./googleAuth";
 const SUPABASE_URL = import.meta.env.VITE_PUBLIC_SUPABASE_URL as string | undefined;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_PUBLIC_SUPABASE_ANON_KEY as string | undefined;
 
-if (!SUPABASE_URL) {
-  throw new Error("Missing VITE_PUBLIC_SUPABASE_URL. Check your environment variables.");
+/** False when a build was made without its backend address; the app then explains itself instead of failing blank. */
+export const supabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+
+if (!supabaseConfigured) {
+  console.error("Missing VITE_PUBLIC_SUPABASE_URL or VITE_PUBLIC_SUPABASE_ANON_KEY. Check your environment variables.");
 }
 
-if (!SUPABASE_ANON_KEY) {
-  throw new Error("Missing VITE_PUBLIC_SUPABASE_ANON_KEY. Check your environment variables.");
-}
-
-export const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { flowType: "pkce", detectSessionInUrl: !isManagedSignInCallback(window.location), persistSession: true, autoRefreshToken: true } });
+// The placeholder address is never contacted: nothing but the notice is shown without configuration.
+export const supabaseClient = createClient(SUPABASE_URL || "https://not-configured.invalid", SUPABASE_ANON_KEY || "not-configured", { auth: { flowType: "pkce", detectSessionInUrl: !isManagedSignInCallback(window.location), persistSession: true, autoRefreshToken: true } });
 
 // Tasks, notes and goals are read and written in src/planner/cloud.ts.
 

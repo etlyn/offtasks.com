@@ -118,7 +118,7 @@ export function PlannerProvider({ owner, children }: { owner: string; children: 
       setError(null);
       setSyncedAt(Date.now());
     } catch (caught) {
-      if (alive.current && id === sequence.current) setError(errorText(caught, "Your planner could not be loaded."));
+      if (alive.current && id === sequence.current) setError(errorText(caught, "Your planner could not be loaded. Check your connection and try again."));
     } finally {
       if (alive.current && id === sequence.current) setLoading(false);
     }

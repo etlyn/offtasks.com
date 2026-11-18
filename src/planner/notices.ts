@@ -26,7 +26,9 @@ export function notify(title: string, detail?: string) {
 
 /** The words of an error, without leaking anything technical when there are none. */
 export const errorText = (error: unknown, fallback = "Please try again.") =>
-  error instanceof Error && error.message && !/abort/i.test(error.message) ? error.message : fallback;
+  error instanceof Error && error.message && !/abort|failed to fetch|networkerror|load failed/i.test(error.message)
+    ? error.message
+    : fallback;
 
 const subscribe = (listener: () => void) => {
   listeners.add(listener);

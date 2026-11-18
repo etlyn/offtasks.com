@@ -15,8 +15,11 @@ async function bounded<Result>(request: (signal: AbortSignal) => PromiseLike<Res
   }
 }
 
-const check = (error: { message?: string } | null, fallback: string) => {
-  if (error) throw new Error(error.message || fallback);
+// People see plain words; the server's own message goes to the console for whoever is debugging.
+const check = (error: { message?: string } | null, plain: string) => {
+  if (!error) return;
+  console.error(plain, error);
+  throw new Error(plain);
 };
 
 // ---------- Tasks ----------
@@ -25,7 +28,7 @@ export async function fetchTasks(owner: string): Promise<PlannerTask[]> {
   const { data, error } = await bounded((signal) =>
     supabaseClient.from("tasks").select("*").eq("user_id", owner).order("priority", { ascending: true }).abortSignal(signal),
   );
-  check(error, "Tasks could not be loaded.");
+  check(error, "Your tasks could not be loaded. Check your connection and try again.");
   return (data ?? []).map((row) => readTask(row as Record<string, unknown>)).filter((task): task is PlannerTask => !!task);
 }
 
@@ -39,21 +42,21 @@ export async function createTask(
       .insert([{ ...values, user_id: owner, isComplete: false }])
       .abortSignal(signal),
   );
-  check(error, "The task could not be saved.");
+  check(error, "The task was not saved. Please try again.");
 }
 
 export async function updateTask(owner: string, id: string, changes: TaskChanges) {
   const { error } = await bounded((signal) =>
     supabaseClient.from("tasks").update(changes).eq("id", id).eq("user_id", owner).abortSignal(signal),
   );
-  check(error, "The task could not be updated.");
+  check(error, "The change was not saved. Please try again.");
 }
 
 export async function deleteTask(owner: string, id: string) {
   const { error } = await bounded((signal) =>
     supabaseClient.from("tasks").delete().eq("id", id).eq("user_id", owner).abortSignal(signal),
   );
-  check(error, "The task could not be removed.");
+  check(error, "The task was not removed. Please try again.");
 }
 
 // ---------- Notes and goals (the shared planner collection) ----------
@@ -77,7 +80,7 @@ async function fetchPlannerRows(owner: string, kind: "note" | "goal"): Promise<P
         .range(offset, offset + 999)
         .abortSignal(signal),
     );
-    check(error, kind === "note" ? "Notes could not be loaded." : "Goals could not be loaded.");
+    check(error, kind === "note" ? "Your notes could not be loaded. Check your connection and try again." : "Your goals could not be loaded. Check your connection and try again.");
     rows.push(...((data ?? []) as PlannerRow[]));
     if (!data || data.length < 1000) break;
   }
@@ -104,7 +107,7 @@ async function upsertPlannerItem(owner: string, kind: "note" | "goal", id: strin
       .upsert([{ user_id: owner, kind, id, value, deleted }], { onConflict: "user_id,kind,id" })
       .abortSignal(signal),
   );
-  check(error, kind === "note" ? "The note could not be saved." : "The goal could not be saved.");
+  check(error, kind === "note" ? "The note was not saved. Please try again." : "The goal was not saved. Please try again.");
 }
 
 export function saveNote(owner: string, note: Note) {

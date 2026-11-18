@@ -164,6 +164,8 @@ html {
 }
 body {
   margin: 0;
+  /* Keeps content clear of a phone's notch and rounded corners when held sideways. */
+  padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left);
   min-height: 100dvh;
   background: var(--ot-bg);
   color: var(--ot-text);
@@ -836,6 +838,26 @@ textarea.ot-input {
   display: grid;
   min-height: 100dvh;
   place-items: center;
+}
+
+.ot-setup {
+  display: grid;
+  max-width: 26rem;
+  justify-items: center;
+  gap: 0.75rem;
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+.ot-setup h1 {
+  margin-top: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.ot-setup p {
+  color: var(--ot-text-2);
+  font-size: 0.9375rem;
+  line-height: 1.5rem;
 }
 
 @keyframes ot-rise {

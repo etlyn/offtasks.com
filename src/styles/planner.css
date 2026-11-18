@@ -231,7 +231,7 @@
   .pl-top {
     grid-template-columns: 2.75rem 1fr 2.75rem;
     min-height: 3.625rem;
-    padding: 0.25rem 1.25rem;
+    padding: max(0.25rem, env(safe-area-inset-top)) 1.25rem 0.25rem;
   }
   .pl-menu {
     display: inline-grid;
@@ -252,7 +252,7 @@
     align-items: center;
     justify-content: center;
     gap: 0.625rem;
-    padding: 0 1.25rem;
+    padding: 0 max(1.25rem, env(safe-area-inset-right)) 0 max(1.25rem, env(safe-area-inset-left));
     pointer-events: none;
   }
   .pl-dock {

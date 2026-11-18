@@ -5,6 +5,7 @@ import { Menu, Plus, Search, X } from "lucide-react";
 import { GoalsWorkbench } from "@/components/GoalsWorkbench";
 import type { FeatureGoal } from "@/lib/goalWorkbench";
 import { clearLocalOfftasksState } from "@/lib/offtasksLocalState";
+import { usePageTitle } from "@/lib/pageTitle";
 import { deleteAccount, fetchUserPreferences, supabaseClient, upsertUserPreferences } from "@/lib/supabase";
 import { getTheme, setTheme, type ThemeMode } from "@/lib/theme";
 import { AccountPanel } from "@/planner/AccountPanel";
@@ -81,6 +82,7 @@ function Planner({ user }: { user: User }) {
   const [featureGoals, setFeatureGoals] = useState<FeatureGoal[]>([]);
   const noteGoals = useCallback((goals: FeatureGoal[]) => setFeatureGoals(goals), []);
   const [openGoal, setOpenGoal] = useState<string | null>(null);
+  usePageTitle(view === "goals" && openGoal ? openGoal : view[0].toUpperCase() + view.slice(1));
   const [goalCreateRequest, setGoalCreateRequest] = useState(0);
   const [goalOpenRequest, setGoalOpenRequest] = useState<{ name: string; requestId: number } | null>(null);
 

@@ -9,6 +9,7 @@ import {
 import { WordmarkLoader } from "@/components/LogoWordmark";
 import { authReturnRoute, safePlannerReturn } from "@/lib/goalWorkbench";
 import { isManagedSignInCallback } from "@/lib/googleAuth";
+import { supabaseConfigured } from "@/lib/supabase";
 import { AuthProvider, useAuth } from "@/providers/auth";
 import { LandingScreen } from "@/screens/Landing";
 
@@ -143,7 +144,28 @@ const AppRoutes = () => {
   );
 };
 
+/** Shown instead of the site when a build has no backend address, for example a preview without its settings. */
+const SetupNotice = () => (
+  <div className="ot-loading-page">
+    <div className="ot-backdrop" aria-hidden="true" />
+    <div className="ot-setup" role="alert">
+      <span className="ot-wordmark ot-wordmark--large">
+        offtasks<i>.</i>
+      </span>
+      <h1>This address isn’t set up yet</h1>
+      <p>
+        This build is missing its Offtasks backend settings, so it can’t sign anyone in. The site at{" "}
+        <a className="ot-link" href="https://www.offtasks.com">
+          offtasks.com
+        </a>{" "}
+        is not affected.
+      </p>
+    </div>
+  </div>
+);
+
 export default function App() {
+  if (!supabaseConfigured) return <SetupNotice />;
   return (
     <AuthProvider>
       <BrowserRouter>

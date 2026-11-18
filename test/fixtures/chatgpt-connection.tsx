@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { ChatGPTConnection } from "../../src/components/ChatGPTConnection";
 import type { ChatGPTConnection as Connection, ChatGPTStatus } from "../../src/lib/chatgptConnection";
-import "../../src/styles/globals.css";
+import "../../src/styles/base.css";
+import "../../src/styles/planner.css";
 
 const mode = new URLSearchParams(location.search).get("mode");
 const calls: { owner: string; revision: string; key: string }[] = [];
@@ -30,10 +31,10 @@ function Fixture() {
     },
   }), [owner]);
   return (
-    <div className="min-h-screen bg-white p-5 dark:bg-zinc-900">
+    <div style={{ minHeight: "100vh", padding: "1.25rem", background: "var(--ot-surface)" }}>
       <button onClick={() => setOwner("owner-b")}>Switch account</button>
-      <div className="mt-4 max-w-[460px] rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/50">
-        <p className="mb-3 text-sm text-zinc-700 dark:text-zinc-300">Account</p>
+      <div style={{ maxWidth: "22.5rem", marginTop: "1rem" }}>
+        <p className="panel-label">Connected apps</p>
         <ChatGPTConnection key={owner} ownerId={owner} connection={connection} />
       </div>
     </div>

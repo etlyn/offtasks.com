@@ -2,6 +2,7 @@ import { type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { PublicFooter } from "@/components/public/PublicFooter";
 import { PublicSiteShell } from "@/components/public/PublicSiteShell";
+import { usePageTitle } from "@/lib/pageTitle";
 
 interface AuthLayoutProps {
   children: ReactNode;
@@ -14,7 +15,9 @@ interface AuthLayoutProps {
 }
 
 /** One quiet panel for signing in, creating an account and recovering a password. */
-export const AuthLayout = ({ children, title, subtitle, switchHref, switchLabel, switchPrompt }: AuthLayoutProps) => (
+export const AuthLayout = ({ children, title, subtitle, switchHref, switchLabel, switchPrompt }: AuthLayoutProps) => {
+  usePageTitle(title);
+  return (
   <PublicSiteShell className="pub--auth">
     <main className="auth">
       <section className="auth-card" aria-labelledby="auth-title">
@@ -33,4 +36,5 @@ export const AuthLayout = ({ children, title, subtitle, switchHref, switchLabel,
     </main>
     <PublicFooter />
   </PublicSiteShell>
-);
+  );
+};
