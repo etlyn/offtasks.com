@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { NavIcon } from "@/planner/ui";
 import "@/styles/planner.css";
 
@@ -28,15 +28,6 @@ export const PlannerPreview = () => (
       <span className="ot-wordmark">
         offtasks<i>.</i>
       </span>
-      <div className="pl-dock ot-glass">
-        <span className="pl-lens" />
-        {(["calendar", "notes", "goals", "later"] as const).map((name, index) => (
-          <span key={name} data-current={index === 0 || undefined}>
-            <NavIcon name={name} selected={index === 0} />
-            {name[0].toUpperCase() + name.slice(1)}
-          </span>
-        ))}
-      </div>
       <span className="preview-avatar">AM</span>
     </div>
     <div className="preview-body" aria-hidden="true">
@@ -100,6 +91,17 @@ export const PlannerPreview = () => (
           ))}
         </ul>
       </div>
+    </div>
+    <div className="preview-footer" aria-hidden="true">
+      <div className="pl-dock ot-glass">
+        {(["board", "calendar", "notes", "goals"] as const).map((name) => (
+          <span key={name} data-current={name === "calendar" || undefined}>
+            <NavIcon name={name} selected={name === "calendar"} />
+            {name[0].toUpperCase() + name.slice(1)}
+          </span>
+        ))}
+      </div>
+      <span className="pl-plus"><Plus size={19} strokeWidth={1.8} /></span>
     </div>
   </div>
 );

@@ -97,7 +97,7 @@ export function safePlannerReturn(value: unknown): string {
     const view = url.searchParams.get("view");
     if (view === "goals" || params.size) params.set("view", "goals");
     // The planner's other pages are a fixed set of names, never free text.
-    else if (view === "notes" || view === "later" || view === "statistics")
+    else if (view === "calendar" || view === "notes" || view === "later" || view === "statistics")
       params.set("view", view);
     return params.size ? `/app?${params}` : "/app";
   } catch {

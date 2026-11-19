@@ -10,7 +10,8 @@ import { deleteAccount, fetchUserPreferences, supabaseClient, upsertUserPreferen
 import { getTheme, setTheme, type ThemeMode } from "@/lib/theme";
 import { AccountPanel } from "@/planner/AccountPanel";
 import { NotesPage, type NoteRequest } from "@/planner/NotesPage";
-import { CalendarPage, LaterPage } from "@/planner/PlanPages";
+import { BoardPage } from "@/planner/BoardPage";
+import { CalendarPage } from "@/planner/PlanPages";
 import { SearchOverlay } from "@/planner/SearchOverlay";
 import { StatisticsPage } from "@/planner/StatisticsPage";
 import { TaskComposer, type ComposerRequest } from "@/planner/TaskComposer";
@@ -23,13 +24,13 @@ import { NavIcon } from "@/planner/ui";
 import { useAuth } from "@/providers/auth";
 import "@/styles/planner.css";
 
-type View = "calendar" | "notes" | "goals" | "later" | "statistics";
+type View = "board" | "calendar" | "notes" | "goals" | "statistics";
 
 const destinations = [
+  { view: "board", label: "Board" },
   { view: "calendar", label: "Calendar" },
   { view: "notes", label: "Notes" },
   { view: "goals", label: "Goals" },
-  { view: "later", label: "Later" },
 ] as const;
 
 const NARROW = "(max-width: 56.1875em)";
@@ -71,9 +72,10 @@ function Planner({ user }: { user: User }) {
   const requested = searchParams.get("view");
   const view: View = goalsView
     ? "goals"
-    : requested === "notes" || requested === "later" || requested === "statistics"
+    : requested === "calendar" || requested === "notes" || requested === "statistics"
       ? requested
-      : "calendar";
+      : "board";
+  const startInLater = view === "board" && requested === "later";
 
   const [goalsVisited, setGoalsVisited] = useState(goalsView);
   useEffect(() => {
@@ -95,9 +97,12 @@ function Planner({ user }: { user: User }) {
   const [deleting, setDeleting] = useState(false);
 
   const go = useCallback(
-    (next: View) => setSearchParams(next === "calendar" ? {} : { view: next }),
+    (next: View | "later") => setSearchParams(next === "board" ? {} : { view: next }),
     [setSearchParams],
   );
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+  }, [view]);
 
   // The account's saved appearance wins over this browser's when they differ.
   useEffect(() => {
@@ -125,8 +130,9 @@ function Planner({ user }: { user: User }) {
     if (view === "notes") setNoteRequest({ id: "new", requestId: Date.now() });
     else if (view === "goals" && !openGoal) setGoalCreateRequest((value) => value + 1);
     else if (view === "goals") setComposer({ date: null, goal: openGoal });
-    else setComposer({ date: view === "later" ? null : view === "calendar" ? day : today() });
-  }, [view, openGoal, day]);
+    else setComposer({ date: startInLater ? null : view === "calendar" ? day : today() });
+  }, [view, openGoal, day, startInLater]);
+  const addToDate = useCallback((date: string | null) => setComposer({ date }), []);
   const addLabel =
     view === "notes" ? "Add note" : view === "goals" && !openGoal ? "Add goal" : "Add task";
 
@@ -220,23 +226,9 @@ function Planner({ user }: { user: User }) {
         <button type="button" className="ot-round pl-menu" aria-label="Open account menu" onClick={() => setPanelOpen(true)}>
           <Menu size={18} strokeWidth={1.8} aria-hidden="true" />
         </button>
-        <Link to="/app" className="ot-wordmark pl-wordmark" aria-label="Offtasks, go to Calendar" onClick={() => setDay(today())}>
+        <Link to="/app" className="ot-wordmark pl-wordmark" aria-label="Offtasks, go to Board">
           offtasks<i>.</i>
         </Link>
-        <div className="pl-dockbar">
-          <Dock view={view} onChange={go} />
-          <button
-            type="button"
-            className="pl-plus"
-            aria-label={addLabel}
-            data-tip={`${addLabel} (${/Mac|iPhone|iPad/.test(navigator.platform) ? "⌘" : "Ctrl"}+)`}
-            data-tip-side="top"
-            data-tip-align="end"
-            onClick={add}
-          >
-            <Plus size={22} strokeWidth={1.8} aria-hidden="true" />
-          </button>
-        </div>
         <div className="pl-tools">
           <button type="button" className="ot-round" aria-label="Search" data-tip="Search ( / )" data-tip-align="end" onClick={() => setSearching(true)}>
             <Search size={18} strokeWidth={1.8} aria-hidden="true" />
@@ -262,13 +254,12 @@ function Planner({ user }: { user: User }) {
             />
           </div>
         ) : null}
-        {view === "calendar" ? (
-          <div className="pl-view" key="calendar">
-            <CalendarPage day={day} onDay={setDay} onEdit={editTask} narrow={narrow} />
-          </div>
-        ) : view === "later" ? (
-          <div className="pl-view" key="later">
-            <LaterPage onEdit={editTask} />
+        <div className="pl-view" hidden={view !== "calendar"}>
+          <CalendarPage day={day} onDay={setDay} onEdit={editTask} narrow={narrow} />
+        </div>
+        {view === "board" ? (
+          <div className="pl-view" key="board">
+            <BoardPage onAdd={addToDate} onEdit={editTask} startInLater={startInLater} />
           </div>
         ) : view === "notes" ? (
           <div className="pl-view" key="notes">
@@ -280,6 +271,21 @@ function Planner({ user }: { user: User }) {
           </div>
         ) : null}
       </main>
+
+      <div className="pl-dockbar">
+        <Dock view={view} onChange={go} />
+        <button
+          type="button"
+          className="pl-plus"
+          aria-label={addLabel}
+          data-tip={`${addLabel} (${/Mac|iPhone|iPad/.test(navigator.platform) ? "⌘" : "Ctrl"}+)`}
+          data-tip-side="top"
+          data-tip-align="end"
+          onClick={add}
+        >
+          <Plus size={22} strokeWidth={1.8} aria-hidden="true" />
+        </button>
+      </div>
 
       <TaskComposer request={composer} onClose={() => setComposer(null)} />
       <SearchOverlay open={searching} onClose={() => setSearching(false)} onPick={openResult} />

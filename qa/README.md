@@ -2,10 +2,10 @@
 
 This product owns and maintains [manifest.json](manifest.json), the read-only
 acceptance asset imported by the standalone E2E website. It currently contains
-12 suites and 67 cases. The November 2026 planner redesign rewrote it around
-Calendar, Later, Notes, Goals, search and the account panel; cases for the retired
-Today/Tomorrow/Later board, Advanced Mode, categories, the history sheet and the
-settings sheet were removed, and cases whose purpose is unchanged kept their IDs.
+12 suites and 70 cases. The November 2026 planner redesign covers Board,
+Calendar, Notes, Goals, search and the account panel. The Board cases cover
+scheduling across Today, Tomorrow and Later and keep the existing Calendar and
+Later case IDs.
 
 When product behavior changes, update this manifest in the same pull request.
 Keep app, suite, and case IDs stable; change an ID only for a new identity.
@@ -18,7 +18,7 @@ An E2E admin registers app ID `offtasks-web`, platform `web`, repository
 runs. A local uncommitted change is not available to GitHub imports.
 
 The original Gherkin files remain under `legacy/offtasks/web/features` for historical
-reference only: they describe the board that the redesign replaced. The JSON
+reference and describe the earlier web planner. The JSON
 manifest is authoritative for online testing. The optional
 legacy runner can use `E2E_ROOT` set to this repository's `qa/legacy` directory.
 Online run results live in E2E, never in this source repo.

@@ -1,9 +1,9 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { Bookmark, CalendarDays, RotateCcw } from "lucide-react";
+import { CalendarDays, RotateCcw } from "lucide-react";
 import { MonthCalendar } from "./MonthCalendar";
 import { TaskList } from "./TaskList";
 import { headingForDay, today } from "./dates";
-import { laterTasks, scheduledDay, tasksForDay, type PlannerTask } from "./model";
+import { scheduledDay, tasksForDay, type PlannerTask } from "./model";
 import { usePlanner } from "./store";
 import { Empty, Loader } from "./ui";
 
@@ -11,16 +11,19 @@ import { Empty, Loader } from "./ui";
 export function PlanHeading({
   title,
   tasks,
+  level = "h1",
   children,
 }: {
   title: string;
   tasks: PlannerTask[];
+  level?: "h1" | "h2";
   children?: ReactNode;
 }) {
   const done = tasks.filter((task) => task.isComplete).length;
+  const Heading = level;
   return (
     <header className="plan-head">
-      <h1>{title}</h1>
+      <Heading>{title}</Heading>
       {tasks.length ? (
         <span aria-label={`${done} of ${tasks.length} tasks completed`}>
           {done}/{tasks.length}
@@ -65,10 +68,10 @@ export function CalendarPage({
   const planner = usePlanner();
   const [expanded, setExpanded] = useState(true);
   const marked = useMemo(
-    () => new Set(planner.tasks.map(scheduledDay).filter((value): value is string => !!value)),
-    [planner.tasks],
+    () => new Set(planner.tasks.map((task) => scheduledDay(task, planner.day)).filter((value): value is string => !!value)),
+    [planner.day, planner.tasks],
   );
-  const tasks = tasksForDay(planner.tasks, day);
+  const tasks = tasksForDay(planner.tasks, day, planner.day);
   return (
     <div className="page page--calendar">
       <div className="page-calendar">
@@ -104,25 +107,6 @@ export function CalendarPage({
           <Empty icon={CalendarDays} card>
             No tasks planned
           </Empty>
-        )}
-      </section>
-    </div>
-  );
-}
-
-export function LaterPage({ onEdit }: { onEdit: (task: PlannerTask) => void }) {
-  const planner = usePlanner();
-  const tasks = laterTasks(planner.tasks);
-  return (
-    <div className="page page--list">
-      <section className="plan" aria-label="Later">
-        <PlanHeading title="Later" tasks={tasks} />
-        {!planner.loaded ? (
-          <PlannerStatus />
-        ) : tasks.length ? (
-          <TaskList tasks={tasks} onEdit={onEdit} />
-        ) : (
-          <Empty icon={Bookmark}>Nothing in Later</Empty>
         )}
       </section>
     </div>

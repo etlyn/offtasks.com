@@ -22,15 +22,16 @@
     "test:codex": "yarn --cwd integrations/codex install --frozen-lockfile && yarn --cwd integrations/codex typecheck && yarn --cwd integrations/codex build && yarn --cwd integrations/codex test && node --test test/codex-*.test.mjs test/goal-workbench.test.mjs test/oauth-consent.test.mjs"
   },
   "dependencies": {
+    "@dnd-kit/core": "6.3.1",
     "@etlyn/analytics": "file:vendor/etlyn-analytics-0.5.0-alpha.0.tgz",
+    "@etlyn/etlyn-auth": "file:vendor/etlyn-etlyn-auth-0.1.0-alpha.5.tgz",
     "@radix-ui/react-alert-dialog": "^1.1.6",
     "@radix-ui/react-dialog": "^1.1.6",
     "@supabase/supabase-js": "2.75.1",
     "lucide-react": "^0.487.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.26.1",
-    "@etlyn/etlyn-auth": "file:vendor/etlyn-etlyn-auth-0.1.0-alpha.5.tgz"
+    "react-router-dom": "^6.26.1"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.3.14",

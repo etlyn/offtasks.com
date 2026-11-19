@@ -166,7 +166,7 @@
 
 /* The planner picture on the landing page */
 .preview {
-  padding: 0.75rem 1.5rem 2.25rem;
+  padding: 0.75rem 1.5rem 1.25rem;
   border: 1px solid var(--ot-glass-edge);
   border-radius: 2rem;
   background: var(--ot-glass);
@@ -184,11 +184,19 @@
 .preview-top {
   display: grid;
   min-height: 3.5rem;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: 1fr auto;
   align-items: center;
 }
-.preview .pl-lens {
-  display: none;
+.preview-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  margin: 1.25rem auto 0;
+}
+.preview .pl-dock,
+.preview .pl-plus {
+  pointer-events: none;
 }
 .preview .pl-dock > span {
   display: flex;
@@ -611,7 +619,7 @@ select.ot-input {
     grid-template-columns: 1fr;
     justify-items: center;
   }
-  .preview-top .pl-dock,
+  .preview-footer,
   .preview-avatar {
     display: none;
   }

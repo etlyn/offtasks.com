@@ -40,26 +40,33 @@ const task = (values) => ({
   ...values,
 });
 
-test("a task belongs to the day it is dated, and to Later when it has no date", () => {
-  const tomorrow = dates.shiftDay(today, 1);
+test("Board and Calendar use the same dates, including legacy task groups", () => {
+  const future = dates.shiftDay(today, 9);
   const yesterday = dates.shiftDay(today, -1);
   assert.equal(planner.groupForDate(null), "upcoming");
   assert.equal(planner.groupForDate(today), "today");
   assert.equal(planner.groupForDate(yesterday), "today");
-  assert.equal(planner.groupForDate(tomorrow), "tomorrow");
-  assert.equal(planner.groupForDate(dates.shiftDay(today, 9)), "upcoming");
+  assert.equal(planner.groupForDate(dates.shiftDay(today, 1)), "tomorrow");
+  assert.equal(planner.groupForDate(future), "upcoming");
 
   const tasks = [
     task({ id: "a", date: today, target_group: "today" }),
     task({ id: "b", date: yesterday, target_group: "today" }),
     task({ id: "c", date: null, target_group: "upcoming" }),
     task({ id: "d", date: null, target_group: "today" }),
-    task({ id: "e", date: dates.shiftDay(today, 9), target_group: "upcoming" }),
+    task({ id: "e", date: future, target_group: "upcoming" }),
+    task({ id: "f", target_group: "tomorrow" }),
+    task({ id: "g", date: dates.shiftDay(today, 1), target_group: "upcoming", isComplete: true }),
   ];
   // Past dates are never pulled forward to today.
   assert.deepEqual(planner.tasksForDay(tasks, today).map((item) => item.id), ["a", "d"]);
   assert.deepEqual(planner.tasksForDay(tasks, yesterday).map((item) => item.id), ["b"]);
-  assert.deepEqual(planner.laterTasks(tasks).map((item) => item.id), ["c", "d"]);
+  const board = planner.boardTasks(tasks, today);
+  assert.deepEqual(board.today.map((item) => item.id), ["a", "d"]);
+  assert.deepEqual(board.tomorrow.map((item) => item.id), ["f", "g"]);
+  assert.deepEqual(board.later.map((item) => item.id), ["c", "e"]);
+  assert.equal(board.later[1].date, future);
+  assert.equal(board.tomorrow[1].isComplete, true);
 });
 
 test("only unfinished tasks with a past date are candidates for Return to Later", () => {

@@ -1,7 +1,7 @@
 ## Offtasks Website and Web App
 
 The Offtasks public landing, legal, and support pages, plus the signed-in
-planner (Calendar, Later, Notes, Goals, search and statistics), built with
+planner (Board, Calendar, Notes, Goals, search and statistics), built with
 React and Vite and maintained by Etlyn. The planner follows the mobile app's
 structure and look, and reads and writes the same account data.
 
@@ -70,9 +70,10 @@ The interface is written in plain CSS on a small set of tokens in
 `src/styles/base.css`. Colours, type sizes, radii, shadows and motion come from
 the mobile app (the "Offtasks Mobile" variables in the Offtasks Figma file), so
 a change there should be mirrored here. Sizes use `rem` and breakpoints use
-`em`, so the layout follows the reader's text size. Below 900px the planner is
-laid out like the phone app (menu and search in the header, a floating dock with
-the plus beside it); from 900px the dock moves into the header.
+`em`, so the layout follows the reader's text size. The navigation dock and
+global add action float at the bottom at every width. Board opens with Today,
+Tomorrow, and Later side by side, and stacks them at narrower widths. Calendar
+keeps its day view and its compact week view on narrow screens.
 
 Light is the default appearance. Dark is chosen in the account panel, kept in
 this browser, and saved to the account's `user_preferences.theme_mode` so the
@@ -80,9 +81,12 @@ phone and the web agree. Icons come from [`lucide-react`](https://lucide.dev/ico
 
 ### What the planner shares with mobile
 
-- Tasks live in `tasks`. A task sits on the day in its `date`; tasks without a
-  date are in Later. Completing a task sets `isComplete` and `completed_at` and
-  never moves it. A goal is attached through the task's `label`.
+- Tasks live in `tasks`. A dated task appears on its assigned day in Calendar.
+  Board shows today, tomorrow, and later. Later holds undated tasks and tasks
+  dated after tomorrow. Dragging a task to Today or Tomorrow assigns that date;
+  moving it from either one to Later clears the date. Each row's Move button
+  offers the same action by keyboard or touch. Completing a task sets
+  `isComplete` and `completed_at`. A goal is attached through the task's `label`.
 - Notes and saved goal names live in `planner_items`. A note may carry its own
   tasks and a paper colour; removing a note or goal marks the row `deleted`.
   Goal briefs are notes whose id starts with `offtask-prd:`; they are edited

@@ -29,7 +29,7 @@
               "action": "Given the tester is signed in to the web app"
             },
             {
-              "action": "When the tester tabs through the header, the navigation dock, the task composer, and the account panel"
+              "action": "When the tester tabs through the header, planner content, bottom dock, task composer, and account panel"
             },
             {
               "action": "Then focus should move through interactive controls in a logical order with a visible focus ring"
@@ -170,7 +170,7 @@
               "action": "Given the tester raises the browser text size to 200 percent on a desktop-width window, or the phone's text size to its largest setting"
             },
             {
-              "action": "When the tester opens the landing page, sign in, Calendar, Notes, Goals, Later, and Statistics"
+              "action": "When the tester opens the landing page, sign in, Board, Calendar, Notes, Goals, and Statistics"
             },
             {
               "action": "Then text should stay readable without being cut off"
@@ -397,7 +397,7 @@
               "action": "And the tester submits the sign in form"
             },
             {
-              "action": "Then the tester should be redirected to the planner with Calendar open on today"
+              "action": "Then the planner should open Board with Today, Tomorrow, and Later"
             }
           ]
         },
@@ -905,8 +905,8 @@
     },
     {
       "id": "calendar-and-later",
-      "title": "Web Calendar and Later",
-      "description": "Calendar should show the plan for the selected day, and Later should hold every task without a date.",
+      "title": "Web Board and Calendar",
+      "description": "Board plans Today, Tomorrow, and Later. Calendar shows tasks on the selected day.",
       "cases": [
         {
           "id": "calendar-and-later-open-calendar-on-today",
@@ -923,7 +923,7 @@
           ],
           "steps": [
             {
-              "action": "When the planner finishes loading"
+              "action": "When the tester selects Calendar in the bottom dock"
             },
             {
               "action": "Then Calendar should show the current month with today selected"
@@ -947,7 +947,8 @@
           ],
           "preconditions": [
             "Given the tester is signed in to the web app",
-            "And the account contains tasks on several days and at least one task without a date"
+            "And the account contains tasks on several days and at least one task without a date",
+            "And Calendar is selected in the bottom dock"
           ],
           "steps": [
             {
@@ -978,7 +979,8 @@
           ],
           "preconditions": [
             "Given the tester is signed in to the web app",
-            "And the account contains tasks on several days and at least one task without a date"
+            "And the account contains tasks on several days and at least one task without a date",
+            "And Calendar is selected in the bottom dock"
           ],
           "steps": [
             {
@@ -1006,7 +1008,8 @@
           ],
           "preconditions": [
             "Given the tester is signed in to the web app",
-            "And the account contains tasks on several days and at least one task without a date"
+            "And the account contains tasks on several days and at least one task without a date",
+            "And Calendar is selected in the bottom dock"
           ],
           "steps": [
             {
@@ -1038,16 +1041,16 @@
           ],
           "steps": [
             {
-              "action": "When the tester opens Later"
+              "action": "When the tester reviews the Later column on Board"
             },
             {
-              "action": "Then every task without a date should be listed, finished ones last"
+              "action": "Then Later should list undated tasks and tasks scheduled after tomorrow, with completed tasks last"
             },
             {
-              "action": "And tasks that belong to a goal should name it on a second line"
+              "action": "And scheduled tasks should show their dates and goal tasks should name their goal"
             },
             {
-              "action": "And an account with no undated tasks should see Nothing in Later"
+              "action": "And an empty Later column should show Nothing in Later"
             }
           ]
         },
@@ -1062,7 +1065,8 @@
           ],
           "preconditions": [
             "Given the tester is signed in to the web app",
-            "And the account contains tasks on several days and at least one task without a date"
+            "And the account contains tasks on several days and at least one task without a date",
+            "And Calendar is selected in the bottom dock"
           ],
           "steps": [
             {
@@ -1070,6 +1074,95 @@
             },
             {
               "action": "Then the list should show No tasks planned without a promotional message"
+            }
+          ]
+        },
+        {
+          "id": "calendar-and-later-drag-tasks-between-board-columns",
+          "title": "Drag tasks between Board columns",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@calendar",
+            "@board"
+          ],
+          "preconditions": [
+            "Given the tester is signed in at a desktop width and opens Board",
+            "And the account has a task in Today and a task scheduled after tomorrow"
+          ],
+          "steps": [
+            {
+              "action": "When the tester drags the Today task over Tomorrow"
+            },
+            {
+              "action": "Then Tomorrow should highlight and the row should follow the pointer"
+            },
+            {
+              "action": "And releasing it should move it to Tomorrow and place it on tomorrow in Calendar"
+            },
+            {
+              "action": "When the tester drags the task from Tomorrow to Later"
+            },
+            {
+              "action": "Then the task should lose its date and appear in Later"
+            },
+            {
+              "action": "And dropping the previously scheduled Later task within Later or pressing Escape should keep its original date"
+            }
+          ]
+        },
+        {
+          "id": "calendar-and-later-move-a-task-with-keyboard-or-touch",
+          "title": "Move a task with keyboard or touch",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@calendar",
+            "@board"
+          ],
+          "preconditions": [
+            "Given the tester is signed in and Board contains an undated task"
+          ],
+          "steps": [
+            {
+              "action": "When the tester activates the task’s Move button with the keyboard or by tapping it in a phone-width browser"
+            },
+            {
+              "action": "Then the sheet should list Today, Tomorrow, and Later with the current column indicated"
+            },
+            {
+              "action": "When the tester chooses Today"
+            },
+            {
+              "action": "Then the task should appear in Today and be dated today after reloading"
+            },
+            {
+              "action": "And a phone-width view should stack the columns and keep navigation at the bottom"
+            }
+          ]
+        },
+        {
+          "id": "calendar-and-later-keep-a-note-task-in-sync-with-calendar",
+          "title": "Keep a note task in sync with Calendar",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@calendar",
+            "@board"
+          ],
+          "preconditions": [
+            "Given the tester is signed in with a dated task created inside a note",
+            "And the tester has selected tomorrow in Calendar and switched to Board"
+          ],
+          "steps": [
+            {
+              "action": "When the tester moves the note task from Today to Tomorrow on Board and returns to Calendar"
+            },
+            {
+              "action": "Then tomorrow should still be selected and show the moved task with its note title"
+            },
+            {
+              "action": "And the note and the Board should show the same assigned date after reloading"
             }
           ]
         }
@@ -1124,10 +1217,10 @@
           ],
           "steps": [
             {
-              "action": "Given Later is open"
+              "action": "Given Board is open"
             },
             {
-              "action": "When the tester adds a task"
+              "action": "When the tester adds a task from the Later column"
             },
             {
               "action": "Then the composer should start with No date"
@@ -1703,7 +1796,7 @@
               "action": "When the tester chooses a task"
             },
             {
-              "action": "Then Calendar should open on the task's day, or Later for an undated task, with the task ready to edit"
+              "action": "Then Calendar should open on the task’s day, or Board should show Later for an undated task, with the task ready to edit"
             },
             {
               "action": "When the tester chooses a note or a goal"

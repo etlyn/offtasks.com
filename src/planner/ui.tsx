@@ -145,6 +145,7 @@ export function Sheet({
   size = "regular",
   className = "",
   onOpenAutoFocus,
+  onCloseAutoFocus,
 }: {
   open: boolean;
   onClose: () => void;
@@ -153,6 +154,7 @@ export function Sheet({
   size?: "regular" | "wide" | "small";
   className?: string;
   onOpenAutoFocus?: (event: Event) => void;
+  onCloseAutoFocus?: (event: Event) => void;
 }) {
   return (
     <Dialog.Root open={open} onOpenChange={(next) => !next && onClose()}>
@@ -162,6 +164,7 @@ export function Sheet({
           className={`ot-sheet ot-sheet--${size} ${className}`}
           aria-describedby={undefined}
           onOpenAutoFocus={onOpenAutoFocus}
+          onCloseAutoFocus={onCloseAutoFocus}
         >
           <Dialog.Title className="ot-visually-hidden">{title}</Dialog.Title>
           {children}
@@ -266,7 +269,7 @@ export function PriorityMark({ value }: { value: number }) {
 }
 
 /** The four destinations, outlined at rest and filled when chosen. */
-export function NavIcon({ name, selected }: { name: "calendar" | "notes" | "goals" | "later"; selected: boolean }) {
+export function NavIcon({ name, selected }: { name: "board" | "calendar" | "notes" | "goals"; selected: boolean }) {
   const cut = "var(--nav-cut, var(--ot-surface))";
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -280,8 +283,11 @@ export function NavIcon({ name, selected }: { name: "calendar" | "notes" | "goal
           <path d="M5 21V4" />
           <path d="M5 4c4-3 8 3 14 0v10c-6 3-10-3-14 0Z" fill={selected ? "currentColor" : "none"} />
         </>
-      ) : name === "later" ? (
-        <path d="M7 3.5h10a1.5 1.5 0 0 1 1.5 1.5v16L12 17l-6.5 4V5A1.5 1.5 0 0 1 7 3.5Z" fill={selected ? "currentColor" : "none"} />
+      ) : name === "board" ? (
+        <>
+          <rect x="3" y="4.5" width="18" height="15" rx="2.5" fill={selected ? "currentColor" : "none"} />
+          <path d="M9 5v14m6-14v14" stroke={selected ? cut : "currentColor"} />
+        </>
       ) : (
         <>
           <rect x="3" y="4.5" width="18" height="17" rx="2.5" fill={selected ? "currentColor" : "none"} />

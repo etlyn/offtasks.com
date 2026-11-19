@@ -63,12 +63,12 @@ test("sign-in return paths preserve only internal UUID planner selectors, not cr
 });
 
 test("sign-in return keeps the planner's own pages and nothing else from the query", () => {
-  for (const view of ["notes", "later", "statistics"])
+  for (const view of ["calendar", "notes", "later", "statistics"])
     assert.equal(
       safePlannerReturn(`/app?view=${view}&code=private&next=https://evil.test`),
       `/app?view=${view}`,
     );
-  assert.equal(safePlannerReturn("/app?view=calendar"), "/app");
+  assert.equal(safePlannerReturn("/app?view=board"), "/app");
   assert.equal(safePlannerReturn("/app?view=https://evil.test"), "/app");
   assert.equal(safePlannerReturn("/app?view=notes&view=later"), "/app?view=notes");
   const id = "22222222-2222-4222-8222-222222222222";

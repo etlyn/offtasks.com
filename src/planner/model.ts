@@ -82,14 +82,26 @@ export const groupForDate = (date: string | null): Exclude<TaskGroup, "close"> =
 };
 
 /** A task's day: its own date, or the day its group stands for when it has none. */
-export const scheduledDay = (task: Pick<PlannerTask, "date" | "target_group">) =>
-  task.date ?? (task.target_group === "today" ? today() : task.target_group === "tomorrow" ? shiftDay(today(), 1) : null);
+export const scheduledDay = (task: Pick<PlannerTask, "date" | "target_group">, reference = today()) =>
+  task.date ?? (task.target_group === "today" ? reference : task.target_group === "tomorrow" ? shiftDay(reference, 1) : null);
 
-export const tasksForDay = <T extends PlannerTask>(tasks: T[], day: string) =>
-  tasks.filter((task) => scheduledDay(task) === day);
+export const tasksForDay = <T extends PlannerTask>(tasks: T[], day: string, reference = today()) =>
+  tasks.filter((task) => scheduledDay(task, reference) === day);
 
-/** Later holds everything without a date. */
-export const laterTasks = <T extends PlannerTask>(tasks: T[]) => tasks.filter((task) => !task.date);
+export type BoardColumn = "today" | "tomorrow" | "later";
+
+/** Past dates remain on Calendar. Future dates stay visible while planning. */
+export function boardTasks<T extends PlannerTask>(tasks: T[], day: string): Record<BoardColumn, T[]> {
+  const columns: Record<BoardColumn, T[]> = { today: [], tomorrow: [], later: [] };
+  const tomorrow = shiftDay(day, 1);
+  for (const task of tasks) {
+    const date = scheduledDay(task, day);
+    if (date === day) columns.today.push(task);
+    else if (date === tomorrow) columns.tomorrow.push(task);
+    else if (date === null || date > tomorrow) columns.later.push(task);
+  }
+  return columns;
+}
 
 const fold = (value: string) => value.trim().toLocaleLowerCase();
 export const goalKey = fold;

@@ -21,6 +21,9 @@ import { errorText, notify } from "./notices";
 
 const laterKey = (owner: string) => `offtasks-move-past-tasks-to-later:${owner}`;
 
+type SaveTiming = "optimistic" | "after-save";
+type PendingMove = { id: string; date: string | null; target_group: ReturnType<typeof groupForDate> };
+
 interface PlannerValue {
   owner: string;
   /** Tasks from the task list together with tasks written inside notes. */
@@ -38,6 +41,8 @@ interface PlannerValue {
   refresh: () => Promise<void>;
   addTask: (values: { content: string; date: string | null; priority: number; label: string | null }) => Promise<void>;
   changeTask: (task: PlannerTask, changes: TaskChanges) => Promise<void>;
+  moveTask: (task: PlannerTask, date: string | null) => Promise<boolean>;
+  movingTaskId: string | null;
   toggleTask: (task: PlannerTask) => Promise<void>;
   removeTask: (task: PlannerTask) => Promise<void>;
   saveNote: (draft: NoteDraft, id?: string) => Promise<Note>;
@@ -52,13 +57,15 @@ const PlannerContext = createContext<PlannerValue | null>(null);
 
 export function PlannerProvider({ owner, children }: { owner: string; children: ReactNode }) {
   const [cloudTasks, setCloudTasks] = useState<PlannerTask[]>([]);
-  const [notes, setNotes] = useState<Note[]>([]);
+  const [notes, setNoteState] = useState<Note[]>([]);
   const [goals, setGoals] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [syncedAt, setSyncedAt] = useState<number | null>(null);
   const [day, setDay] = useState(today());
+  const [pendingMove, setPendingMove] = useState<PendingMove | null>(null);
+  const moveInFlight = useRef(false);
   const [movePastToLater, setMovePast] = useState(() => {
     try {
       return window.localStorage.getItem(laterKey(owner)) === "true";
@@ -69,10 +76,28 @@ export function PlannerProvider({ owner, children }: { owner: string; children: 
 
   const alive = useRef(true);
   const sequence = useRef(0);
-  const notesRef = useRef(notes);
-  notesRef.current = notes;
+  const notesRef = useRef<Note[]>([]);
+  const noteWrites = useRef(new Map<string, Promise<unknown>>());
   const movePastRef = useRef(movePastToLater);
   movePastRef.current = movePastToLater;
+
+  const setNotes = useCallback((update: (current: Note[]) => Note[]) => {
+    const next = update(notesRef.current);
+    notesRef.current = next;
+    setNoteState(next);
+  }, []);
+
+  // Notes are saved as whole records. Build each change after the last write to that note.
+  const queueNote = useCallback(async <Result,>(id: string, write: () => Promise<Result>): Promise<Result> => {
+    const previous = noteWrites.current.get(id);
+    const pending = previous ? previous.then(write, write) : write();
+    noteWrites.current.set(id, pending);
+    try {
+      return await pending;
+    } finally {
+      if (noteWrites.current.get(id) === pending) noteWrites.current.delete(id);
+    }
+  }, []);
 
   const refresh = useCallback(async () => {
     const id = ++sequence.current;
@@ -87,20 +112,20 @@ export function PlannerProvider({ owner, children }: { owner: string; children: 
       // Only someone who turned "Return to Later" on has past dates cleared.
       if (movePastRef.current) {
         const pastTasks = nextTasks.filter(isPastAndOpen);
-        const pastNotes = nextNotes.filter((note) => note.tasks?.some(isPastAndOpen));
+        const pastNotes = nextNotes.filter((note) => !noteWrites.current.has(note.id) && note.tasks?.some(isPastAndOpen));
         if (pastTasks.length || pastNotes.length) {
           const now = new Date().toISOString();
           await Promise.all([
             ...pastTasks.map((task) => cloud.updateTask(owner, task.id, { target_group: "upcoming", date: null })),
-            ...pastNotes.map((note) =>
-              cloud.saveNote(owner, {
+            ...pastNotes.map((note) => queueNote(note.id, async () => {
+              const updated: Note = {
                 ...note,
                 updatedAt: now,
-                tasks: note.tasks!.map((task) =>
-                  isPastAndOpen(task) ? { ...task, target_group: "upcoming" as const, date: null } : task,
-                ),
-              }),
-            ),
+                tasks: note.tasks?.map((task) => isPastAndOpen(task) ? { ...task, target_group: "upcoming", date: null } : task),
+              };
+              await cloud.saveNote(owner, updated);
+              setNotes((current) => current.map((item) => item.id === note.id ? updated : item));
+            })),
           ]);
           if (!alive.current || id !== sequence.current) return;
           [nextTasks, nextNotes, nextGoals] = await Promise.all([
@@ -112,7 +137,7 @@ export function PlannerProvider({ owner, children }: { owner: string; children: 
         }
       }
       setCloudTasks(nextTasks);
-      setNotes(nextNotes);
+      setNotes(() => nextNotes);
       setGoals(nextGoals);
       setLoaded(true);
       setError(null);
@@ -122,7 +147,7 @@ export function PlannerProvider({ owner, children }: { owner: string; children: 
     } finally {
       if (alive.current && id === sequence.current) setLoading(false);
     }
-  }, [owner]);
+  }, [owner, queueNote, setNotes]);
 
   useEffect(() => {
     alive.current = true;
@@ -160,46 +185,88 @@ export function PlannerProvider({ owner, children }: { owner: string; children: 
 
   /** Show the change at once, send it, and fall back to the saved state if it fails. */
   const commit = useCallback(
-    async (apply: () => void, action: () => Promise<unknown>, failure: string) => {
+    async (apply: () => void, action: () => Promise<unknown>, failure: string, timing: SaveTiming = "optimistic") => {
       sequence.current += 1;
-      apply();
+      if (timing === "optimistic") apply();
       try {
         await action();
       } catch (caught) {
         notify(failure, errorText(caught));
-        await refresh();
+        if (timing === "optimistic") await refresh();
+        else void refresh();
         throw caught;
       }
+      if (timing === "after-save") apply();
       void refresh();
     },
     [refresh],
   );
 
   const writeNote = useCallback(
-    (note: Note, failure: string) =>
+    (note: Note, failure: string, timing?: SaveTiming) =>
       commit(
         () => setNotes((current) => (current.some((item) => item.id === note.id) ? current.map((item) => (item.id === note.id ? note : item)) : [note, ...current])),
         () => cloud.saveNote(owner, note),
         failure,
+        timing,
       ),
-    [commit, owner],
+    [commit, owner, setNotes],
   );
 
   const changeNoteTask = useCallback(
-    (task: PlannerTask, change: ((item: NoteTask) => NoteTask) | null, failure: string) => {
-      const note = notesRef.current.find((item) => item.id === task.noteId);
-      if (!note?.tasks?.some((item) => noteTaskId(note.id, item.id) === task.id))
-        return Promise.reject(new Error("This note task no longer exists."));
-      const tasks = change
-        ? note.tasks.map((item) => (noteTaskId(note.id, item.id) === task.id ? change(item) : item))
-        : note.tasks.filter((item) => noteTaskId(note.id, item.id) !== task.id);
-      return writeNote({ ...note, updatedAt: new Date().toISOString(), tasks }, failure);
-    },
-    [writeNote],
+    (task: PlannerTask, change: ((item: NoteTask) => NoteTask) | null, failure: string, timing?: SaveTiming) =>
+      queueNote(task.noteId ?? "", async () => {
+        const note = notesRef.current.find((item) => item.id === task.noteId);
+        if (!note?.tasks?.some((item) => noteTaskId(note.id, item.id) === task.id)) {
+          const message = "This note task no longer exists.";
+          notify(failure, message);
+          throw new Error(message);
+        }
+        const tasks = change
+          ? note.tasks.map((item) => (noteTaskId(note.id, item.id) === task.id ? change(item) : item))
+          : note.tasks.filter((item) => noteTaskId(note.id, item.id) !== task.id);
+        return writeNote({ ...note, updatedAt: new Date().toISOString(), tasks }, failure, timing);
+      }),
+    [queueNote, writeNote],
   );
 
+  const changeTask = useCallback(
+    (task: PlannerTask, changes: TaskChanges, timing?: SaveTiming) =>
+      isNoteTaskId(task.id)
+        ? changeNoteTask(task, (item) => ({ ...item, ...changes, id: item.id }), "Could not update task", timing)
+        : commit(
+            () => setCloudTasks((current) => current.map((item) => (item.id === task.id ? { ...item, ...changes } : item))),
+            () => cloud.updateTask(owner, task.id, changes),
+            "Could not update task",
+            timing,
+          ),
+    [changeNoteTask, commit, owner],
+  );
+
+  const moveTask = useCallback(async (task: PlannerTask, date: string | null) => {
+    if (moveInFlight.current) return false;
+    moveInFlight.current = true;
+    const changes = { date, target_group: groupForDate(date) };
+    // Display the move immediately. On failure, removing this overlay restores the saved schedule.
+    setPendingMove({ id: task.id, ...changes });
+    try {
+      await changeTask(task, changes, "after-save");
+      return true;
+    } catch {
+      return false;
+    } finally {
+      moveInFlight.current = false;
+      setPendingMove(null);
+    }
+  }, [changeTask]);
+
   const value = useMemo<PlannerValue>(() => {
-    const tasks = [...cloudTasks, ...tasksInNotes(notes)];
+    const savedTasks = [...cloudTasks, ...tasksInNotes(notes)];
+    const tasks = pendingMove
+      ? savedTasks.map((task) => task.id === pendingMove.id
+        ? { ...task, date: pendingMove.date, target_group: pendingMove.target_group }
+        : task)
+      : savedTasks;
     return {
       owner,
       tasks,
@@ -221,14 +288,9 @@ export function PlannerProvider({ owner, children }: { owner: string; children: 
           void refresh();
         }
       },
-      changeTask: (task, changes) =>
-        isNoteTaskId(task.id)
-          ? changeNoteTask(task, (item) => ({ ...item, ...changes, id: item.id }), "Could not update task")
-          : commit(
-              () => setCloudTasks((current) => current.map((item) => (item.id === task.id ? { ...item, ...changes } : item))),
-              () => cloud.updateTask(owner, task.id, changes),
-              "Could not update task",
-            ),
+      changeTask,
+      moveTask,
+      movingTaskId: pendingMove?.id ?? null,
       toggleTask: (task) => {
         const changes = { isComplete: !task.isComplete, completed_at: task.isComplete ? null : today() };
         return (
@@ -249,19 +311,28 @@ export function PlannerProvider({ owner, children }: { owner: string; children: 
               () => cloud.deleteTask(owner, task.id),
               "Delete failed",
             ),
-      saveNote: async (draft, id) => {
-        const previous = id ? notesRef.current.find((item) => item.id === id) : undefined;
-        if (id && !previous) throw new Error("This note no longer exists.");
-        const note = composeNote(draft, previous);
-        await writeNote(note, "Could not save note");
-        return note;
+      saveNote: (draft, id) => {
+        const save = async () => {
+          const previous = id ? notesRef.current.find((item) => item.id === id) : undefined;
+          if (id && !previous) throw new Error("This note no longer exists.");
+          const note = composeNote(draft, previous);
+          // The note editor can complete tasks. Scheduling may have changed since it opened.
+          const savedTasks = new Map(previous?.tasks?.map((task) => [task.id, task]));
+          note.tasks = note.tasks?.map((task) => {
+            const saved = savedTasks.get(task.id);
+            return saved ? { ...task, date: saved.date, target_group: saved.target_group } : task;
+          });
+          await writeNote(note, "Could not save note");
+          return note;
+        };
+        return id ? queueNote(id, save) : save();
       },
-      patchNote: async (id, patch) => {
+      patchNote: (id, patch) => queueNote(id, async () => {
         const note = notesRef.current.find((item) => item.id === id);
         if (!note) return;
         await writeNote({ ...note, ...patch }, patch.tone ? "Could not save appearance" : "Could not save notes");
-      },
-      removeNote: async (id) => {
+      }),
+      removeNote: (id) => queueNote(id, async () => {
         const note = notesRef.current.find((item) => item.id === id);
         if (!note) return;
         await commit(
@@ -269,7 +340,7 @@ export function PlannerProvider({ owner, children }: { owner: string; children: 
           () => cloud.removeNote(owner, note),
           "Could not delete note",
         );
-      },
+      }),
       removeGoal: (name) =>
         commit(
           () => setGoals((current) => current.filter((item) => item.trim().toLocaleLowerCase() !== name.trim().toLocaleLowerCase())),
@@ -288,7 +359,7 @@ export function PlannerProvider({ owner, children }: { owner: string; children: 
         if (enabled) void refresh();
       },
     };
-  }, [owner, cloudTasks, notes, goals, loading, loaded, error, syncedAt, day, refresh, commit, changeNoteTask, writeNote, movePastToLater]);
+  }, [owner, cloudTasks, notes, goals, loading, loaded, error, syncedAt, day, refresh, commit, changeTask, changeNoteTask, writeNote, movePastToLater, pendingMove, moveTask, queueNote, setNotes]);
 
   return <PlannerContext.Provider value={value}>{children}</PlannerContext.Provider>;
 }

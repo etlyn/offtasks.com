@@ -52,8 +52,8 @@ function ComposerBody({ request, onClose }: { request: ComposerRequest; onClose:
   const field = useRef<HTMLTextAreaElement>(null);
   const trimmed = content.trim();
   const marked = useMemo(
-    () => new Set(planner.tasks.map(scheduledDay).filter((day): day is string => !!day)),
-    [planner.tasks],
+    () => new Set(planner.tasks.map((task) => scheduledDay(task, planner.day)).filter((day): day is string => !!day)),
+    [planner.day, planner.tasks],
   );
 
   useEffect(() => {
