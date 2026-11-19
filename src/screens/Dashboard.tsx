@@ -12,6 +12,7 @@ import { AccountPanel } from "@/planner/AccountPanel";
 import { NotesPage, type NoteRequest } from "@/planner/NotesPage";
 import { BoardPage } from "@/planner/BoardPage";
 import { CalendarPage } from "@/planner/PlanPages";
+import { RemindersProvider, useReminders } from "@/planner/ReminderProvider";
 import { SearchOverlay } from "@/planner/SearchOverlay";
 import { StatisticsPage } from "@/planner/StatisticsPage";
 import { TaskComposer, type ComposerRequest } from "@/planner/TaskComposer";
@@ -57,13 +58,16 @@ export const DashboardScreen = () => {
   if (!user) return null;
   return (
     <PlannerProvider key={user.id} owner={user.id}>
-      <Planner user={user} />
+      <RemindersProvider owner={user.id}>
+        <Planner user={user} />
+      </RemindersProvider>
     </PlannerProvider>
   );
 };
 
 function Planner({ user }: { user: User }) {
   const planner = usePlanner();
+  const { disconnect: disconnectReminders } = useReminders();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const narrow = useNarrow();
@@ -191,6 +195,7 @@ function Planner({ user }: { user: User }) {
   }, [add, searching]);
 
   const signOut = async () => {
+    await disconnectReminders();
     const { error } = await supabaseClient.auth.signOut({ scope: "local" });
     if (error) throw error;
     navigate("/login");
@@ -200,6 +205,7 @@ function Planner({ user }: { user: User }) {
     setDeleting(true);
     try {
       await deleteAccount();
+      await disconnectReminders();
       const { error } = await supabaseClient.auth.signOut({ scope: "local" });
       if (error) console.warn("Offtasks data was deleted, but signing out on this device reported an error", error);
       clearLocalOfftasksState();

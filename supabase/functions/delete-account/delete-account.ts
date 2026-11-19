@@ -81,6 +81,7 @@ export const cleanupTargets: CleanupTarget[] = [
   // Revoke app-specific access first; shared provider sessions/identity and the
   // operator's global client policy are not Offtasks-owned user records.
   { table: "offtask_oauth_grants", column: "user_id", optional: true },
+  { table: "offtask_web_reminder_devices", column: "user_id", optional: true },
   { table: "offtask_task_results", column: "user_id", optional: true },
   { table: "offtask_integration_requests", column: "user_id", optional: true },
   { table: "offtask_integration_audit", column: "user_id", optional: true },

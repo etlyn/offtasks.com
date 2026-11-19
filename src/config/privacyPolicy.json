@@ -1,7 +1,7 @@
 {
   "title": "Privacy Policy",
   "description": "How Offtasks handles your information on the web, iOS, and connected AI services.",
-  "updatedLabel": "Updated October 29, 2026",
+  "updatedLabel": "Updated November 18, 2026",
   "sections": [
     {
       "title": "Information we handle",
@@ -24,6 +24,15 @@
       "links": [
         { "label": "OpenAI privacy policy", "href": "https://openai.com/policies/privacy-policy/" },
         { "label": "ChatGPT chat deletion and connected app data", "href": "https://help.openai.com/en/articles/8809935-deleting-and-archiving-chats-in-chatgpt" }
+      ]
+    },
+    {
+      "title": "Task reminders",
+      "items": [
+        "On iPhone, task reminders are scheduled on the device. If you set a web reminder, we save its scheduled time and task reference, plus the browser subscription address and encryption keys linked to your Offtasks session. This lets Offtasks deliver the reminder to that browser while the tab is closed.",
+        "When a web reminder is due, Offtasks uses the task’s current title as the message. Supabase runs the delivery service. Your browser’s notification service receives the subscription address and an encrypted notification payload for delivery to your device.",
+        "Scheduled web reminders are removed after delivery or when the task is completed, deleted or the reminder is cleared. Offtasks retries pending delivery for up to 15 minutes after the scheduled time. A subscription is removed when it rejects a delivery as expired, the linked session ends, you sign out on that browser or you delete Offtasks data. The underlying task follows the usual retention for saved content.",
+        "Choose No reminder in the task to cancel its reminder. You can also turn off Offtasks notifications in your browser or device settings. A notification already shown on a device can remain in its notification center until you dismiss it."
       ]
     },
     {
