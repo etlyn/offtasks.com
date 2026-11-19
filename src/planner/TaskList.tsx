@@ -1,10 +1,12 @@
-import { useState, type ReactNode } from "react";
-import { GripVertical, Trash2 } from "lucide-react";
+import { useId, useState, type ReactNode } from "react";
+import { Bell, GripVertical, Trash2 } from "lucide-react";
 import { useDraggable } from "@dnd-kit/core";
 import { openFirst, type PlannerTask } from "./model";
 import { taskContext, taskWhen } from "./search";
 import { usePlanner } from "./store";
 import { Checkbox, Confirm, PriorityMark } from "./ui";
+import { useReminders } from "./ReminderProvider";
+import { formatReminder } from "./reminders";
 
 type Detail = "plan" | "goal" | "context";
 type MoveAction = (task: PlannerTask, trigger: HTMLButtonElement) => void;
@@ -30,6 +32,8 @@ export function TaskList({
   onMove?: MoveAction;
 }) {
   const planner = usePlanner();
+  const { getReminder } = useReminders();
+  const listId = useId();
   const [removing, setRemoving] = useState<PlannerTask | null>(null);
   const ordered = keepOrder ? tasks : openFirst(tasks);
   return (
@@ -38,6 +42,9 @@ export function TaskList({
         {ordered.map((task) => {
           const extra = meta?.(task);
           const moving = planner.movingTaskId === task.id;
+          const reminder = task.isComplete ? null : getReminder(task.id);
+          const reminderLabel = reminder ? formatReminder(reminder) : null;
+          const reminderId = `${listId}-reminder-${task.id}`;
           return (
             <TaskRow key={task.id} task={task} onMove={onMove} moveDisabled={!!planner.movingTaskId} moving={moving}>
               <Checkbox
@@ -46,7 +53,7 @@ export function TaskList({
                 onChange={() => void planner.toggleTask(task)}
                 disabled={moving}
               />
-              <button type="button" className="task-body" onClick={() => onEdit(task)} aria-label={`Edit: ${task.content}`} disabled={moving}>
+              <button type="button" className="task-body" onClick={() => onEdit(task)} aria-label={`Edit: ${task.content}`} aria-describedby={reminder ? reminderId : undefined} disabled={moving}>
                 <span className="task-title">{task.content}</span>
                 {detail === "plan" && task.noteTitle ? <span className="task-meta">Note: {task.noteTitle}</span> : null}
                 {detail === "plan" && task.label ? <span className="task-meta">Goal: {task.label}</span> : null}
@@ -58,6 +65,13 @@ export function TaskList({
                     {extra ? <span className="task-tag">{extra}</span> : null}
                     {task.noteTitle ? <span>Note: {task.noteTitle}</span> : null}
                     <PriorityMark value={task.priority} />
+                  </span>
+                ) : null}
+                {reminderLabel ? (
+                  <span className="task-meta task-reminder" id={reminderId}>
+                    <Bell size={13} strokeWidth={1.7} aria-hidden="true" />
+                    <span className="ot-visually-hidden">Reminder: </span>
+                    {reminderLabel}
                   </span>
                 ) : null}
               </button>

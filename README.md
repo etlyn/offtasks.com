@@ -95,7 +95,9 @@ phone and the web agree. Icons come from [`lucide-react`](https://lucide.dev/ico
   mobile. Goal logos are saved to the account.
 - Return to Later is an explicit, per-browser choice. Only when it is on do
   unfinished tasks from past days lose their date.
-- Reminders are local notifications on the phone and are not part of the web.
+- Task reminders use the same composer and row indicator on web and iPhone.
+  Web Push delivers to the browser where the reminder was set, including while
+  its tab is closed. See [web reminders](docs/web-reminders.md) for setup.
 
 ### Supabase Schema
 

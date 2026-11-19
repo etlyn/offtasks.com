@@ -1367,6 +1367,94 @@
               "action": "Then the edited values should still be visible on the same task"
             }
           ]
+        },
+        {
+          "id": "task-management-choose-edit-and-clear-a-task-reminder",
+          "title": "Choose, edit and clear a task reminder",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@task-management",
+            "@reminders"
+          ],
+          "preconditions": [
+            "Given the tester is signed in with a sample task and is using a Web Push-capable browser"
+          ],
+          "steps": [
+            {
+              "action": "When the tester opens an unfinished task and chooses Remind me"
+            },
+            {
+              "action": "Then the composer should show a native date-and-time control, Back, Done and No reminder"
+            },
+            {
+              "action": "And a past time should stay in the reminder step with a validation message"
+            },
+            {
+              "action": "When the tester chooses a future time, allows notifications and saves the task"
+            },
+            {
+              "action": "Then a bell and time should appear on the task after reload while its assigned date stays the same"
+            },
+            {
+              "action": "And editing the reminder or choosing No reminder should update the row after saving"
+            }
+          ]
+        },
+        {
+          "id": "task-management-deliver-a-reminder-with-planner-closed",
+          "title": "Deliver a reminder with the planner tab closed",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@task-management",
+            "@reminders"
+          ],
+          "preconditions": [
+            "Given the hosted web reminder dispatcher is active and notifications are allowed in a supported test browser",
+            "And the tester uses a disposable task in that browser's signed-in Offtasks session"
+          ],
+          "steps": [
+            {
+              "action": "When the tester saves a reminder several minutes ahead and closes every Offtasks tab while leaving the browser running"
+            },
+            {
+              "action": "Then a Reminder notification with the current task title should arrive on that browser near the chosen time"
+            },
+            {
+              "action": "And selecting the notification should open the Offtasks planner"
+            }
+          ]
+        },
+        {
+          "id": "task-management-cancel-reminders-on-task-completion-and-sign-out",
+          "title": "Cancel reminders on task completion and sign-out",
+          "tags": [
+            "@e2e",
+            "@web",
+            "@task-management",
+            "@reminders"
+          ],
+          "preconditions": [
+            "Given sample reminders exist for a task and a task written inside a note"
+          ],
+          "steps": [
+            {
+              "action": "When the tester completes or removes a task in the planner"
+            },
+            {
+              "action": "Then the bell should disappear and the task should not send its pending reminder"
+            },
+            {
+              "action": "When the tester signs out of that browser"
+            },
+            {
+              "action": "Then remaining reminders for that browser session should be canceled"
+            },
+            {
+              "action": "And other browsers and accounts should retain their own reminders"
+            }
+          ]
         }
       ]
     },

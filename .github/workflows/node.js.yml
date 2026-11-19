@@ -46,6 +46,12 @@ jobs:
           yarn test:analytics
           yarn test:planner
 
+      - name: Check the web reminder dispatcher
+        working-directory: supabase/functions/offtask-web-reminders
+        run: |
+          npx --yes deno@2.9.6 check --frozen index.ts
+          npx --yes deno@2.9.6 test --frozen --allow-env
+
       - name: Build
         run: |
           if [ -e yarn.lock ]; then

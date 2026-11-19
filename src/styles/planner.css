@@ -438,6 +438,14 @@
   line-height: 1rem;
   overflow-wrap: anywhere;
 }
+.task-reminder {
+  display: flex;
+  align-items: center;
+  gap: 0.3125rem;
+}
+.task-reminder svg {
+  flex: none;
+}
 .task-meta--row {
   display: flex;
   flex-wrap: wrap;
@@ -1032,6 +1040,56 @@
 .composer-quick {
   justify-content: center;
   padding: 0.25rem 0 0.125rem;
+}
+.reminder-head {
+  display: grid;
+  grid-template-columns: minmax(3.875rem, 1fr) auto minmax(3.875rem, 1fr);
+}
+.reminder-head h2 {
+  grid-column: 2;
+}
+.reminder-head .ot-button {
+  justify-self: end;
+}
+.reminder-field {
+  display: grid;
+  min-width: 0;
+  gap: 0.375rem;
+  margin-top: 0.625rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+.reminder-field input {
+  min-width: 0;
+  font-weight: 400;
+}
+.reminder-hint,
+.reminder-error {
+  color: var(--ot-text-2);
+  font-size: 0.75rem;
+  line-height: 1.125rem;
+}
+.reminder-error {
+  color: var(--ot-danger);
+}
+.reminder-clear {
+  justify-self: center;
+  margin-top: 0.125rem;
+}
+@media (pointer: coarse) {
+  .composer-chips .ot-chip,
+  .reminder-clear,
+  .reminder-head .ot-button {
+    min-height: 2.75rem;
+  }
+}
+@media (max-width: 17em) {
+  .reminder-head {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+  .reminder-head h2 {
+    overflow-wrap: anywhere;
+  }
 }
 .composer .cal {
   border-color: transparent;
