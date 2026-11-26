@@ -663,7 +663,10 @@
               "action": "Then the panel should show the account name and email, Sync now with its status, and Manage Etlyn account"
             },
             {
-              "action": "And the panel should show the ChatGPT connection and Delete Offtasks data"
+              "action": "And the panel should show the ChatGPT connection and Delete Offtasks data without a caption under the delete action"
+            },
+            {
+              "action": "When the tester opens the delete confirmation, it should explain what is deleted and that the shared Etlyn sign-in is kept"
             }
           ]
         },
@@ -1092,10 +1095,10 @@
           ],
           "steps": [
             {
-              "action": "When the tester drags the Today task over Tomorrow"
+              "action": "When the tester drags the Today task by the grip to the left of its checkbox over Tomorrow"
             },
             {
-              "action": "Then Tomorrow should highlight and the row should follow the pointer"
+              "action": "Then Tomorrow should highlight and the row should follow the pointer with the grip on the left"
             },
             {
               "action": "And releasing it should move it to Tomorrow and place it on tomorrow in Calendar"
@@ -1392,13 +1395,13 @@
               "action": "Given Notes is open"
             },
             {
-              "action": "When the tester presses the plus button, enters a title and text, and saves"
+              "action": "When the tester presses the plus button, the editor should focus a single blank writing area and disable Save until it has content"
             },
             {
-              "action": "Then the note should appear as a card with its title, first lines, and date"
+              "action": "When the tester writes multiple paragraphs and saves, the first line should name the note’s card and the card should show a preview and date"
             },
             {
-              "action": "And saving with no title, text, or tasks should be refused with a short message"
+              "action": "And reopening the note after reloading should restore the full text and paragraph breaks"
             }
           ]
         },
@@ -1419,7 +1422,7 @@
               "action": "Given a note is open"
             },
             {
-              "action": "When the tester adds a task in the note and saves"
+              "action": "When the tester opens Add a task from the editor toolbar, adds a task, and saves"
             },
             {
               "action": "Then the task should appear on today's plan in Calendar with the note's title beneath it"

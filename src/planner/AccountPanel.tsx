@@ -252,7 +252,6 @@ export function AccountPanel({
                   </i>
                   <span>{deleting ? "Deleting Offtasks data" : "Delete Offtasks data"}</span>
                 </button>
-                <p>Only Offtasks data. Your Etlyn account is kept.</p>
               </footer>
             </div>
           )}

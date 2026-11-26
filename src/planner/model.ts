@@ -241,22 +241,29 @@ export function filterNotes(notes: Note[], pinnedOnly: boolean) {
 }
 
 export interface NoteDraft {
-  title: string;
-  body: string;
+  text: string;
   tasks?: NoteTask[];
 }
 
+/** Display both fields in the same editor, including titles from older clients. */
+export const noteText = (note: Pick<Note, "title" | "body">) =>
+  [note.title, note.body].filter(Boolean).join("\n").replace(/\r\n?/g, "\n");
+
 /** The note as it should be saved; throws when there is nothing to save. */
 export function composeNote(draft: NoteDraft, previous?: Note, now = new Date().toISOString()): Note {
-  const title = draft.title.trim();
-  const body = draft.body.trim();
-  if (!title && !body && !draft.tasks?.length) throw new Error("Add a title or note before saving.");
   const tasks = draft.tasks ?? previous?.tasks;
+  const text = draft.text.trim();
+  if (!text && !tasks?.length) throw new Error("Write a note or add a task before saving.");
+  const lineBreak = text.indexOf("\n");
+  const firstLine = lineBreak < 0 ? text : text.slice(0, lineBreak);
+  const remainder = lineBreak < 0 ? "" : text.slice(lineBreak + 1);
+  const unchanged = previous && draft.text === noteText(previous);
   return {
     ...(previous ?? {}),
     id: previous?.id ?? newLocalId(),
-    title: title || "Untitled note",
-    body,
+    // Keep the separate fields used by cards, search and the mobile app.
+    title: unchanged ? previous.title : firstLine || "Untitled note",
+    body: unchanged ? previous.body : remainder,
     updatedAt: now,
     pinned: previous?.pinned ?? false,
     ...(tasks ? { tasks } : {}),

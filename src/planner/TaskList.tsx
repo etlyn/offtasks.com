@@ -128,20 +128,20 @@ function DraggableTaskRow({ task, onMove, disabled, moving, children }: {
           listeners?.onPointerDown?.(event);
       }}
     >
-      {children}
       <button
         type="button"
         className="task-move ot-round ot-round--plain"
         aria-label={`Move: ${task.content}`}
         aria-haspopup="dialog"
         data-tip="Move task"
-        data-tip-align="end"
+        data-tip-align="start"
         disabled={disabled}
         onPointerDown={(event) => listeners?.onPointerDown?.(event)}
         onClick={(event) => onMove(task, event.currentTarget)}
       >
         <GripVertical size={16} strokeWidth={1.8} aria-hidden="true" />
       </button>
+      {children}
     </li>
   );
 }

@@ -104,8 +104,8 @@ export function BoardPage({ onAdd, onEdit, startInLater }: {
           {createPortal(<DragOverlay dropAnimation={null} zIndex={35}>
             {dragTask ? (
               <div className="board-drag-preview" aria-hidden="true">
-                <span>{dragTask.content}</span>
                 <GripVertical size={16} />
+                <span>{dragTask.content}</span>
               </div>
             ) : null}
           </DragOverlay>, document.body)}

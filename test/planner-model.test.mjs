@@ -139,19 +139,35 @@ test("notes keep fields this app does not know and drop tasks it cannot show", (
   assert.equal(planner.isNoteTaskId(first.id), true);
 });
 
-test("saving a note trims it, names an untitled one and keeps its pin and paper", () => {
+test("the note's first line names its card and paragraphs round-trip through the single editor", () => {
   const previous = { id: "n1", title: "Old", body: "Old", pinned: true, updatedAt: "2026-10-01T00:00:00.000Z", tone: "sand", tasks: [] };
-  const saved = planner.composeNote({ title: "  ", body: "  New text  " }, previous, "2026-10-07T00:00:00.000Z");
+  const saved = planner.composeNote({ text: "  New text\n\nNext paragraph\n  Indented line  " }, previous, "2026-10-07T00:00:00.000Z");
   assert.deepEqual(
     [saved.id, saved.title, saved.body, saved.pinned, saved.tone, saved.updatedAt],
-    ["n1", "Untitled note", "New text", true, "sand", "2026-10-07T00:00:00.000Z"],
+    ["n1", "New text", "\nNext paragraph\n  Indented line", true, "sand", "2026-10-07T00:00:00.000Z"],
   );
-  const created = planner.composeNote({ title: "Fresh", body: "" });
+  assert.equal(planner.noteText(saved), "New text\n\nNext paragraph\n  Indented line");
+  const created = planner.composeNote({ text: "Fresh" });
   assert.equal(created.pinned, false);
+  assert.equal(created.body, "");
   assert.ok(created.id.length > 5);
-  assert.throws(() => planner.composeNote({ title: " ", body: "" }), /Add a title or note/);
+  assert.throws(() => planner.composeNote({ text: " " }), /Write a note/);
   // A note that is only a task list is still worth saving.
-  assert.equal(planner.composeNote({ title: "", body: "", tasks: [{ id: "a", content: "x", isComplete: false, priority: 0, target_group: "today", date: null }] }).tasks.length, 1);
+  const taskOnly = planner.composeNote({ text: "", tasks: [{ id: "a", content: "x", isComplete: false, priority: 0, target_group: "today", date: null }] });
+  assert.equal(taskOnly.title, "Untitled note");
+  assert.equal(taskOnly.tasks.length, 1);
+});
+
+test("saved titles and body stay intact when a legacy note is saved with task edits", () => {
+  const previous = {
+    id: "n1", title: "Untitled note\nAnother title line", body: "First paragraph\r\n\r\nSecond paragraph", pinned: true,
+    updatedAt: "2026-10-01T00:00:00.000Z", tone: "sand", extra: { source: "mobile" },
+  };
+  const text = planner.noteText(previous);
+  assert.equal(text, "Untitled note\nAnother title line\nFirst paragraph\n\nSecond paragraph");
+  const now = "2026-10-07T00:00:00.000Z";
+  const tasks = [{ id: "task", content: "Keep this", isComplete: true, priority: 0, target_group: "today", date: null }];
+  assert.deepEqual(planner.composeNote({ text, tasks }, previous, now), { ...previous, tasks, updatedAt: now });
 });
 
 test("notes list pinned first, then most recently changed", () => {

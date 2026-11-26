@@ -775,6 +775,10 @@ textarea.ot-input {
     top: auto;
     bottom: calc(100% + 0.25rem);
   }
+  [data-tip][data-tip-align="start"]::after {
+    left: 0;
+    --tip-shift: 0%;
+  }
   [data-tip][data-tip-align="end"]::after {
     right: 0;
     left: auto;

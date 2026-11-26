@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Bookmark, Check, FileText, MoreHorizontal, Plus, Trash2, X } from "lucide-react";
-import { dayOf, longDate, shortDate, today } from "./dates";
-import { filterNotes, newLocalId, noteTone, noteTones, type Note, type NoteTask, type NoteTone } from "./model";
+import { Bookmark, Check, FileText, ListPlus, MoreHorizontal, Plus, Trash2, X } from "lucide-react";
+import { dayOf, shortDate, today } from "./dates";
+import { filterNotes, newLocalId, noteText, noteTone, noteTones, type Note, type NoteDraft, type NoteTone } from "./model";
 import { errorText, notify } from "./notices";
 import { PlannerStatus } from "./PlanPages";
 import { usePlanner } from "./store";
@@ -12,12 +12,11 @@ const toneStyle = (id?: string) => {
   return { "--tone-light": tone.light, "--tone-dark": tone.dark, "--tone-accent": tone.accent } as React.CSSProperties;
 };
 
-interface Draft {
+interface Draft extends NoteDraft {
   id?: string;
-  title: string;
-  body: string;
-  tasks?: NoteTask[];
 }
+
+const editNote = (note: Note): Draft => ({ id: note.id, text: noteText(note), tasks: note.tasks });
 
 export interface NoteRequest {
   /** An existing note to open, or "new" for an empty one. */
@@ -39,9 +38,9 @@ export function NotesPage({ request, onRequestHandled }: { request: NoteRequest 
     handled.current = request.requestId;
     // A request is answered once; coming back to Notes later must not replay it.
     onRequestHandled();
-    if (request.id === "new") return setDraft({ title: "", body: "" });
+    if (request.id === "new") return setDraft({ text: "" });
     const note = planner.notes.find((item) => item.id === request.id);
-    if (note) setDraft({ id: note.id, title: note.title, body: note.body, tasks: note.tasks });
+    if (note) setDraft(editNote(note));
     else notify("Note unavailable", "This note may have been removed.");
   }, [request, planner.loaded, planner.notes, onRequestHandled]);
 
@@ -70,7 +69,7 @@ export function NotesPage({ request, onRequestHandled }: { request: NoteRequest 
                 type="button"
                 className="note-open"
                 aria-label={`Open note: ${note.title}`}
-                onClick={() => setDraft({ id: note.id, title: note.title, body: note.body, tasks: note.tasks })}
+                onClick={() => setDraft(editNote(note))}
               >
                 <h2>{note.title}</h2>
                 {note.body ? <p>{note.body}</p> : null}
@@ -158,15 +157,24 @@ function NoteEditor({
     if (draft) setShown(draft);
   }, [draft]);
   const [taskDraft, setTaskDraft] = useState("");
+  const [addingTask, setAddingTask] = useState(false);
   const [saving, setSaving] = useState(false);
   const body = useRef<HTMLTextAreaElement>(null);
-  const title = useRef<HTMLInputElement>(null);
+  const taskField = useRef<HTMLInputElement>(null);
   const value = draft ?? shown;
-  const existing = value?.id ? planner.notes.find((note) => note.id === value.id) : undefined;
+  const noteTasks = value?.tasks ?? [];
+  const hasContent = !!(value?.text.trim() || noteTasks.length || taskDraft.trim());
 
   useEffect(() => {
-    if (!draft) setTaskDraft("");
+    if (!draft) {
+      setTaskDraft("");
+      setAddingTask(false);
+    }
   }, [draft]);
+
+  useEffect(() => {
+    if (addingTask) taskField.current?.focus();
+  }, [addingTask]);
 
   const addTask = () => {
     const content = taskDraft.trim();
@@ -174,26 +182,27 @@ function NoteEditor({
     onChange({
       ...value,
       tasks: [
-        ...(value.tasks ?? []),
+        ...noteTasks,
         { id: newLocalId(), content, isComplete: false, priority: 0, target_group: "today", date: today() },
       ],
     });
     setTaskDraft("");
+    setAddingTask(false);
+    body.current?.focus({ preventScroll: true });
   };
   const save = async () => {
-    if (!value || saving) return;
+    if (!draft || saving || !hasContent) return;
     // A task still being typed is kept rather than lost on Save.
     const pending = taskDraft.trim();
     const tasks = pending
-      ? [...(value.tasks ?? []), { id: newLocalId(), content: pending, isComplete: false, priority: 0, target_group: "today" as const, date: today() }]
-      : value.tasks;
+      ? [...noteTasks, { id: newLocalId(), content: pending, isComplete: false, priority: 0, target_group: "today" as const, date: today() }]
+      : draft.tasks;
     setSaving(true);
     try {
-      await planner.saveNote({ title: value.title, body: value.body, tasks }, value.id);
+      await planner.saveNote({ text: draft.text, tasks }, draft.id);
       onClose();
     } catch (caught) {
-      // A failed request has already been reported; these two never reach the server.
-      if (caught instanceof Error && /Add a title|no longer exists/.test(caught.message))
+      if (caught instanceof Error && /Write a note|no longer exists/.test(caught.message))
         notify("Could not save note", errorText(caught));
     } finally {
       setSaving(false);
@@ -209,19 +218,18 @@ function NoteEditor({
       className="note-sheet"
       onOpenAutoFocus={(event) => {
         event.preventDefault();
-        (value?.id ? body.current : title.current)?.focus({ preventScroll: true });
+        body.current?.focus({ preventScroll: true });
       }}
     >
       {value ? (
         <form
           className="note-editor"
-          style={toneStyle(existing?.tone)}
           onSubmit={(event) => {
             event.preventDefault();
             void save();
           }}
           onKeyDown={(event) => {
-            if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+            if (event.key === "Enter" && (event.metaKey || event.ctrlKey) && !event.nativeEvent.isComposing) {
               event.preventDefault();
               void save();
             }
@@ -244,99 +252,105 @@ function NoteEditor({
                 <Trash2 size={17} strokeWidth={1.8} aria-hidden="true" />
               </button>
             ) : null}
-            <button type="submit" className="ot-button ot-button--small" disabled={saving} aria-label={saving ? "Saving" : undefined}>
+            <button type="submit" className="ot-button ot-button--small" disabled={saving || !hasContent} aria-label={saving ? "Saving" : undefined}>
               {saving ? <i className="composer-saving" aria-hidden="true" /> : "Save"}
             </button>
           </header>
           <div className="note-scroll">
-            <input
-              ref={title}
-              className="note-title"
-              placeholder="Title"
-              aria-label="Title"
-              maxLength={200}
-              value={value.title}
-              disabled={saving}
-              onChange={(event) => onChange({ ...value, title: event.target.value })}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" && !event.metaKey && !event.ctrlKey) {
-                  event.preventDefault();
-                  body.current?.focus();
-                }
-              }}
-            />
-            <p className="note-date">{longDate(existing ? dayOf(existing.updatedAt) : today())}</p>
             <AutoTextarea
               ref={body}
               className="note-body"
               placeholder="Start writing…"
               aria-label="Note"
-              value={value.body}
+              value={value.text}
               disabled={saving}
-              onChange={(event) => onChange({ ...value, body: event.target.value })}
+              onChange={(event) => onChange({ ...value, text: event.target.value })}
             />
-            <ul className="note-task-list">
-              {(value.tasks ?? []).map((task) => (
-                <li key={task.id} data-done={task.isComplete || undefined}>
-                  <Checkbox
-                    checked={task.isComplete}
-                    label={`${task.isComplete ? "Reopen" : "Complete"}: ${task.content}`}
-                    disabled={saving}
-                    onChange={() =>
-                      onChange({
-                        ...value,
-                        tasks: value.tasks!.map((item) =>
-                          item.id === task.id
-                            ? { ...item, isComplete: !item.isComplete, completed_at: item.isComplete ? null : today() }
-                            : item,
-                        ),
-                      })
+            {noteTasks.length ? (
+              <ul className="note-task-list">
+                {noteTasks.map((task) => (
+                  <li key={task.id} data-done={task.isComplete || undefined}>
+                    <Checkbox
+                      checked={task.isComplete}
+                      label={`${task.isComplete ? "Reopen" : "Complete"}: ${task.content}`}
+                      disabled={saving}
+                      onChange={() =>
+                        onChange({
+                          ...value,
+                          tasks: noteTasks.map((item) =>
+                            item.id === task.id
+                              ? { ...item, isComplete: !item.isComplete, completed_at: item.isComplete ? null : today() }
+                              : item,
+                          ),
+                        })
+                      }
+                    />
+                    <span>
+                      {task.content}
+                      {task.date ? <small>{task.date === today() ? "Today" : shortDate(task.date)}</small> : <small>Later</small>}
+                    </span>
+                    <button
+                      type="button"
+                      className="ot-round ot-round--plain"
+                      aria-label={`Remove task: ${task.content}`}
+                      disabled={saving}
+                      onClick={() => onChange({ ...value, tasks: noteTasks.filter((item) => item.id !== task.id) })}
+                    >
+                      <X size={15} strokeWidth={1.8} aria-hidden="true" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            {addingTask ? (
+              <div className="note-add-task" id="note-add-task">
+                <i aria-hidden="true" />
+                <input
+                  ref={taskField}
+                  placeholder="Add a task"
+                  aria-label="Add a task"
+                  maxLength={2000}
+                  value={taskDraft}
+                  disabled={saving}
+                  onChange={(event) => setTaskDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && !event.metaKey && !event.ctrlKey && !event.nativeEvent.isComposing) {
+                      event.preventDefault();
+                      addTask();
                     }
-                  />
-                  <span>
-                    {task.content}
-                    {task.date ? <small>{task.date === today() ? "Today" : shortDate(task.date)}</small> : <small>Later</small>}
-                  </span>
-                  <button
-                    type="button"
-                    className="ot-round ot-round--plain"
-                    aria-label={`Remove task: ${task.content}`}
-                    disabled={saving}
-                    onClick={() => onChange({ ...value, tasks: value.tasks!.filter((item) => item.id !== task.id) })}
-                  >
-                    <X size={15} strokeWidth={1.8} aria-hidden="true" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <div className="note-add-task">
-              <i aria-hidden="true" />
-              <input
-                placeholder="Add a task"
-                aria-label="Add a task"
-                maxLength={2000}
-                value={taskDraft}
-                disabled={saving}
-                onChange={(event) => setTaskDraft(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" && !event.metaKey && !event.ctrlKey && !event.nativeEvent.isComposing) {
-                    event.preventDefault();
-                    addTask();
-                  }
-                }}
-              />
-              <button
-                type="button"
-                className="ot-round ot-round--plain"
-                aria-label="Add note task"
-                disabled={saving || !taskDraft.trim()}
-                onClick={addTask}
-              >
-                <Plus size={18} strokeWidth={1.8} aria-hidden="true" />
-              </button>
-            </div>
-            <p className="note-hint">Tasks appear in Calendar. Edit their date there.</p>
+                  }}
+                />
+                <button
+                  type="button"
+                  className="ot-round ot-round--plain"
+                  aria-label="Add note task"
+                  disabled={saving || !taskDraft.trim()}
+                  onClick={addTask}
+                >
+                  <Plus size={18} strokeWidth={1.8} aria-hidden="true" />
+                </button>
+              </div>
+            ) : null}
           </div>
+          <footer className="note-editor-tools">
+            <button
+              type="button"
+              className="ot-round ot-round--plain"
+              aria-label="Add a task"
+              aria-expanded={addingTask}
+              aria-controls={addingTask ? "note-add-task" : undefined}
+              data-tip="Add a task"
+              data-tip-align="start"
+              data-tip-side="top"
+              disabled={saving}
+              onClick={() => {
+                if (addingTask) taskField.current?.focus();
+                else setAddingTask(true);
+              }}
+            >
+              <ListPlus size={19} strokeWidth={1.7} aria-hidden="true" />
+            </button>
+          </footer>
         </form>
       ) : null}
     </Sheet>
