@@ -211,7 +211,7 @@ function Planner({ user }: { user: User }) {
       await deleteAccount();
       const { error } = await supabaseClient.auth.signOut({ scope: "local" });
       if (error) console.warn("Offtasks data was deleted, but signing out on this device reported an error", error);
-      clearLocalOfftasksState();
+      clearLocalOfftasksState(user.id);
       navigate("/login", { replace: true, state: { accountDeleted: true } });
     } catch (caught) {
       notify(

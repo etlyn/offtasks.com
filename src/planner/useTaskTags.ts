@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { taskTagStorageKey } from "@/lib/offtasksLocalState";
 import { newLocalId } from "./model";
 import { applyTagChanges, forgetTaskTags, readTagState, removeTag, saveTag, taskTagIds, type TagState } from "./tags";
 
@@ -13,7 +14,7 @@ function load(key: string) {
 }
 
 export function useTaskTags(owner: string) {
-  const key = `offtasks-task-tags:${owner}`;
+  const key = taskTagStorageKey(owner);
   const [state, setState] = useState(() => load(key));
   useEffect(() => {
     const receive = (event: StorageEvent) => {

@@ -4,8 +4,11 @@ export const OFFTASKS_STORAGE_KEYS = {
   theme: "offtasks-theme",
 } as const;
 
-/** Removes everything Offtasks keeps in this browser: appearance, goal colours and preferences. */
-export const clearLocalOfftasksState = () => {
+const taskTagsPrefix = "offtasks-task-tags:";
+export const taskTagStorageKey = (owner: string) => `${taskTagsPrefix}${owner}`;
+
+/** Clear planner preferences and the deleted account's tags from this browser. */
+export const clearLocalOfftasksState = (owner: string) => {
   if (typeof window === "undefined") {
     return;
   }
@@ -14,9 +17,9 @@ export const clearLocalOfftasksState = () => {
 
   for (let index = 0; index < window.localStorage.length; index += 1) {
     const key = window.localStorage.key(index);
-    if (key?.startsWith("offtasks-")) {
-      keysToRemove.push(key);
-    }
+    if (!key?.startsWith("offtasks-")) continue;
+    if (key.startsWith(taskTagsPrefix) && key !== taskTagStorageKey(owner)) continue;
+    keysToRemove.push(key);
   }
 
   for (const key of keysToRemove) {
