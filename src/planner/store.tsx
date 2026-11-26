@@ -39,7 +39,7 @@ interface PlannerValue {
   /** Changes at midnight so date-dependent views redraw. */
   day: string;
   refresh: () => Promise<void>;
-  addTask: (values: { content: string; date: string | null; priority: number; label: string | null }) => Promise<void>;
+  addTask: (values: { content: string; date: string | null; priority: number; label: string | null }) => Promise<string>;
   changeTask: (task: PlannerTask, changes: TaskChanges) => Promise<void>;
   moveTask: (task: PlannerTask, date: string | null) => Promise<boolean>;
   movingTaskId: string | null;
@@ -282,7 +282,7 @@ export function PlannerProvider({ owner, children }: { owner: string; children: 
       addTask: async ({ content, date, priority, label }) => {
         sequence.current += 1;
         try {
-          await cloud.createTask(owner, { content, date, priority, label, target_group: groupForDate(date) });
+          return await cloud.createTask(owner, { content, date, priority, label, target_group: groupForDate(date) });
         } finally {
           // The list is read again either way, so a half-finished save never lingers on screen.
           void refresh();

@@ -12,6 +12,7 @@ const bundle = await build({
       export * from "./src/planner/model.ts";
       export * as dates from "./src/planner/dates.ts";
       export * from "./src/planner/search.ts";
+      export * from "./src/planner/reminders.ts";
       export { defaultGoalAppearance, surpriseGoalAppearance, goalColors, goalEmoji, goalInitials } from "./src/planner/goalAppearance.ts";
     `,
     resolveDir: fileURLToPath(new URL("..", import.meta.url)),
@@ -38,6 +39,25 @@ const task = (values) => ({
   label: null,
   completed_at: null,
   ...values,
+});
+
+test("reminder defaults follow the iPhone and the picker preserves local time", () => {
+  const evening = new Date(2026, 10, 18, 18, 28);
+  assert.equal(planner.localReminderInput(planner.defaultReminderDate(null, evening)), "2026-11-18T19:30");
+  assert.equal(planner.localReminderInput(planner.defaultReminderDate("2026-11-19", evening)), "2026-11-19T09:00");
+  assert.equal(planner.reminderFromInput("2026-11-18T18:00", evening.getTime()), null);
+  assert.equal(planner.reminderFromInput("2026-02-30T18:00", 0), null);
+  const selected = planner.reminderFromInput("2026-11-19T09:00", evening.getTime());
+  assert.equal(selected, new Date(2026, 10, 19, 9).toISOString());
+  assert.match(planner.formatReminder(selected, evening), /^Tomorrow,/);
+});
+
+test("a note task reminder uses the same identity in the composer and task list", () => {
+  const noteId = "note:ideas #1";
+  const taskId = "task : update";
+  const id = planner.noteTaskId(noteId, taskId);
+  assert.deepEqual(planner.reminderTarget({ id, noteId }), { note_id: noteId, task_id: taskId });
+  assert.equal(planner.reminderTaskKey(planner.reminderTarget({ id, noteId })), id);
 });
 
 test("Board and Calendar use the same dates, including legacy task groups", () => {

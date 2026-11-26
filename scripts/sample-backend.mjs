@@ -13,6 +13,7 @@ import { sampleAccount, sampleState } from "./sample-data.mjs";
 const PORT = Number(process.env.SAMPLE_BACKEND_PORT || 54399);
 const state = sampleState();
 const sessions = new Map(); // access token -> user id
+const browserReminders = new Map();
 
 const base64url = (value) => Buffer.from(JSON.stringify(value)).toString("base64url");
 const user = () => ({
@@ -135,6 +136,26 @@ function planJson(goal) {
 
 function rpc(name, body) {
   const { operation, args = {} } = body;
+  if (name === "offtask_web_reminder_key") return process.env.SAMPLE_PUSH_PUBLIC_KEY || null;
+  if (name === "offtask_web_reminder_list") {
+    return (browserReminders.get(body.browser_device) ?? []).filter((row) => {
+      const task = row.note_id
+        ? state.planner_items.find((item) => item.id === row.note_id && !item.deleted)?.value.tasks?.find((item) => item.id === row.task_id)
+        : state.tasks.find((item) => item.id === row.task_id);
+      return task && !task.isComplete && Date.parse(row.remind_at) > Date.now();
+    });
+  }
+  if (name === "offtask_web_reminder_set") {
+    const { browser_device, task_key, note_key, fire_at } = body;
+    const reminders = (browserReminders.get(browser_device) ?? []).filter((row) => row.note_id !== note_key || row.task_id !== task_key);
+    if (fire_at) reminders.push({ note_id: note_key, task_id: task_key, remind_at: fire_at });
+    browserReminders.set(browser_device, reminders);
+    return null;
+  }
+  if (name === "offtask_web_reminder_disconnect") {
+    browserReminders.delete(body.browser_device);
+    return null;
+  }
   if (name === "offtask_integration_read") {
     if (operation === "list_goals") {
       const offset = args.offset || 0;
@@ -227,7 +248,8 @@ async function rest(request, response, url) {
   const params = url.searchParams;
   if (table === "rpc") {
     try {
-      return send(response, 200, rpc(extra, await readBody(request)) ?? null);
+      const result = rpc(extra, await readBody(request));
+      return send(response, 200, typeof result === "string" ? JSON.stringify(result) : result ?? null);
     } catch (error) {
       return fail(response, error.code === "PGRST202" ? 404 : 400, error.message, error.code || "P0001");
     }
@@ -321,6 +343,7 @@ const server = createServer(async (request, response) => {
     // Design helper: start over with the sample content, or with an empty account.
     if (url.pathname === "/__sample/reset" && request.method === "POST") {
       const fresh = sampleState();
+      browserReminders.clear();
       if ((await readBody(request)).empty) Object.assign(fresh, { tasks: [], planner_items: [], offtask_goals: [], offtask_plans: [], offtask_task_results: [] });
       for (const key of Object.keys(state)) delete state[key];
       Object.assign(state, fresh);
