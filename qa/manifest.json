@@ -170,7 +170,7 @@
               "action": "Given the tester raises the browser text size to 200 percent on a desktop-width window, or the phone's text size to its largest setting"
             },
             {
-              "action": "When the tester opens the landing page, sign in, Board, Calendar, Notes, Goals, and Statistics"
+              "action": "When the tester opens the landing page, sign in, Board, Calendar, Tags, Notes, Goals, and Statistics"
             },
             {
               "action": "Then text should stay readable without being cut off"
@@ -1095,7 +1095,7 @@
           ],
           "steps": [
             {
-              "action": "Then a small drag grip should sit immediately before the checkbox inside each task row"
+              "action": "Then a small drag grip should sit immediately before the checkbox inside each task row, with a minimal visual gap and separate hit areas"
             },
             {
               "action": "When the tester hovers over a grip, it should grow smoothly while the checkbox and task text stay in place"
@@ -1398,7 +1398,7 @@
           ],
           "steps": [
             {
-              "action": "Given Notes is open"
+              "action": "When the tester opens the drawer and chooses Notes"
             },
             {
               "action": "When the tester presses the plus button, the editor should focus a single blank writing area and disable Save until it has content"
@@ -1532,6 +1532,57 @@
             {
               "action": "Then the brief should not be listed as a note"
             }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tags",
+      "title": "Web task tags",
+      "description": "Use reusable labels to organize tasks across dates and goals.",
+      "cases": [
+        {
+          "id": "tags-assign-labels-to-new-and-existing-tasks",
+          "title": "Assign labels to new and existing tasks",
+          "tags": ["@e2e", "@web", "@tags"],
+          "preconditions": [
+            "Given a sample account with an existing scheduled task and permission to create test tasks"
+          ],
+          "steps": [
+            { "action": "When the tester edits the scheduled task, opens Tags in the composer, and creates two labels" },
+            { "action": "Then both labels should appear on the saved task" },
+            { "action": "When the tester creates a new task and reuses one label from the picker" },
+            { "action": "Then both tasks should appear under that label in the Tags section after reloading the same browser" },
+            { "action": "And a second signed-in account should have its own tag list" }
+          ]
+        },
+        {
+          "id": "tags-filter-board-and-calendar",
+          "title": "Filter the Board and Calendar by tag",
+          "tags": ["@e2e", "@web", "@tags"],
+          "preconditions": [
+            "Given there are tagged and untagged sample tasks in multiple Board columns"
+          ],
+          "steps": [
+            { "action": "When the tester chooses a tag from Filter by tag on Board" },
+            { "action": "Then each column should show only matching tasks" },
+            { "action": "When the tester moves a matching task to a different column and opens Calendar" },
+            { "action": "Then the same filter should be active and the task should appear under its new date" },
+            { "action": "When the tester chooses All tasks, untagged tasks should return" }
+          ]
+        },
+        {
+          "id": "tags-rename-and-remove-a-label",
+          "title": "Rename and remove a reusable label",
+          "tags": ["@e2e", "@web", "@tags"],
+          "preconditions": [
+            "Given multiple sample tasks share a tag and one has a second tag"
+          ],
+          "steps": [
+            { "action": "When the tester opens the tag in Tags and edits its name" },
+            { "action": "Then the new name should appear in the tag list, on both tasks, and in the Board filter" },
+            { "action": "When the tester confirms Remove tag" },
+            { "action": "Then the tag should disappear from its tasks and filters while both tasks and the other tag remain" }
           ]
         }
       ]

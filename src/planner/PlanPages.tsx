@@ -1,10 +1,12 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { CalendarDays, RotateCcw } from "lucide-react";
 import { MonthCalendar } from "./MonthCalendar";
+import { TagFilter } from "./TagControls";
 import { TaskList } from "./TaskList";
 import { headingForDay, today } from "./dates";
 import { scheduledDay, tasksForDay, type PlannerTask } from "./model";
 import { usePlanner } from "./store";
+import { filterByTag } from "./tags";
 import { Empty, Loader } from "./ui";
 
 /** A heading with a done/total count beside it, as "Today 1/3". */
@@ -59,19 +61,24 @@ export function CalendarPage({
   onDay,
   onEdit,
   narrow,
+  tagId,
+  onTag,
 }: {
   day: string;
   onDay: (day: string) => void;
   onEdit: (task: PlannerTask) => void;
   narrow: boolean;
+  tagId: string;
+  onTag: (id: string) => void;
 }) {
   const planner = usePlanner();
   const [expanded, setExpanded] = useState(true);
+  const visible = useMemo(() => filterByTag(planner.tasks, planner.tagging, tagId), [planner.tasks, planner.tagging, tagId]);
   const marked = useMemo(
-    () => new Set(planner.tasks.map((task) => scheduledDay(task, planner.day)).filter((value): value is string => !!value)),
-    [planner.day, planner.tasks],
+    () => new Set(visible.map((task) => scheduledDay(task, planner.day)).filter((value): value is string => !!value)),
+    [planner.day, visible],
   );
-  const tasks = tasksForDay(planner.tasks, day, planner.day);
+  const tasks = tasksForDay(visible, day, planner.day);
   return (
     <div className="page page--calendar">
       <div className="page-calendar">
@@ -86,6 +93,7 @@ export function CalendarPage({
       </div>
       <section className="plan" aria-label={headingForDay(day)}>
         <PlanHeading title={headingForDay(day)} tasks={tasks}>
+          <TagFilter tags={planner.tagging.tags} value={tagId} onChange={onTag} />
           {day !== today() ? (
             <button
               type="button"
@@ -105,7 +113,7 @@ export function CalendarPage({
           <TaskList tasks={tasks} onEdit={onEdit} />
         ) : (
           <Empty icon={CalendarDays} card>
-            No tasks planned
+            {tagId ? "No tasks with this tag" : "No tasks planned"}
           </Empty>
         )}
       </section>

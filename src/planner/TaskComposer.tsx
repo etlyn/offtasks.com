@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, CalendarDays, Check, Trash2, X } from "lucide-react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { ArrowLeft, CalendarDays, Check, Tag, Trash2, X } from "lucide-react";
 import { MonthCalendar } from "./MonthCalendar";
+import { TagPicker } from "./TagControls";
 import { TaskWorkDetails } from "./TaskWorkDetails";
 import { shiftDay, shortDate, today } from "./dates";
-import { groupForDate, isNoteTaskId, priorities, scheduledDay, type PlannerTask } from "./model";
+import { groupForDate, isNoteTaskId, priorities, scheduledDay, type PlannerTask, type TaskChanges } from "./model";
 import { errorText, notify } from "./notices";
 import { usePlanner } from "./store";
 import { AutoTextarea, Confirm, PriorityMark, Sheet } from "./ui";
@@ -15,11 +16,13 @@ export interface ComposerRequest {
   date?: string | null;
   /** Set inside a goal: new tasks join it and priority becomes available. */
   goal?: string | null;
+  /** New tasks made from a filtered list inherit that tag. */
+  tagId?: string;
 }
 
 /**
- * Writing or editing a task: text and a date. Inside a goal, priority too.
- * A goal or priority already on a task is kept, never silently cleared.
+ * Writing or editing a task: text, a date and optional tags. Inside a goal,
+ * priority is available too.
  */
 export function TaskComposer({ request, onClose }: { request: ComposerRequest | null; onClose: () => void }) {
   // The last request stays on screen while the sheet eases out.
@@ -46,11 +49,18 @@ function ComposerBody({ request, onClose }: { request: ComposerRequest; onClose:
   const [content, setContent] = useState(task?.content ?? "");
   const [date, setDate] = useState<string | null>(task ? task.date : (request.date ?? null));
   const [priority, setPriority] = useState(task?.priority ?? 0);
-  const [step, setStep] = useState<"write" | "date" | "priority">("write");
+  const [initialTags] = useState(() => task ? planner.tagging.forTask(task.id).map((tag) => tag.id) : []);
+  const [tagIds, setTagIds] = useState(() => !task && request.tagId ? [request.tagId] : initialTags);
+  const [step, setStep] = useState<"write" | "date" | "priority" | "tags">("write");
   const [saving, setSaving] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const field = useRef<HTMLTextAreaElement>(null);
+  const tagPickerId = useId();
   const trimmed = content.trim();
+  const selectedTags = planner.tagging.tags.filter((tag) => tagIds.includes(tag.id));
+  const toggleTag = (id: string) => setTagIds((current) =>
+    current.includes(id) ? current.filter((tag) => tag !== id) : [...current, id],
+  );
   const marked = useMemo(
     () => new Set(planner.tasks.map((task) => scheduledDay(task, planner.day)).filter((day): day is string => !!day)),
     [planner.day, planner.tasks],
@@ -68,18 +78,29 @@ function ComposerBody({ request, onClose }: { request: ComposerRequest; onClose:
     if (!trimmed || saving) return;
     setSaving(true);
     try {
+      let taskId: string;
       if (task) {
-        // An untouched date keeps its group too, so nothing moves by itself.
-        const sameDay = date === task.date;
-        await planner.changeTask(task, {
-          content: trimmed,
-          date,
-          target_group: sameDay ? task.target_group : groupForDate(date),
-          priority,
-          label: task.label,
-        });
+        taskId = task.id;
+        const changes: TaskChanges = {};
+        if (trimmed !== task.content) changes.content = trimmed;
+        if (priority !== task.priority) changes.priority = priority;
+        if (date !== task.date) {
+          changes.date = date;
+          changes.target_group = groupForDate(date);
+        }
+        if (Object.keys(changes).length) await planner.changeTask(task, changes);
       } else {
-        await planner.addTask({ content: trimmed, date, priority, label: goal ?? null });
+        taskId = await planner.addTask({ content: trimmed, date, priority, label: goal ?? null });
+      }
+      const added = tagIds.filter((id) => !initialTags.includes(id));
+      const removed = initialTags.filter((id) => !tagIds.includes(id));
+      if (added.length || removed.length) {
+        try {
+          planner.tagging.assign(taskId, added, removed);
+        } catch (caught) {
+          // The task is already saved. Retrying the form could create a duplicate.
+          notify("Task saved", errorText(caught));
+        }
       }
       onClose();
     } catch (caught) {
@@ -176,6 +197,19 @@ function ComposerBody({ request, onClose }: { request: ComposerRequest; onClose:
           <CalendarDays size={15} strokeWidth={1.8} aria-hidden="true" />
           {date ? (date === today() ? "Today" : shortDate(date)) : "No date"}
         </button>
+        <button
+          type="button"
+          className="ot-chip composer-tag-chip"
+          data-set={selectedTags.length > 0 || undefined}
+          aria-expanded={step === "tags"}
+          aria-controls={tagPickerId}
+          aria-label={selectedTags.length ? `Tags, ${selectedTags.length} selected` : "Tags"}
+          disabled={saving}
+          onClick={() => setStep(step === "tags" ? "write" : "tags")}
+        >
+          <Tag size={15} strokeWidth={1.8} aria-hidden="true" />
+          <span>{selectedTags.length === 1 ? selectedTags[0].name : selectedTags.length ? `Tags · ${selectedTags.length}` : "Tags"}</span>
+        </button>
         {goal ? (
           <button
             type="button"
@@ -190,6 +224,16 @@ function ComposerBody({ request, onClose }: { request: ComposerRequest; onClose:
           </button>
         ) : null}
       </div>
+
+      <TagPicker
+        id={tagPickerId}
+        open={step === "tags"}
+        disabled={saving}
+        tags={planner.tagging.tags}
+        selected={tagIds}
+        onToggle={toggleTag}
+        onCreate={planner.tagging.create}
+      />
 
       {step === "priority" ? (
         <div className="composer-options" role="group" aria-label="Priority">

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { GripVertical, Trash2 } from "lucide-react";
+import { GripVertical, Tag, Trash2 } from "lucide-react";
 import { useDraggable } from "@dnd-kit/core";
 import { openFirst, type PlannerTask } from "./model";
 import { taskContext, taskWhen } from "./search";
@@ -38,6 +38,7 @@ export function TaskList({
         {ordered.map((task) => {
           const extra = meta?.(task);
           const moving = planner.movingTaskId === task.id;
+          const tags = planner.tagging.forTask(task.id);
           return (
             <TaskRow key={task.id} task={task} onMove={onMove} moveDisabled={!!planner.movingTaskId} moving={moving}>
               <Checkbox
@@ -58,6 +59,16 @@ export function TaskList({
                     {extra ? <span className="task-tag">{extra}</span> : null}
                     {task.noteTitle ? <span>Note: {task.noteTitle}</span> : null}
                     <PriorityMark value={task.priority} />
+                  </span>
+                ) : null}
+                {tags.length ? (
+                  <span className="task-labels">
+                    {tags.map((tag) => (
+                      <span className="task-label" key={tag.id}>
+                        <Tag size={11} strokeWidth={1.8} aria-hidden="true" />
+                        {tag.name}
+                      </span>
+                    ))}
                   </span>
                 ) : null}
               </button>

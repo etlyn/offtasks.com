@@ -94,7 +94,7 @@ export const PlannerPreview = () => (
     </div>
     <div className="preview-footer" aria-hidden="true">
       <div className="pl-dock ot-glass">
-        {(["board", "calendar", "notes", "goals"] as const).map((name) => (
+        {(["board", "calendar", "tags", "goals"] as const).map((name) => (
           <span key={name} data-current={name === "calendar" || undefined}>
             <NavIcon name={name} selected={name === "calendar"} />
             {name[0].toUpperCase() + name.slice(1)}

@@ -2,8 +2,8 @@
 
 This product owns and maintains [manifest.json](manifest.json), the read-only
 acceptance asset imported by the standalone E2E website. It currently contains
-12 suites and 70 cases. The November 2026 planner redesign covers Board,
-Calendar, Notes, Goals, search and the account panel. The Board cases cover
+13 suites and 73 cases. The November 2026 planner redesign covers Board,
+Calendar, Tags, Notes, Goals, search and the account panel. The Board cases cover
 scheduling across Today, Tomorrow and Later and keep the existing Calendar and
 Later case IDs.
 

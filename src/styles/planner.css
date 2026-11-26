@@ -454,6 +454,28 @@
   line-height: 0.875rem;
   font-weight: 600;
 }
+.task-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+}
+.task-label {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.4375rem;
+  border-radius: 0.375rem;
+  background: var(--ot-soft-2);
+  color: var(--ot-brand);
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  overflow-wrap: anywhere;
+}
+.task-label svg {
+  flex: none;
+}
 .ot-priority {
   flex: none;
   color: var(--ot-text-3);
@@ -498,6 +520,13 @@
 /* ---------- Board ---------- */
 .page--board {
   margin: 0 auto;
+}
+.board-head,
+.tags-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
 .board-title {
   padding: 0.375rem 0 1rem;
@@ -566,10 +595,16 @@
   height: 2.75rem;
   flex: none;
   place-items: center;
+  justify-items: end;
   border-radius: 0.5rem;
   color: var(--ot-text-3);
   touch-action: none;
   transition: color var(--ot-press) var(--ot-ease);
+}
+.task-move + .ot-check {
+  width: 2rem;
+  justify-items: start;
+  padding-inline-start: 0.125rem;
 }
 .task-move > svg {
   transition: scale var(--ot-press) var(--ot-ease);
@@ -691,8 +726,168 @@
   }
 }
 @media (pointer: coarse) {
-  .task-move {
+  .task-move,
+  .task-move + .ot-check {
     width: 2.75rem;
+  }
+}
+
+/* ---------- Task tags ---------- */
+.page--tags {
+  max-width: 60rem;
+  margin: 0 auto;
+  container-type: inline-size;
+}
+.tags-new {
+  border-radius: 999px;
+}
+.tags-layout {
+  display: grid;
+  grid-template-columns: minmax(9rem, 13rem) minmax(0, 1fr);
+  align-items: start;
+  gap: 2rem;
+}
+.tags-index {
+  display: grid;
+  gap: 0.125rem;
+}
+.tags-index button,
+.tag-picker-options button {
+  display: grid;
+  width: 100%;
+  min-height: 2.75rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--ot-radius-sm);
+  color: var(--ot-text-2);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  text-align: start;
+  transition:
+    background-color var(--ot-press) var(--ot-ease),
+    color var(--ot-press) var(--ot-ease);
+}
+.tags-index button span,
+.tag-picker-options button span,
+.tags-results-head h2 {
+  overflow-wrap: anywhere;
+}
+.tags-index button small {
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+}
+.tags-index button[aria-pressed="true"],
+.tag-picker-options button[aria-pressed="true"] {
+  background: var(--ot-soft-2);
+  color: var(--ot-brand);
+  font-weight: 600;
+}
+@media (hover: hover) {
+  .tags-index button:hover,
+  .tag-picker-options button:hover {
+    background: var(--ot-soft-3);
+  }
+}
+.tags-results-head {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-inline-start: 0.25rem;
+  border-bottom: 1px solid var(--ot-divider-faint);
+}
+.tags-results-head h2 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+.tags-results-head .ot-round {
+  flex: none;
+  color: var(--ot-text-2);
+}
+.tag-filter {
+  position: relative;
+  display: inline-flex;
+  width: min(10rem, 38vw);
+  flex: none;
+  align-items: center;
+  align-self: center;
+  color: var(--ot-text-2);
+}
+.tag-filter select {
+  display: block;
+  width: 100%;
+  min-height: 2rem;
+  appearance: none;
+  padding: 0.25rem 1.625rem 0.25rem 1.875rem;
+  border: 0;
+  border-radius: 1rem;
+  background: var(--ot-soft-2);
+  color: inherit;
+  font: inherit;
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: background-color var(--ot-press) var(--ot-ease);
+}
+.tag-filter select:hover,
+.tag-filter[data-active] select {
+  background: var(--ot-soft-3);
+  color: var(--ot-brand);
+}
+.tag-filter option {
+  background: var(--ot-surface);
+  color: var(--ot-text);
+}
+.tag-filter svg {
+  position: absolute;
+  pointer-events: none;
+}
+.tag-filter svg:first-child { inset-inline-start: 0.625rem; }
+.tag-filter svg:last-child { inset-inline-end: 0.5rem; }
+.tag-remove {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-self: start;
+  gap: 0.5rem;
+  padding: 0 0.75rem;
+  border-radius: var(--ot-radius-sm);
+  color: var(--ot-danger);
+  font-size: 0.8125rem;
+}
+.tag-field-error {
+  color: var(--ot-danger);
+  font-size: 0.8125rem;
+  padding: 0 0.25rem;
+}
+@container (max-width: 38rem) {
+  .tags-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.75rem;
+  }
+  .tags-index {
+    display: flex;
+    padding: 0.25rem;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+  }
+  .tags-index button {
+    width: auto;
+    max-width: 85%;
+    flex: none;
+  }
+}
+@media (pointer: coarse) {
+  .tag-filter select,
+  .tags-new,
+  .composer-chips .ot-chip {
+    min-height: 2.75rem;
+  }
+  .tag-filter select {
+    font-size: 1rem;
   }
 }
 
@@ -1062,6 +1257,81 @@
 .composer-quick {
   justify-content: center;
   padding: 0.25rem 0 0.125rem;
+}
+.composer-tag-chip {
+  max-width: 100%;
+}
+.composer-tag-chip svg {
+  flex: none;
+}
+.composer-tag-chip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.composer-tag-expand {
+  display: grid;
+  grid-template-rows: 0fr;
+  margin-top: -0.625rem;
+  opacity: 0;
+  transition:
+    grid-template-rows var(--ot-layout) var(--ot-ease),
+    margin-top var(--ot-layout) var(--ot-ease),
+    opacity var(--ot-fade-out) var(--ot-ease),
+    visibility var(--ot-layout) var(--ot-ease);
+  visibility: hidden;
+}
+.composer-tag-expand[data-open] {
+  grid-template-rows: 1fr;
+  margin-top: 0;
+  opacity: 1;
+  visibility: visible;
+}
+.composer-tag-clip {
+  min-height: 0;
+  overflow: hidden;
+}
+.tag-picker {
+  display: grid;
+  gap: 0.375rem;
+  padding: 0.1875rem;
+}
+.tag-search {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--ot-input-edge);
+  border-radius: var(--ot-radius-sm);
+  background: var(--ot-input);
+  color: var(--ot-text-2);
+}
+.tag-search:focus-within {
+  border-color: var(--ot-today-ring);
+}
+.tag-search input {
+  min-width: 0;
+  min-height: inherit;
+  flex: 1;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ot-text);
+  font: inherit;
+}
+.tag-picker-options {
+  display: grid;
+  max-height: 10.5rem;
+  gap: 0.125rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.tag-picker-options button:focus-visible {
+  outline-offset: -2px;
+}
+.tag-picker-options .tag-picker-create {
+  color: var(--ot-brand);
 }
 .composer .cal {
   border-color: transparent;

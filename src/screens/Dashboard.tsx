@@ -14,6 +14,7 @@ import { BoardPage } from "@/planner/BoardPage";
 import { CalendarPage } from "@/planner/PlanPages";
 import { SearchOverlay } from "@/planner/SearchOverlay";
 import { StatisticsPage } from "@/planner/StatisticsPage";
+import { TagsPage } from "@/planner/TagsPage";
 import { TaskComposer, type ComposerRequest } from "@/planner/TaskComposer";
 import { today } from "@/planner/dates";
 import { goalKey, scheduledDay, type PlannerTask } from "@/planner/model";
@@ -24,12 +25,12 @@ import { NavIcon } from "@/planner/ui";
 import { useAuth } from "@/providers/auth";
 import "@/styles/planner.css";
 
-type View = "board" | "calendar" | "notes" | "goals" | "statistics";
+type View = "board" | "calendar" | "tags" | "notes" | "goals" | "statistics";
 
 const destinations = [
   { view: "board", label: "Board" },
   { view: "calendar", label: "Calendar" },
-  { view: "notes", label: "Notes" },
+  { view: "tags", label: "Tags" },
   { view: "goals", label: "Goals" },
 ] as const;
 
@@ -72,7 +73,7 @@ function Planner({ user }: { user: User }) {
   const requested = searchParams.get("view");
   const view: View = goalsView
     ? "goals"
-    : requested === "calendar" || requested === "notes" || requested === "statistics"
+    : requested === "calendar" || requested === "tags" || requested === "notes" || requested === "statistics"
       ? requested
       : "board";
   const startInLater = view === "board" && requested === "later";
@@ -89,6 +90,10 @@ function Planner({ user }: { user: User }) {
   const [goalOpenRequest, setGoalOpenRequest] = useState<{ name: string; requestId: number } | null>(null);
 
   const [day, setDay] = useState(today());
+  const [planningTag, setPlanningTag] = useState("");
+  const tags = planner.tagging.tags;
+  const selectedTag = view === "tags" ? tags.find((tag) => tag.id === searchParams.get("tag")) : undefined;
+  const activePlanningTag = tags.some((tag) => tag.id === planningTag) ? planningTag : "";
   const [composer, setComposer] = useState<ComposerRequest | null>(null);
   const [noteRequest, setNoteRequest] = useState<NoteRequest | null>(null);
   const clearNoteRequest = useCallback(() => setNoteRequest(null), []);
@@ -130,9 +135,13 @@ function Planner({ user }: { user: User }) {
     if (view === "notes") setNoteRequest({ id: "new", requestId: Date.now() });
     else if (view === "goals" && !openGoal) setGoalCreateRequest((value) => value + 1);
     else if (view === "goals") setComposer({ date: null, goal: openGoal });
-    else setComposer({ date: startInLater ? null : view === "calendar" ? day : today() });
-  }, [view, openGoal, day, startInLater]);
-  const addToDate = useCallback((date: string | null) => setComposer({ date }), []);
+    else if (view === "tags") setComposer({ date: null, tagId: selectedTag?.id });
+    else setComposer({
+      date: startInLater ? null : view === "calendar" ? day : today(),
+      tagId: view === "board" || view === "calendar" ? activePlanningTag : undefined,
+    });
+  }, [view, openGoal, day, startInLater, selectedTag?.id, activePlanningTag]);
+  const addToDate = useCallback((date: string | null) => setComposer({ date, tagId: activePlanningTag }), [activePlanningTag]);
   const addLabel =
     view === "notes" ? "Add note" : view === "goals" && !openGoal ? "Add goal" : "Add task";
 
@@ -255,11 +264,19 @@ function Planner({ user }: { user: User }) {
           </div>
         ) : null}
         <div className="pl-view" hidden={view !== "calendar"}>
-          <CalendarPage day={day} onDay={setDay} onEdit={editTask} narrow={narrow} />
+          <CalendarPage day={day} onDay={setDay} onEdit={editTask} narrow={narrow} tagId={activePlanningTag} onTag={setPlanningTag} />
         </div>
         {view === "board" ? (
           <div className="pl-view" key="board">
-            <BoardPage onAdd={addToDate} onEdit={editTask} startInLater={startInLater} />
+            <BoardPage onAdd={addToDate} onEdit={editTask} startInLater={startInLater} tagId={activePlanningTag} onTag={setPlanningTag} />
+          </div>
+        ) : view === "tags" ? (
+          <div className="pl-view" key="tags">
+            <TagsPage
+              selected={selectedTag}
+              onSelect={(tag) => setSearchParams(tag ? { view: "tags", tag } : { view: "tags" })}
+              onEdit={editTask}
+            />
           </div>
         ) : view === "notes" ? (
           <div className="pl-view" key="notes">
@@ -294,6 +311,7 @@ function Planner({ user }: { user: User }) {
         onClose={() => setPanelOpen(false)}
         name={name}
         email={user.email ?? undefined}
+        onNotes={() => go("notes")}
         onStatistics={() => go("statistics")}
         onThemeChange={saveTheme}
         onSignOut={signOut}

@@ -12,6 +12,7 @@ const bundle = await build({
       export * from "./src/planner/model.ts";
       export * as dates from "./src/planner/dates.ts";
       export * from "./src/planner/search.ts";
+      export * from "./src/planner/tags.ts";
       export { defaultGoalAppearance, surpriseGoalAppearance, goalColors, goalEmoji, goalInitials } from "./src/planner/goalAppearance.ts";
     `,
     resolveDir: fileURLToPath(new URL("..", import.meta.url)),
@@ -38,6 +39,38 @@ const task = (values) => ({
   label: null,
   completed_at: null,
   ...values,
+});
+
+test("reusable task tags preserve assignments across rename, reload and unrelated edits", () => {
+  let state = planner.readTagState(null);
+  state = planner.saveTag(state, "work", "  Client   Work  ");
+  state = planner.saveTag(state, "weekend", "Weekend");
+  assert.throws(() => planner.saveTag(state, "other", "client work"), /already exists/);
+  state = planner.applyTagChanges(state, "a", ["work", "weekend"], []);
+  state = planner.applyTagChanges(state, "b", ["work", "work"], []);
+  state = planner.applyTagChanges(state, "a", ["unknown"], []);
+  state = planner.saveTag(state, "work", "Studio");
+  state = planner.readTagState(JSON.stringify(state));
+  assert.deepEqual(state.tags.map(({ name }) => name), ["Studio", "Weekend"]);
+  assert.deepEqual(planner.taskTagIds(state, "a"), ["work", "weekend"]);
+  const tasks = [task({ id: "a" }), task({ id: "b" }), task({ id: "c" })];
+  assert.deepEqual(planner.filterByTag(tasks, state, "work").map(({ id }) => id), ["a", "b"]);
+  assert.equal(planner.filterByTag(tasks, state, ""), tasks);
+  state = planner.removeTag(state, "work");
+  assert.deepEqual(state.assignments, { a: ["weekend"] });
+  state = planner.forgetTaskTags(state, ["a"]);
+  assert.deepEqual(state.assignments, {});
+});
+
+test("invalid stored tag entries and deleted IDs cannot reappear in the planner", () => {
+  const state = planner.readTagState(JSON.stringify({
+    tags: [null, { id: "a", name: "Home" }, { id: "b", name: "home" }, { id: "c", name: "  " }],
+    assignments: { t: ["a", "b", "a", 3], other: "a" },
+  }));
+  assert.deepEqual(state.tags, [{ id: "a", name: "Home" }]);
+  assert.deepEqual(state.assignments, { t: ["a"] });
+  assert.deepEqual(planner.taskTagIds(state, "__proto__"), []);
+  assert.deepEqual(planner.readTagState("{broken"), { tags: [], assignments: {} });
 });
 
 test("Board and Calendar use the same dates, including legacy task groups", () => {

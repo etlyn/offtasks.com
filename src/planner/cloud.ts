@@ -36,13 +36,16 @@ export async function createTask(
   owner: string,
   values: { content: string; target_group: TaskGroup; date: string | null; priority: number; label: string | null },
 ) {
-  const { error } = await bounded((signal) =>
+  const { data, error } = await bounded((signal) =>
     supabaseClient
       .from("tasks")
       .insert([{ ...values, user_id: owner, isComplete: false }])
-      .abortSignal(signal),
+      .select("id")
+      .abortSignal(signal)
+      .single<{ id: string }>(),
   );
   check(error, "The task was not saved. Please try again.");
+  return data!.id;
 }
 
 export async function updateTask(owner: string, id: string, changes: TaskChanges) {

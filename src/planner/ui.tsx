@@ -269,14 +269,14 @@ export function PriorityMark({ value }: { value: number }) {
 }
 
 /** The four destinations, outlined at rest and filled when chosen. */
-export function NavIcon({ name, selected }: { name: "board" | "calendar" | "notes" | "goals"; selected: boolean }) {
+export function NavIcon({ name, selected }: { name: "board" | "calendar" | "tags" | "goals"; selected: boolean }) {
   const cut = "var(--nav-cut, var(--ot-surface))";
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      {name === "notes" ? (
+      {name === "tags" ? (
         <>
-          <path d="M6 3.5h8l4.5 4.5v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z" fill={selected ? "currentColor" : "none"} />
-          <path d="M13.5 4v5h4.5M8.5 12.5h6M8.5 16h4.5" stroke={selected ? cut : "currentColor"} />
+          <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h6l8.2 8.2a2 2 0 0 1 0 2.8L15 19.7a2 2 0 0 1-2.8 0L4 11.5Z" fill={selected ? "currentColor" : "none"} />
+          <circle cx="8.25" cy="8.25" r="1" fill={selected ? cut : "currentColor"} stroke="none" />
         </>
       ) : name === "goals" ? (
         <>

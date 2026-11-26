@@ -6,6 +6,7 @@ import {
   ChartNoAxesCombined,
   ChevronRight,
   ExternalLink,
+  FileText,
   Moon,
   RefreshCw,
   Settings,
@@ -25,7 +26,7 @@ declare const __APP_VERSION__: string;
 type View = "menu" | "privacy" | "account";
 
 /**
- * The planner's side panel: who is signed in, Statistics, Return to Later,
+ * The planner's side panel: who is signed in, Notes, Statistics, Return to Later,
  * Light/Dark, privacy and the account. It slides in from the left on phones,
  * like the mobile app's drawer, and from the right on wider screens.
  */
@@ -34,6 +35,7 @@ export function AccountPanel({
   onClose,
   name,
   email,
+  onNotes,
   onStatistics,
   onThemeChange,
   onSignOut,
@@ -44,6 +46,7 @@ export function AccountPanel({
   onClose: () => void;
   name?: string;
   email?: string;
+  onNotes: () => void;
   onStatistics: () => void;
   onThemeChange: (mode: ThemeMode) => void;
   onSignOut: () => Promise<void>;
@@ -105,6 +108,22 @@ export function AccountPanel({
                 {email ? <span>{email}</span> : null}
               </header>
               <ul className="panel-rows">
+                <li>
+                  <button
+                    type="button"
+                    className="panel-row"
+                    onClick={() => {
+                      onClose();
+                      onNotes();
+                    }}
+                  >
+                    <i aria-hidden="true">
+                      <FileText size={18} strokeWidth={1.7} />
+                    </i>
+                    <span>Notes</span>
+                    <ChevronRight size={14} aria-hidden="true" />
+                  </button>
+                </li>
                 <li>
                   <button
                     type="button"

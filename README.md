@@ -74,6 +74,10 @@ a change there should be mirrored here. Sizes use `rem` and breakpoints use
 global add action float at the bottom at every width. Board opens with Today,
 Tomorrow, and Later side by side, and stacks them at narrower widths. Calendar
 keeps its day view and its compact week view on narrow screens.
+Tags opens from the dock and Notes opens from the account drawer. Create or
+reuse tags in the task composer, browse tasks in Tags, or use the tag filter
+on Board and Calendar. Tags are saved for the account in the current browser
+during staging. They do not sync across browsers or devices.
 
 Light is the default appearance. Dark is chosen in the account panel, kept in
 this browser, and saved to the account's `user_preferences.theme_mode` so the
@@ -161,7 +165,7 @@ Enable Row Level Security on these tables and add policies that grant users acce
 - `yarn dev:sample` – start the site against the local sample backend
 - `npm run build` – create a production build
 - `npm run preview` – preview the production build locally
-- `yarn test:planner` – check the planner's date, note, goal and search rules
+- `yarn test:planner` – check the planner's date, note, goal, tag and search rules
 
 ### Branches and deployment
 

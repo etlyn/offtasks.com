@@ -3,10 +3,12 @@ import { createPortal } from "react-dom";
 import { DndContext, DragOverlay, PointerSensor, pointerWithin, useDroppable, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { Bookmark, Calendar, Check, GripVertical, Plus, Sun, X, type LucideIcon } from "lucide-react";
 import { PlanHeading, PlannerStatus } from "./PlanPages";
+import { TagFilter } from "./TagControls";
 import { TaskList } from "./TaskList";
 import { shiftDay, shortDate, weekdayDate } from "./dates";
 import { boardTasks, type BoardColumn, type PlannerTask } from "./model";
 import { usePlanner } from "./store";
+import { filterByTag } from "./tags";
 import { Empty, Sheet } from "./ui";
 
 const columns = [
@@ -15,13 +17,15 @@ const columns = [
   { id: "later", label: "Later", icon: Bookmark, empty: "Nothing in Later" },
 ] as const;
 
-export function BoardPage({ onAdd, onEdit, startInLater }: {
+export function BoardPage({ onAdd, onEdit, startInLater, tagId, onTag }: {
   onAdd: (date: string | null) => void;
   onEdit: (task: PlannerTask) => void;
   startInLater: boolean;
+  tagId: string;
+  onTag: (id: string) => void;
 }) {
   const planner = usePlanner();
-  const grouped = boardTasks(planner.tasks, planner.day);
+  const grouped = boardTasks(filterByTag(planner.tasks, planner.tagging, tagId), planner.day);
   const dates = { today: planner.day, tomorrow: shiftDay(planner.day, 1), later: null };
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
   const [dragId, setDragId] = useState<string | null>(null);
@@ -68,7 +72,10 @@ export function BoardPage({ onAdd, onEdit, startInLater }: {
 
   return (
     <div className="page page--board" ref={board} tabIndex={-1}>
-      <h1 className="board-title">Board</h1>
+      <header className="board-head">
+        <h1 className="board-title">Board</h1>
+        <TagFilter tags={planner.tagging.tags} value={tagId} onChange={onTag} />
+      </header>
       {planner.loaded ? (
         <DndContext
           sensors={sensors}
@@ -94,7 +101,7 @@ export function BoardPage({ onAdd, onEdit, startInLater }: {
                 date={dates[id]}
                 tasks={grouped[id]}
                 icon={icon}
-                empty={empty}
+                empty={tagId ? "No tasks with this tag" : empty}
                 onAdd={onAdd}
                 onEdit={onEdit}
                 onMove={choose}

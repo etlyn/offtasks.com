@@ -18,6 +18,7 @@ import {
   type TaskChanges,
 } from "./model";
 import { errorText, notify } from "./notices";
+import { useTaskTags } from "./useTaskTags";
 
 const laterKey = (owner: string) => `offtasks-move-past-tasks-to-later:${owner}`;
 
@@ -29,6 +30,7 @@ interface PlannerValue {
   /** Tasks from the task list together with tasks written inside notes. */
   tasks: PlannerTask[];
   notes: Note[];
+  tagging: ReturnType<typeof useTaskTags>;
   /** Saved goal names. Goals that exist only as a task's label are in `summaries`. */
   goals: string[];
   summaries: GoalSummary[];
@@ -39,7 +41,7 @@ interface PlannerValue {
   /** Changes at midnight so date-dependent views redraw. */
   day: string;
   refresh: () => Promise<void>;
-  addTask: (values: { content: string; date: string | null; priority: number; label: string | null }) => Promise<void>;
+  addTask: (values: { content: string; date: string | null; priority: number; label: string | null }) => Promise<string>;
   changeTask: (task: PlannerTask, changes: TaskChanges) => Promise<void>;
   moveTask: (task: PlannerTask, date: string | null) => Promise<boolean>;
   movingTaskId: string | null;
@@ -58,6 +60,7 @@ const PlannerContext = createContext<PlannerValue | null>(null);
 export function PlannerProvider({ owner, children }: { owner: string; children: ReactNode }) {
   const [cloudTasks, setCloudTasks] = useState<PlannerTask[]>([]);
   const [notes, setNoteState] = useState<Note[]>([]);
+  const tagging = useTaskTags(owner);
   const [goals, setGoals] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [loaded, setLoaded] = useState(false);
@@ -271,6 +274,7 @@ export function PlannerProvider({ owner, children }: { owner: string; children: 
       owner,
       tasks,
       notes,
+      tagging,
       goals,
       summaries: goalSummaries(tasks, goals),
       loading,
@@ -282,7 +286,7 @@ export function PlannerProvider({ owner, children }: { owner: string; children: 
       addTask: async ({ content, date, priority, label }) => {
         sequence.current += 1;
         try {
-          await cloud.createTask(owner, { content, date, priority, label, target_group: groupForDate(date) });
+          return await cloud.createTask(owner, { content, date, priority, label, target_group: groupForDate(date) });
         } finally {
           // The list is read again either way, so a half-finished save never lingers on screen.
           void refresh();
@@ -303,14 +307,16 @@ export function PlannerProvider({ owner, children }: { owner: string; children: 
               )
         ).catch(() => undefined);
       },
-      removeTask: (task) =>
-        isNoteTaskId(task.id)
+      removeTask: async (task) => {
+        await (isNoteTaskId(task.id)
           ? changeNoteTask(task, null, "Delete failed")
           : commit(
               () => setCloudTasks((current) => current.filter((item) => item.id !== task.id)),
               () => cloud.deleteTask(owner, task.id),
               "Delete failed",
-            ),
+            ));
+        tagging.forget([task.id]);
+      },
       saveNote: (draft, id) => {
         const save = async () => {
           const previous = id ? notesRef.current.find((item) => item.id === id) : undefined;
@@ -323,6 +329,8 @@ export function PlannerProvider({ owner, children }: { owner: string; children: 
             return saved ? { ...task, date: saved.date, target_group: saved.target_group } : task;
           });
           await writeNote(note, "Could not save note");
+          for (const task of note.tasks ?? []) savedTasks.delete(task.id);
+          tagging.forget([...savedTasks.keys()].map((taskId) => noteTaskId(note.id, taskId)));
           return note;
         };
         return id ? queueNote(id, save) : save();
@@ -340,6 +348,7 @@ export function PlannerProvider({ owner, children }: { owner: string; children: 
           () => cloud.removeNote(owner, note),
           "Could not delete note",
         );
+        tagging.forget(note.tasks?.map((task) => noteTaskId(id, task.id)) ?? []);
       }),
       removeGoal: (name) =>
         commit(
@@ -359,7 +368,7 @@ export function PlannerProvider({ owner, children }: { owner: string; children: 
         if (enabled) void refresh();
       },
     };
-  }, [owner, cloudTasks, notes, goals, loading, loaded, error, syncedAt, day, refresh, commit, changeTask, changeNoteTask, writeNote, movePastToLater, pendingMove, moveTask, queueNote, setNotes]);
+  }, [owner, cloudTasks, notes, tagging, goals, loading, loaded, error, syncedAt, day, refresh, commit, changeTask, changeNoteTask, writeNote, movePastToLater, pendingMove, moveTask, queueNote, setNotes]);
 
   return <PlannerContext.Provider value={value}>{children}</PlannerContext.Provider>;
 }
