@@ -1095,7 +1095,13 @@
           ],
           "steps": [
             {
-              "action": "When the tester drags the Today task by the grip to the left of its checkbox over Tomorrow"
+              "action": "Then the checkbox should start each task row, with a small drag grip just outside the column’s left edge"
+            },
+            {
+              "action": "When the tester hovers over a grip, it should grow smoothly while the checkbox and task text stay in place"
+            },
+            {
+              "action": "When the tester drags the Today task by its grip over Tomorrow"
             },
             {
               "action": "Then Tomorrow should highlight and the row should follow the pointer with the grip on the left"
@@ -1128,7 +1134,7 @@
           ],
           "steps": [
             {
-              "action": "When the tester activates the task’s Move button with the keyboard or by tapping it in a phone-width browser"
+              "action": "When the tester activates the task’s grip with the keyboard or by tapping it in a phone-width browser"
             },
             {
               "action": "Then the sheet should list Today, Tomorrow, and Later with the current column indicated"
