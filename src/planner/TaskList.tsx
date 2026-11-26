@@ -38,16 +38,14 @@ export function TaskList({
         {ordered.map((task) => {
           const extra = meta?.(task);
           const moving = planner.movingTaskId === task.id;
-          const checkbox = (
-            <Checkbox
-              checked={task.isComplete}
-              label={`${task.isComplete ? "Reopen" : "Complete"}: ${task.content}`}
-              onChange={() => void planner.toggleTask(task)}
-              disabled={moving}
-            />
-          );
           return (
-            <TaskRow key={task.id} task={task} checkbox={checkbox} onMove={onMove} moveDisabled={!!planner.movingTaskId} moving={moving}>
+            <TaskRow key={task.id} task={task} onMove={onMove} moveDisabled={!!planner.movingTaskId} moving={moving}>
+              <Checkbox
+                checked={task.isComplete}
+                label={`${task.isComplete ? "Reopen" : "Complete"}: ${task.content}`}
+                onChange={() => void planner.toggleTask(task)}
+                disabled={moving}
+              />
               <button type="button" className="task-body" onClick={() => onEdit(task)} aria-label={`Edit: ${task.content}`} disabled={moving}>
                 <span className="task-title">{task.content}</span>
                 {detail === "plan" && task.noteTitle ? <span className="task-meta">Note: {task.noteTitle}</span> : null}
@@ -94,31 +92,24 @@ export function TaskList({
   );
 }
 
-function TaskRow({ task, checkbox, onMove, moveDisabled, moving, children }: {
+function TaskRow({ task, onMove, moveDisabled, moving, children }: {
   task: PlannerTask;
-  checkbox: ReactNode;
   onMove?: MoveAction;
   moveDisabled: boolean;
   moving: boolean;
   children: ReactNode;
 }) {
   const attributes = { className: "task", "data-done": task.isComplete || undefined };
-  if (!onMove) return (
-    <li {...attributes}>
-      {checkbox}
-      {children}
-    </li>
-  );
+  if (!onMove) return <li {...attributes}>{children}</li>;
   return (
-    <DraggableTaskRow task={task} checkbox={checkbox} onMove={onMove} disabled={moveDisabled} moving={moving}>
+    <DraggableTaskRow task={task} onMove={onMove} disabled={moveDisabled} moving={moving}>
       {children}
     </DraggableTaskRow>
   );
 }
 
-function DraggableTaskRow({ task, checkbox, onMove, disabled, moving, children }: {
+function DraggableTaskRow({ task, onMove, disabled, moving, children }: {
   task: PlannerTask;
-  checkbox: ReactNode;
   onMove: MoveAction;
   disabled: boolean;
   moving: boolean;
@@ -137,7 +128,6 @@ function DraggableTaskRow({ task, checkbox, onMove, disabled, moving, children }
           listeners?.onPointerDown?.(event);
       }}
     >
-      {checkbox}
       <button
         type="button"
         className="task-move"

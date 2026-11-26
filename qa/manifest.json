@@ -1095,7 +1095,7 @@
           ],
           "steps": [
             {
-              "action": "Then each task row should start with its checkbox, followed by a small drag grip inside the same row"
+              "action": "Then a small drag grip should sit immediately before the checkbox inside each task row"
             },
             {
               "action": "When the tester hovers over a grip, it should grow smoothly while the checkbox and task text stay in place"
