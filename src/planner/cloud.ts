@@ -1,6 +1,7 @@
 // Reads and writes for the signed-in planner. Every call is scoped to the
 // signed-in account by the database; the user id is sent only where a column needs it.
 import { supabaseClient } from "@/lib/supabase";
+import type { ChatGPTReceipt } from "./chatgptHandoff";
 import { readNote, readTask, isBriefId, type Note, type PlannerTask, type TaskChanges, type TaskGroup } from "./model";
 
 const TIMEOUT_MS = 15_000;
@@ -30,6 +31,40 @@ export async function fetchTasks(owner: string): Promise<PlannerTask[]> {
   );
   check(error, "Your tasks could not be loaded. Check your connection and try again.");
   return (data ?? []).map((row) => readTask(row as Record<string, unknown>)).filter((task): task is PlannerTask => !!task);
+}
+
+/** The dedicated integration create operation records provenance under the owner's RLS policy. */
+export async function fetchAICreatedTaskIds(owner: string): Promise<Set<string>> {
+  const ids = new Set<string>();
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await bounded((signal) => supabaseClient
+      .from("offtask_integration_audit")
+      .select("target")
+      .eq("user_id", owner)
+      .eq("operation", "create_task")
+      .order("id")
+      .range(offset, offset + 999)
+      .abortSignal(signal));
+    if (error) throw new Error("Task origins could not be read.");
+    for (const row of data ?? []) if (typeof row.target === "string") ids.add(row.target);
+    if (!data || data.length < 1000) return ids;
+  }
+}
+
+/** Read only the receipts for requests the owner prepared in this browser. */
+export async function fetchChatGPTReceipts(owner: string, keys: string[]): Promise<ChatGPTReceipt[]> {
+  const receipts: ChatGPTReceipt[] = [];
+  for (let offset = 0; offset < keys.length; offset += 40) {
+    const { data, error } = await bounded((signal) => supabaseClient
+      .from("offtask_integration_audit")
+      .select("operation,target,request_key")
+      .eq("user_id", owner)
+      .in("request_key", keys.slice(offset, offset + 40))
+      .abortSignal(signal));
+    if (error) throw new Error("ChatGPT updates could not be read.");
+    receipts.push(...(data ?? []));
+  }
+  return receipts;
 }
 
 export async function createTask(

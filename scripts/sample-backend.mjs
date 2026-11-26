@@ -321,7 +321,7 @@ const server = createServer(async (request, response) => {
     // Design helper: start over with the sample content, or with an empty account.
     if (url.pathname === "/__sample/reset" && request.method === "POST") {
       const fresh = sampleState();
-      if ((await readBody(request)).empty) Object.assign(fresh, { tasks: [], planner_items: [], offtask_goals: [], offtask_plans: [], offtask_task_results: [] });
+      if ((await readBody(request)).empty) Object.assign(fresh, { tasks: [], planner_items: [], offtask_goals: [], offtask_plans: [], offtask_task_results: [], offtask_integration_audit: [] });
       for (const key of Object.keys(state)) delete state[key];
       Object.assign(state, fresh);
       return send(response, 200, { reset: true });

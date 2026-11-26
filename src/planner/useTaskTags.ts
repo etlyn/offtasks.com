@@ -44,7 +44,7 @@ export function useTaskTags(owner: string) {
 
   return useMemo(() => ({
     ...state,
-    forTask: (id: string) => {
+    forTarget: (id: string) => {
       const assigned = taskTagIds(state, id);
       return state.tags.filter((tag) => assigned.includes(tag.id));
     },

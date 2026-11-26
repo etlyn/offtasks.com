@@ -1,9 +1,11 @@
-import { useState, type ReactNode } from "react";
-import { GripVertical, Tag, Trash2 } from "lucide-react";
+import { useId, useState, type ReactNode } from "react";
+import { Flag, GripVertical, LoaderCircle, Sparkles, Trash2 } from "lucide-react";
 import { useDraggable } from "@dnd-kit/core";
+import { canHandOffTask } from "./chatgptHandoff";
 import { openFirst, type PlannerTask } from "./model";
-import { taskContext, taskWhen } from "./search";
+import { taskWhen } from "./search";
 import { usePlanner } from "./store";
+import { TagLabels } from "./TagControls";
 import { Checkbox, Confirm, PriorityMark } from "./ui";
 
 type Detail = "plan" | "goal" | "context";
@@ -21,6 +23,7 @@ export function TaskList({
   onEdit,
   meta,
   onMove,
+  onChatGPT,
 }: {
   tasks: PlannerTask[];
   detail?: Detail;
@@ -28,9 +31,11 @@ export function TaskList({
   onEdit: (task: PlannerTask) => void;
   meta?: (task: PlannerTask) => string | undefined;
   onMove?: MoveAction;
+  onChatGPT?: MoveAction;
 }) {
   const planner = usePlanner();
   const [removing, setRemoving] = useState<PlannerTask | null>(null);
+  const originPrefix = useId();
   const ordered = keepOrder ? tasks : openFirst(tasks);
   return (
     <>
@@ -38,7 +43,18 @@ export function TaskList({
         {ordered.map((task) => {
           const extra = meta?.(task);
           const moving = planner.movingTaskId === task.id;
-          const tags = planner.tagging.forTask(task.id);
+          const tags = planner.tagging.forTarget(task.id);
+          const aiCreated = planner.chatGPT.created.has(task.id);
+          const phase = planner.chatGPT.phase(task);
+          const canWork = !!onChatGPT && !task.isComplete && canHandOffTask(task.id);
+          const action = phase === "waiting" ? "Continue in ChatGPT" :
+            phase === "review" ? "View ChatGPT result" :
+            phase === "blocked" ? "View ChatGPT blocker" : "Do with ChatGPT";
+          const originId = `${originPrefix}-${task.id}`;
+          const labelsId = `${originId}-labels`;
+          const goalLabel = detail !== "goal" ? task.label : null;
+          const hasLabels = !!goalLabel || tags.length > 0;
+          const describedBy = [aiCreated ? originId : "", hasLabels ? labelsId : ""].filter(Boolean).join(" ");
           return (
             <TaskRow key={task.id} task={task} onMove={onMove} moveDisabled={!!planner.movingTaskId} moving={moving}>
               <Checkbox
@@ -47,12 +63,20 @@ export function TaskList({
                 onChange={() => void planner.toggleTask(task)}
                 disabled={moving}
               />
-              <button type="button" className="task-body" onClick={() => onEdit(task)} aria-label={`Edit: ${task.content}`} disabled={moving}>
-                <span className="task-title">{task.content}</span>
+              <button type="button" className="task-body" onClick={() => onEdit(task)} aria-label={`Edit: ${task.content}`} aria-describedby={describedBy || undefined} disabled={moving}>
+                <span className="task-line">
+                  <span className="task-title">{task.content}</span>
+                  {aiCreated ? (
+                    <span id={originId} className="task-origin" title="Created with AI">
+                      <Sparkles size={12} strokeWidth={1.8} aria-hidden="true" />
+                      <span aria-hidden="true">AI</span>
+                      <span className="ot-visually-hidden">Created with AI</span>
+                    </span>
+                  ) : null}
+                </span>
                 {detail === "plan" && task.noteTitle ? <span className="task-meta">Note: {task.noteTitle}</span> : null}
-                {detail === "plan" && task.label ? <span className="task-meta">Goal: {task.label}</span> : null}
                 {detail === "plan" && extra ? <span className="task-meta">{extra}</span> : null}
-                {detail === "context" ? <span className="task-meta">{taskContext(task)}</span> : null}
+                {detail === "context" ? <span className="task-meta">{taskWhen(task)}</span> : null}
                 {detail === "goal" ? (
                   <span className="task-meta task-meta--row">
                     <span>{taskWhen(task)}</span>
@@ -61,17 +85,37 @@ export function TaskList({
                     <PriorityMark value={task.priority} />
                   </span>
                 ) : null}
-                {tags.length ? (
-                  <span className="task-labels">
-                    {tags.map((tag) => (
-                      <span className="task-label" key={tag.id}>
-                        <Tag size={11} strokeWidth={1.8} aria-hidden="true" />
-                        {tag.name}
-                      </span>
-                    ))}
+                {hasLabels ? (
+                  <span className="task-labels" id={labelsId}>
+                    {goalLabel ? <span className="task-goal-label">
+                      <Flag size={12} strokeWidth={1.8} aria-hidden="true" />
+                      <span className="ot-visually-hidden">Goal: </span>{goalLabel}
+                    </span> : null}
+                    <TagLabels tags={tags} />
                   </span>
                 ) : null}
               </button>
+              {phase === "working" ? (
+                <span className="task-ai-activity" role="status" aria-label="ChatGPT working" title="ChatGPT working">
+                  <LoaderCircle className="task-ai-spin" size={17} strokeWidth={1.75} aria-hidden="true" />
+                </span>
+              ) : canWork ? (
+                <button
+                  type="button"
+                  className="ot-round ot-round--plain task-ai-action"
+                  aria-label={`${action}: ${task.content}`}
+                  data-tip={action}
+                  data-tip-align="end"
+                  data-state={phase ?? undefined}
+                  onClick={(event) => {
+                    if (phase === "review" || phase === "blocked") onEdit(task);
+                    else onChatGPT(task, event.currentTarget);
+                  }}
+                >
+                  <Sparkles size={16} strokeWidth={1.8} aria-hidden="true" />
+                  <span className="task-ai-action-text" aria-hidden="true">{action}</span>
+                </button>
+              ) : null}
               <button
                 type="button"
                 className="task-remove ot-round ot-round--plain"

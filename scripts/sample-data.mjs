@@ -110,6 +110,9 @@ export function sampleState() {
       goalRow(goals.explore, "Explore more"),
     ],
     offtask_plans: [plan],
+    offtask_integration_audit: [
+      { id: "77777777-7777-4777-8777-777777777701", user_id: owner, operation: "create_task", target: tasks[6].id, request_key: "sample-ai-created-task" },
+    ],
     offtask_goal_logos: [],
     offtask_task_results: [
       {

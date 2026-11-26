@@ -11,6 +11,7 @@ export interface TagState {
 export const tagNameLimit = 48;
 export const tagName = (value: string) => value.trim().replace(/\s+/g, " ").normalize("NFC");
 export const tagKey = (value: string) => tagName(value).toLowerCase();
+export const goalTagKey = (id: string) => `goal:${id}`;
 
 export const taskTagIds = (state: TagState, id: string) =>
   Object.hasOwn(state.assignments, id) ? state.assignments[id] : [];

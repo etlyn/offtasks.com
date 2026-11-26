@@ -1,20 +1,19 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, ArrowUpDown, Check, Flag, MoreHorizontal, RefreshCw, Shuffle, X } from "lucide-react";
+import { ArrowLeft, ArrowUpDown, Check, Flag, MoreHorizontal, Pencil, RefreshCw, Shuffle, Sparkles, Tag, X } from "lucide-react";
 import { goalIntegration } from "@/lib/goalIntegration";
 import { goalLogoSource, listGoalLogos, prepareGoalLogo, setGoalLogo, type GoalLogo } from "@/lib/goalLogos";
 import {
   goalRoute,
   integrationError,
   integrationRequestKey,
-  planIsStale,
-  splitCriteria,
-  taskStageLabel,
   type FeatureGoal,
-  type GoalContext,
 } from "@/lib/goalWorkbench";
+import { ChatGPTHandoffSheet } from "@/planner/ChatGPTHandoffSheet";
 import { PlannerStatus } from "@/planner/PlanPages";
+import { TagFilter, TagLabels, TagPicker } from "@/planner/TagControls";
 import { TaskList } from "@/planner/TaskList";
+import type { ChatGPTRequest } from "@/planner/chatgptHandoff";
 import {
   defaultGoalAppearance,
   goalColors,
@@ -27,15 +26,15 @@ import {
   type GoalAppearances,
 } from "@/planner/goalAppearance";
 import { goalKey, openFirst, tasksForGoal, type GoalSummary, type PlannerTask } from "@/planner/model";
-import { notify } from "@/planner/notices";
+import { errorText, notify } from "@/planner/notices";
 import { usePlanner } from "@/planner/store";
-import { Confirm, Empty, Segmented, Sheet } from "@/planner/ui";
+import { goalTagKey } from "@/planner/tags";
+import { Confirm, Empty, Sheet } from "@/planner/ui";
 
 interface GoalDraft {
   title: string;
   outcome: string;
-  markdown: string;
-  criteria: string;
+  revision: string;
 }
 
 /** A goal's tile: its logo, emoji or initials on its own soft colour. */
@@ -114,7 +113,7 @@ export function GoalsWorkbench({
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
   const [styling, setStyling] = useState<string | null>(null);
-  const [contextVersion, setContextVersion] = useState(0);
+  const [goalTagFilter, setGoalTagFilter] = useState("");
   const drafts = useRef(new Map<string, GoalDraft>());
   const listVersion = useRef(0);
   const active = useRef(true);
@@ -125,7 +124,7 @@ export function GoalsWorkbench({
     const version = ++listVersion.current;
     setError("");
     try {
-      // Goal records carry the ids that logos, briefs and plans hang on.
+      // The goal id remains stable when its name or description changes.
       const all: FeatureGoal[] = [];
       for (let offset: number | null = 0, page = 0; offset !== null && page < 20; page += 1) {
         const result = await goalIntegration.listGoals(offset);
@@ -157,7 +156,6 @@ export function GoalsWorkbench({
     const visible = () => {
       if (document.visibilityState !== "visible") return;
       void refresh();
-      setContextVersion((value) => value + 1);
     };
     document.addEventListener("visibilitychange", visible);
     return () => document.removeEventListener("visibilitychange", visible);
@@ -220,6 +218,11 @@ export function GoalsWorkbench({
 
   const stylingSummary = styling ? planner.summaries.find((goal) => goalKey(goal.name) === goalKey(styling)) : undefined;
   const stylingFeature = styling ? featureByKey.get(goalKey(styling)) : undefined;
+  const tagFilter = planner.tagging.tags.some((tag) => tag.id === goalTagFilter) ? goalTagFilter : "";
+  const visibleGoals = tagFilter ? planner.summaries.filter((summary) => {
+    const goal = featureByKey.get(goalKey(summary.name));
+    return goal && planner.tagging.forTarget(goalTagKey(goal.id)).some((tag) => tag.id === tagFilter);
+  }) : planner.summaries;
 
   return (
     <section className="page page--goals" aria-label="Goals">
@@ -227,30 +230,40 @@ export function GoalsWorkbench({
         <GoalDetail
           key={`${ownerId}:${goalId}`}
           goalId={goalId}
-          knownTitle={openGoal?.title}
-          version={contextVersion}
+          goal={openGoal}
+          loading={!goalsLoaded && !error}
+          loadError={error}
           initialDraft={drafts.current.get(goalId)}
           logo={logos[goalId]}
           appearanceFor={appearanceFor}
-          onDraft={(draft) => drafts.current.set(goalId, draft)}
+          onDraft={(draft) => {
+            if (draft) drafts.current.set(goalId, draft);
+            else drafts.current.delete(goalId);
+          }}
           onStyle={(name) => setStyling(name)}
-          onRenamed={(previous, next) => {
+          onSaved={(previous, updated) => {
+            setGoals((current) => current.map((goal) => goal.id === updated.id ? updated : goal));
             // A goal's colour and emoji follow it to its new name.
             const kept = appearances[goalKey(previous)];
-            if (kept && goalKey(previous) !== goalKey(next)) {
+            if (kept && goalKey(previous) !== goalKey(updated.title)) {
               try {
                 writeGoalAppearance(ownerId, previous, null);
-                setAppearances(writeGoalAppearance(ownerId, next, kept));
+                setAppearances(writeGoalAppearance(ownerId, updated.title, kept));
               } catch {
                 // The default colour for the new name is used instead.
               }
             }
+            changed();
           }}
           onEditTask={(task, goal) => callbacks.current.onEditTask(task, goal)}
-          onChanged={changed}
+          onRefresh={changed}
         />
       ) : (
         <>
+          <header className="board-head">
+            <h1 className="board-title">Goals</h1>
+            <TagFilter tags={planner.tagging.tags} value={tagFilter} onChange={setGoalTagFilter} label="Filter goals by tag" allLabel="All goals" />
+          </header>
           {error ? (
             <p role="alert" className="ot-notice ot-notice--error goals-notice">
               {error}
@@ -261,11 +274,12 @@ export function GoalsWorkbench({
           ) : null}
           {!planner.loaded ? (
             <PlannerStatus />
-          ) : planner.summaries.length ? (
+          ) : visibleGoals.length ? (
             <ul className="goals">
-              {planner.summaries.map((goal) => {
+              {visibleGoals.map((goal) => {
                 const feature = featureByKey.get(goalKey(goal.name));
                 const appearance = appearanceFor(goal.name);
+                const tags = feature ? planner.tagging.forTarget(goalTagKey(feature.id)) : [];
                 const ink = goalColors[appearance.color]?.ink;
                 const body = (
                   <>
@@ -273,6 +287,9 @@ export function GoalsWorkbench({
                     <span className="goal-text">
                       <strong>{goal.name}</strong>
                       <span>{goal.total ? `${goal.completed}/${goal.total} done` : "Ready for a first step"}</span>
+                      {tags.length ? (
+                        <span className="task-labels"><TagLabels tags={tags} /></span>
+                      ) : null}
                       {goal.total ? (
                         <span
                           className="ot-progress"
@@ -312,6 +329,8 @@ export function GoalsWorkbench({
                 );
               })}
             </ul>
+          ) : tagFilter ? (
+            <Empty icon={Tag}>No goals with this tag</Empty>
           ) : (
             <div className="goals-empty">
               <div aria-hidden="true">
@@ -525,6 +544,7 @@ function GoalAppearanceBody({
     setBusy(true);
     try {
       await planner.removeGoal(shown);
+      if (feature) planner.tagging.forget([goalTagKey(feature.id)]);
       onRemoved();
     } catch {
       // The failure has already been reported.
@@ -657,146 +677,80 @@ function GoalAppearanceBody({
 const sortLabels = { none: "Default order", desc: "Highest first", asc: "Lowest first" } as const;
 
 function GoalDetail({
-  goalId,
-  knownTitle,
-  version,
-  initialDraft,
-  logo,
-  appearanceFor,
-  onDraft,
-  onStyle,
-  onRenamed,
-  onEditTask,
-  onChanged,
+  goalId, goal, loading, loadError, initialDraft, logo, appearanceFor, onDraft,
+  onStyle, onSaved, onEditTask, onRefresh,
 }: {
   goalId: string;
-  knownTitle?: string;
-  version: number;
+  goal?: FeatureGoal;
+  loading: boolean;
+  loadError: string;
   initialDraft?: GoalDraft;
   logo?: GoalLogo;
   appearanceFor: (name: string) => GoalAppearance;
-  onDraft: (draft: GoalDraft) => void;
+  onDraft: (draft?: GoalDraft) => void;
   onStyle: (name: string) => void;
-  onRenamed: (previous: string, next: string) => void;
+  onSaved: (previous: string, goal: FeatureGoal) => void;
   onEditTask: (task: PlannerTask, goal: string) => void;
-  onChanged: () => void;
+  onRefresh: () => void;
 }) {
   const planner = usePlanner();
-  const [context, setContext] = useState<GoalContext | null>(null);
+  const [section, setSection] = useState<"tasks" | "description">(initialDraft ? "description" : "tasks");
   const [draft, setDraft] = useState<GoalDraft | null>(initialDraft ?? null);
-  const [section, setSection] = useState<"tasks" | "brief" | "plan">("tasks");
-  const [codexOnly, setCodexOnly] = useState(false);
+  const [editing, setEditing] = useState(!!initialDraft);
   const [sort, setSort] = useState<keyof typeof sortLabels>("none");
-  const [editingGoal, setEditingGoal] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [request, setRequest] = useState<ChatGPTRequest | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [compare, setCompare] = useState(false);
-  const active = useRef(true);
-  const generation = useRef(0);
-  const lock = useRef(false);
-  const hydrated = useRef(!!initialDraft);
-  const draftRef = useRef(draft);
-  draftRef.current = draft;
-  const callbacks = useRef({ onDraft, onChanged, onRenamed });
-  callbacks.current = { onDraft, onChanged, onRenamed };
   const requestKey = useRequestKey();
+  const saveLock = useRef(false);
+  const aiTrigger = useRef<HTMLButtonElement | null>(null);
 
-  const refresh = useCallback(async () => {
-    const current = ++generation.current;
-    setLoading(true);
-    setError("");
-    try {
-      const result = await goalIntegration.getGoal(goalId);
-      if (!active.current || current !== generation.current) return;
-      setContext(result);
-      if (!hydrated.current) {
-        const next = {
-          title: result.goal.title,
-          outcome: result.goal.outcome,
-          markdown: result.prd?.markdown ?? "",
-          criteria: result.prd?.acceptance_criteria.join("\n") ?? "",
-        };
-        hydrated.current = true;
-        draftRef.current = next;
-        setDraft(next);
-        callbacks.current.onDraft(next);
-      } else if (draftRef.current?.markdown !== (result.prd?.markdown ?? "")) setCompare(true);
-    } catch (caught) {
-      if (active.current && current === generation.current) setError(integrationError(caught));
-    } finally {
-      if (active.current && current === generation.current) setLoading(false);
-    }
-  }, [goalId]);
-  useEffect(() => {
-    active.current = true;
-    void refresh();
-    return () => {
-      active.current = false;
-      generation.current += 1;
-    };
-  }, [refresh, version]);
-
-  const change = (patch: Partial<GoalDraft>) => {
-    if (!draft) return;
-    const next = { ...draft, ...patch };
-    setDraft(next);
-    callbacks.current.onDraft(next);
-    setNotice("");
-  };
-  const save = async (kind: "goal" | "prd", event: FormEvent) => {
-    event.preventDefault();
-    if (!context || !draft || lock.current) return;
-    lock.current = true;
-    setBusy(true);
-    setError("");
-    setNotice("");
-    try {
-      if (kind === "goal") {
-        const values = {
-          goal_id: goalId,
-          expected_revision: context.goal.revision,
-          title: draft.title.trim(),
-          outcome: draft.outcome.trim(),
-        };
-        const previous = context.goal.title;
-        const result = await goalIntegration.saveGoal(values, requestKey([kind, values]));
-        if (!active.current) return;
-        setContext((current) => (current ? { ...current, goal: result.goal } : current));
-        setEditingGoal(false);
-        callbacks.current.onRenamed(previous, result.goal.title);
-      } else {
-        const criteria = splitCriteria(draft.criteria);
-        const result = await goalIntegration.savePrd(
-          context,
-          draft.markdown,
-          criteria,
-          requestKey([kind, goalId, context.goal.revision, context.prd?.revision, draft.markdown, criteria]),
-        );
-        if (!active.current) return;
-        setContext((current) => (current ? { ...current, goal: result.goal, prd: result.prd } : current));
-        setCompare(false);
-      }
-      setNotice(kind === "goal" ? "Goal saved." : "Brief saved.");
-      callbacks.current.onChanged();
-    } catch (caught) {
-      if (active.current) setError(integrationError(caught));
-    } finally {
-      lock.current = false;
-      if (active.current) setBusy(false);
-    }
-  };
-
-  const title = context?.goal.title ?? knownTitle ?? "Goal";
+  const title = goal?.title ?? "Goal";
   const goalTasks = useMemo(() => tasksForGoal(planner.tasks, title), [planner.tasks, title]);
-  const visibleTasks = useMemo(() => {
-    const filtered = codexOnly ? goalTasks.filter((task) => task.execution_target === "codex") : goalTasks;
-    if (sort === "none") return openFirst(filtered);
-    return [...filtered].sort((a, b) => (sort === "desc" ? b.priority - a.priority : a.priority - b.priority));
-  }, [goalTasks, codexOnly, sort]);
   const done = goalTasks.filter((task) => task.isComplete).length;
   const appearance = appearanceFor(title);
+  const visibleTasks = sort === "none" ? openFirst(goalTasks) :
+    [...goalTasks].sort((left, right) => sort === "desc" ? right.priority - left.priority : left.priority - right.priority);
+  const staleDraft = !!goal && !!draft && goal.revision !== draft.revision;
+
+  const updateDraft = (value: GoalDraft) => {
+    setDraft(value);
+    onDraft(value);
+    setNotice("");
+    setError("");
+  };
+  const startEditing = () => {
+    if (!goal) return;
+    if (!draft) updateDraft({ title: goal.title, outcome: goal.outcome, revision: goal.revision });
+    setEditing(true);
+  };
+  const save = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!goal || !draft || !draft.title.trim() || staleDraft || saveLock.current) return;
+    saveLock.current = true;
+    setBusy(true);
+    setError("");
+    try {
+      const values = { goal_id: goalId, expected_revision: draft.revision, title: draft.title.trim(), outcome: draft.outcome.trim() };
+      const result = await goalIntegration.saveGoal(values, requestKey(values));
+      onSaved(goal.title, result.goal);
+      setDraft(null);
+      onDraft();
+      setEditing(false);
+      setNotice("Goal saved.");
+    } catch (caught) {
+      setError(integrationError(caught));
+    } finally {
+      saveLock.current = false;
+      setBusy(false);
+    }
+  };
+
+  const openChatGPT = (kind: ChatGPTRequest["kind"], id: string, trigger: HTMLButtonElement) => {
+    aiTrigger.current = trigger;
+    setRequest(planner.chatGPT.prepare(kind, id));
+  };
 
   return (
     <div className="goal-detail">
@@ -804,205 +758,171 @@ function GoalDetail({
         <Link className="ot-round" to={goalRoute()} aria-label="Back to goals">
           <ArrowLeft size={18} strokeWidth={1.8} aria-hidden="true" />
         </Link>
-        <button type="button" className="goal-head-avatar" aria-label={`Appearance for goal: ${title}`} onClick={() => onStyle(title)}>
+        <button type="button" className="goal-head-avatar" aria-label={`Appearance for goal: ${title}`} disabled={!goal} onClick={() => onStyle(title)}>
           <GoalAvatar name={title} appearance={appearance} logo={logo} size={40} />
         </button>
         <h1>{title}</h1>
-        <button
-          type="button"
-          className="ot-round ot-round--plain"
-          aria-label="Refresh goal"
-          data-tip="Refresh"
-          data-tip-align="end"
-          disabled={busy || loading}
-          onClick={() => {
-            void refresh();
-            void planner.refresh();
-          }}
-        >
+        <button type="button" className="ot-round ot-round--plain" aria-label="Refresh goal" data-tip="Refresh" data-tip-align="end" disabled={busy || loading} onClick={onRefresh}>
           <RefreshCw size={16} strokeWidth={1.8} aria-hidden="true" />
         </button>
       </header>
 
-      <nav aria-label="Goal sections" className="goal-tabs">
-        {(["tasks", "brief", "plan"] as const).map((value) => (
-          <button type="button" key={value} aria-pressed={section === value} disabled={busy} onClick={() => setSection(value)}>
-            {value === "tasks" ? "Tasks" : value === "brief" ? "Brief" : "Plan"}
-          </button>
-        ))}
-        {section === "tasks" ? (
-          <Segmented
-            label="Tasks shown"
-            options={[
-              { value: "all", label: "All tasks" },
-              { value: "codex", label: "Codex" },
-            ]}
-            value={codexOnly ? "codex" : "all"}
-            onChange={(value) => setCodexOnly(value === "codex")}
-          />
-        ) : null}
-      </nav>
-
-      {error ? (
-        <p role="alert" className="ot-notice ot-notice--error">
-          {error}
-        </p>
-      ) : null}
-      {notice ? (
-        <p role="status" className="ot-notice">
-          {notice}
-        </p>
-      ) : null}
-
-      <div className="goal-section" key={section}>
-        {section === "tasks" ? (
-          <section className="plan" aria-label="Tasks">
-            <header className="plan-head">
-              <h2>Tasks</h2>
-              {goalTasks.length ? (
-                <span aria-label={`${done} of ${goalTasks.length} tasks completed`}>
-                  {done}/{goalTasks.length}
-                </span>
-              ) : null}
-              <div className="plan-head-tools">
-                {goalTasks.length > 1 ? (
-                  <button
-                    type="button"
-                    className="ot-round ot-round--plain"
-                    aria-label={`Sort by priority: ${sortLabels[sort]}`}
-                    data-tip={sortLabels[sort]}
-                    data-tip-align="end"
-                    data-active={sort !== "none" || undefined}
-                    onClick={() => setSort(sort === "none" ? "desc" : sort === "desc" ? "asc" : "none")}
-                  >
-                    <ArrowUpDown size={16} strokeWidth={1.8} aria-hidden="true" />
-                  </button>
-                ) : null}
-              </div>
-            </header>
-            {goalTasks.length ? (
-              <div className="ot-progress goal-progress" style={{ "--goal-ink": goalColors[appearance.color]?.ink } as React.CSSProperties}>
-                <i style={{ width: `${(done / goalTasks.length) * 100}%` }} />
-              </div>
-            ) : null}
-            {!planner.loaded ? (
-              <PlannerStatus />
-            ) : visibleTasks.length ? (
-              <TaskList
-                tasks={visibleTasks}
-                detail="goal"
-                keepOrder
-                onEdit={(task) => onEditTask(task, title)}
-                meta={(task) =>
-                  [
-                    task.work_stage && task.work_stage !== "not_started" && !task.isComplete ? task.work_stage.replace(/_/g, " ") : "",
-                    task.execution_target === "codex" ? "Codex" : "",
-                  ]
-                    .filter(Boolean)
-                    .join(" · ") || undefined
+      {goal ? (
+        <div className="goal-toolbar">
+          <nav aria-label="Goal sections" className="goal-tabs">
+            {(["tasks", "description"] as const).map((value) => (
+              <button type="button" key={value} aria-pressed={section === value} disabled={busy} onClick={() => setSection(value)}>
+                {value === "tasks" ? "Tasks" : "Description"}
+              </button>
+            ))}
+          </nav>
+          {goal.status === "active" ? (
+            <button
+              type="button"
+              className="ot-chip goal-ai-button"
+              disabled={busy}
+              onClick={(event) => {
+                if (goal.outcome.trim()) openChatGPT("goal", goalId, event.currentTarget);
+                else {
+                  setSection("description");
+                  startEditing();
+                  setNotice("Add a description to start with AI.");
                 }
-              />
-            ) : (
-              <Empty icon={Flag}>{codexOnly ? "No tasks marked for Codex." : "No tasks planned"}</Empty>
-            )}
-          </section>
-        ) : !context || !draft ? (
-          loading ? (
-            <p role="status" className="goal-muted">
-              Refreshing goal…
-            </p>
-          ) : null
-        ) : section === "brief" ? (
-          <div className="goal-brief">
-            <div className="goal-brief-head">
-              <span className="goal-meta">Brief {context.prd?.revision ?? "not written"}</span>
-              <button type="button" className="ot-link" disabled={busy} aria-expanded={editingGoal} onClick={() => setEditingGoal((value) => !value)}>
-                Edit goal
-              </button>
-            </div>
-            {context.goal.outcome && !editingGoal ? <p className="goal-outcome">{context.goal.outcome}</p> : null}
-            {editingGoal ? (
-              <form className="goal-form" onSubmit={(event) => void save("goal", event)}>
-                <label className="ot-field">
-                  <span>Goal name</span>
-                  <input className="ot-input" value={draft.title} maxLength={200} required disabled={busy} onChange={(event) => change({ title: event.target.value })} />
-                </label>
-                <label className="ot-field">
-                  <span>Outcome</span>
-                  <textarea className="ot-input" value={draft.outcome} maxLength={16000} rows={3} disabled={busy} onChange={(event) => change({ outcome: event.target.value })} />
-                </label>
-                <button type="submit" className="ot-button ot-button--small" disabled={busy || loading || !draft.title.trim()}>
-                  {busy ? "Saving…" : "Save goal"}
-                </button>
-              </form>
-            ) : null}
-            <form className="goal-form" onSubmit={(event) => void save("prd", event)}>
-              {compare ? (
-                <details>
-                  <summary>Current saved brief — your draft is kept below</summary>
-                  <pre className="goal-prose">{context.prd?.markdown || "No saved brief."}</pre>
-                </details>
+              }}
+            >
+              <Sparkles size={15} strokeWidth={1.8} aria-hidden="true" />
+              Start with AI
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
+      {error || loadError ? <p role="alert" className="ot-notice ot-notice--error">{error || loadError}</p> : null}
+      {notice ? <p role="status" className="ot-notice">{notice}</p> : null}
+
+      {!goal ? (
+        loading ? <p role="status" className="goal-muted">Loading goal…</p> :
+          !loadError ? <Empty icon={Flag}>Goal unavailable</Empty> : null
+      ) : (
+        <div className="goal-section" key={section}>
+          {section === "tasks" ? (
+            <section className="plan" aria-label="Tasks">
+              <header className="plan-head">
+                <h2>Tasks</h2>
+                {goalTasks.length ? <span aria-label={`${done} of ${goalTasks.length} tasks completed`}>{done}/{goalTasks.length}</span> : null}
+                <div className="plan-head-tools">
+                  {goalTasks.length > 1 ? (
+                    <button
+                      type="button"
+                      className="ot-round ot-round--plain"
+                      aria-label={`Sort by priority: ${sortLabels[sort]}`}
+                      data-tip={sortLabels[sort]}
+                      data-tip-align="end"
+                      data-active={sort !== "none" || undefined}
+                      onClick={() => setSort(sort === "none" ? "desc" : sort === "desc" ? "asc" : "none")}
+                    >
+                      <ArrowUpDown size={16} strokeWidth={1.8} aria-hidden="true" />
+                    </button>
+                  ) : null}
+                </div>
+              </header>
+              {goalTasks.length ? (
+                <div className="ot-progress goal-progress" style={{ "--goal-ink": goalColors[appearance.color]?.ink } as React.CSSProperties}>
+                  <i style={{ width: `${(done / goalTasks.length) * 100}%` }} />
+                </div>
               ) : null}
-              <label className="ot-field">
-                <span>Requirements</span>
-                <textarea
-                  className="ot-input"
-                  value={draft.markdown}
-                  onChange={(event) => change({ markdown: event.target.value })}
-                  rows={10}
-                  maxLength={200000}
-                  placeholder="What should this goal achieve?"
-                  required
-                  disabled={busy}
+              {!planner.loaded ? <PlannerStatus /> : visibleTasks.length ? (
+                <TaskList
+                  tasks={visibleTasks}
+                  detail="goal"
+                  keepOrder
+                  onEdit={(task) => onEditTask(task, title)}
+                  onChatGPT={goal.status === "active" ? (task, trigger) => openChatGPT("task", task.id, trigger) : undefined}
+                  meta={(task) => {
+                    const phase = planner.chatGPT.phase(task);
+                    if (phase === "waiting") return "Waiting for ChatGPT";
+                    if (phase === "working") return "ChatGPT working";
+                    if (phase === "review") return "Ready to review";
+                    if (phase === "blocked") return "Needs input";
+                    return !task.isComplete && task.work_stage && task.work_stage !== "not_started" ? task.work_stage.replace(/_/g, " ") : undefined;
+                  }}
                 />
-              </label>
-              <label className="ot-field">
-                <span>Acceptance criteria</span>
-                <textarea
-                  className="ot-input"
-                  value={draft.criteria}
-                  onChange={(event) => change({ criteria: event.target.value })}
-                  rows={4}
-                  placeholder="One clear criterion per line"
-                  disabled={busy}
-                />
-              </label>
-              <button type="submit" className="ot-button ot-button--small" disabled={busy || loading || !draft.markdown.trim()}>
-                {busy ? "Saving…" : "Save brief"}
-              </button>
-            </form>
-          </div>
-        ) : context.plan ? (
-          <div className="goal-plan-view">
-            {planIsStale(context) ? (
-              <p role="alert" className="ot-notice ot-notice--error">
-                Requirements changed. Reconcile this plan before starting work.
-              </p>
-            ) : null}
-            <p className="goal-meta">
-              Plan {context.plan.revision} · Brief {context.plan.source_prd_revision}
-            </p>
-            {context.plan.summary ? <p className="goal-prose">{context.plan.summary}</p> : null}
-            <ol className="goal-plan">
-              {context.plan.items.map((item) => (
-                <li key={item.id}>
-                  <strong>{item.title}</strong>
-                  {item.description ? <p className="goal-prose goal-muted">{item.description}</p> : null}
-                  {context.tasks
-                    .filter((task) => task.source_plan_id === context.plan?.id && task.source_plan_item_id === item.id)
-                    .map((task) => (
-                      <Link key={task.id} className="ot-link" to={goalRoute(goalId, task.id)}>
-                        {task.content} · {taskStageLabel(task)}
-                      </Link>
-                    ))}
-                </li>
-              ))}
-            </ol>
-          </div>
-        ) : (
-          <p className="goal-muted">No saved plan yet.</p>
-        )}
+              ) : <Empty icon={Flag}>No tasks planned</Empty>}
+            </section>
+          ) : (
+            <section className="goal-description" aria-label="Goal description">
+              {editing && draft ? (
+                <form className="goal-form" onSubmit={(event) => void save(event)}>
+                  {staleDraft ? (
+                    <div className="ot-notice" role="status">
+                      The saved goal changed while you were editing.
+                      <button type="button" className="ot-link" onClick={() => updateDraft({ title: goal.title, outcome: goal.outcome, revision: goal.revision })}>
+                        Load saved version
+                      </button>
+                    </div>
+                  ) : null}
+                  <label className="ot-field">
+                    <span>Goal name</span>
+                    <input className="ot-input" value={draft.title} maxLength={200} required disabled={busy} onChange={(event) => updateDraft({ ...draft, title: event.target.value })} />
+                  </label>
+                  <label className="ot-field">
+                    <span>Description</span>
+                    <textarea className="ot-input" value={draft.outcome} maxLength={16000} rows={4} autoFocus disabled={busy} onChange={(event) => updateDraft({ ...draft, outcome: event.target.value })} />
+                  </label>
+                  <div className="goal-description-actions">
+                    <button type="button" className="ot-button ot-button--soft ot-button--small" disabled={busy} onClick={() => setEditing(false)}>Cancel</button>
+                    <button type="submit" className="ot-button ot-button--small" disabled={busy || staleDraft || !draft.title.trim()}>{busy ? "Saving…" : "Save goal"}</button>
+                  </div>
+                </form>
+              ) : (
+                <div className="goal-description-read">
+                  <p className="goal-prose">{goal.outcome || "No description yet"}</p>
+                  <button type="button" className="ot-round ot-round--plain" aria-label="Edit description" data-tip="Edit description" data-tip-align="end" onClick={startEditing}>
+                    <Pencil size={16} strokeWidth={1.8} aria-hidden="true" />
+                  </button>
+                </div>
+              )}
+              <GoalTags id={goalId} />
+            </section>
+          )}
+        </div>
+      )}
+
+      <ChatGPTHandoffSheet
+        request={request}
+        onClose={() => setRequest(null)}
+        onTrack={planner.chatGPT.track}
+        returnFocus={aiTrigger}
+      />
+    </div>
+  );
+}
+
+function GoalTags({ id }: { id: string }) {
+  const { tagging } = usePlanner();
+  const [open, setOpen] = useState(false);
+  const picker = useId();
+  const key = goalTagKey(id);
+  const tags = tagging.forTarget(key);
+  const selected = tags.map((tag) => tag.id);
+  const toggle = (tag: string) => {
+    const removing = selected.includes(tag);
+    try {
+      tagging.assign(key, removing ? [] : [tag], removing ? [tag] : []);
+    } catch (caught) {
+      notify("Could not save tags", errorText(caught));
+    }
+  };
+  return (
+    <div className="goal-tags">
+      <div className="goal-tags-row">
+        {tags.length ? <span className="task-labels"><TagLabels tags={tags} /></span> : null}
+        <button type="button" className="ot-chip" aria-expanded={open} aria-controls={picker} onClick={() => setOpen(!open)}>
+          <Tag size={14} strokeWidth={1.8} aria-hidden="true" />
+          {tags.length ? "Edit tags" : "Add tags"}
+        </button>
       </div>
+      <TagPicker id={picker} open={open} disabled={false} tags={tagging.tags} selected={selected} onToggle={toggle} onCreate={tagging.create} label="Goal tags" />
     </div>
   );
 }

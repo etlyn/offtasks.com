@@ -18,6 +18,7 @@ import {
   type TaskChanges,
 } from "./model";
 import { errorText, notify } from "./notices";
+import { useChatGPTWork } from "./useChatGPTWork";
 import { useTaskTags } from "./useTaskTags";
 
 const laterKey = (owner: string) => `offtasks-move-past-tasks-to-later:${owner}`;
@@ -31,6 +32,7 @@ interface PlannerValue {
   tasks: PlannerTask[];
   notes: Note[];
   tagging: ReturnType<typeof useTaskTags>;
+  chatGPT: ReturnType<typeof useChatGPTWork>;
   /** Saved goal names. Goals that exist only as a task's label are in `summaries`. */
   goals: string[];
   summaries: GoalSummary[];
@@ -263,6 +265,8 @@ export function PlannerProvider({ owner, children }: { owner: string; children: 
     }
   }, [changeTask]);
 
+  const chatGPT = useChatGPTWork(owner, cloudTasks, syncedAt, refresh);
+
   const value = useMemo<PlannerValue>(() => {
     const savedTasks = [...cloudTasks, ...tasksInNotes(notes)];
     const tasks = pendingMove
@@ -275,6 +279,7 @@ export function PlannerProvider({ owner, children }: { owner: string; children: 
       tasks,
       notes,
       tagging,
+      chatGPT,
       goals,
       summaries: goalSummaries(tasks, goals),
       loading,
@@ -368,7 +373,7 @@ export function PlannerProvider({ owner, children }: { owner: string; children: 
         if (enabled) void refresh();
       },
     };
-  }, [owner, cloudTasks, notes, tagging, goals, loading, loaded, error, syncedAt, day, refresh, commit, changeTask, changeNoteTask, writeNote, movePastToLater, pendingMove, moveTask, queueNote, setNotes]);
+  }, [owner, cloudTasks, notes, tagging, chatGPT, goals, loading, loaded, error, syncedAt, day, refresh, commit, changeTask, changeNoteTask, writeNote, movePastToLater, pendingMove, moveTask, queueNote, setNotes]);
 
   return <PlannerContext.Provider value={value}>{children}</PlannerContext.Provider>;
 }

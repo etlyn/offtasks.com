@@ -76,8 +76,14 @@ Tomorrow, and Later side by side, and stacks them at narrower widths. Calendar
 keeps its day view and its compact week view on narrow screens.
 Tags opens from the dock and Notes opens from the account drawer. Create or
 reuse tags in the task composer, browse tasks in Tags, or use the tag filter
-on Board and Calendar. Tags are saved for the account in the current browser
-during staging. They do not sync across browsers or devices.
+on Board and Calendar. Goal tags use the same labels, and Goals has its own
+filter. Tags are saved for the account in the current browser during staging.
+
+Goals has Tasks and Description. Start with AI prepares a ChatGPT request from
+the saved description. Do with ChatGPT prepares a request for one goal task.
+Send these requests in ChatGPT with Offtasks selected and edit access enabled.
+The planner shows a sparkle on tasks created through the integration and an
+activity icon after the matching start update is recorded.
 
 Light is the default appearance. Dark is chosen in the account panel, kept in
 this browser, and saved to the account's `user_preferences.theme_mode` so the

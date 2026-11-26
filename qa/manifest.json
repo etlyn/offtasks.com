@@ -1590,7 +1590,7 @@
     {
       "id": "goals",
       "title": "Web Goals",
-      "description": "Goals should show progress, carry a personal appearance, and hold tasks, a brief, and a plan.",
+      "description": "Goals organize tasks, a saved description, reusable tags and ChatGPT handoffs.",
       "cases": [
         {
           "id": "goals-review-goals-and-progress",
@@ -1698,8 +1698,8 @@
           ]
         },
         {
-          "id": "goals-edit-a-goal-brief-and-read-its-plan",
-          "title": "Edit a goal brief and read its plan",
+          "id": "goals-edit-a-description",
+          "title": "Edit a goal description",
           "tags": [
             "@e2e",
             "@web",
@@ -1714,44 +1714,68 @@
               "action": "Given a goal is open"
             },
             {
-              "action": "When the tester writes requirements and acceptance criteria in Brief and saves"
+              "action": "Then its sections should be Tasks and Description"
             },
             {
-              "action": "Then the brief should be saved with a new revision"
+              "action": "When the tester edits the description and saves, reopening the goal should show the saved description"
             },
             {
-              "action": "And Plan should show the saved plan with its steps, or say that no plan is saved yet"
+              "action": "When the tester edits again and leaves the goal before saving"
             },
             {
-              "action": "And an unsaved brief draft should survive switching to another page and back"
+              "action": "Then the description draft should still be available on return"
             }
           ]
         },
         {
-          "id": "goals-mark-a-goal-task-for-codex",
-          "title": "Mark a goal task for Codex",
+          "id": "goals-do-a-task-with-chatgpt",
+          "title": "Hand a goal task to ChatGPT and follow its status",
           "tags": [
             "@e2e",
             "@web",
             "@goals"
           ],
           "preconditions": [
-            "Given the tester is signed in to the web app",
-            "And the tester may create and remove test goals in this account"
+            "Given a sample account with a goal task and an authorized ChatGPT connection with edit access"
           ],
           "steps": [
             {
-              "action": "Given a goal task is open"
+              "action": "When the tester selects Do with ChatGPT on a task and copies the request"
             },
             {
-              "action": "When the tester turns For Codex on"
+              "action": "Then the row should be waiting while the request is prepared"
             },
             {
-              "action": "Then the task should be marked without starting any work"
+              "action": "When the tester sends the request with Offtasks selected, the activity icon should appear after ChatGPT records the matching start update"
             },
             {
-              "action": "And Progress & results should list recorded updates or say that there are none yet"
+              "action": "Then the icon should stop when the result is ready to review, and the recorded result should be accessible from the row"
             }
+          ]
+        },
+        {
+          "id": "goals-reuse-and-filter-by-tags",
+          "title": "Reuse task tags on goals",
+          "tags": ["@e2e", "@web", "@goals", "@tags"],
+          "preconditions": ["Given a sample account with a goal and a saved task tag"],
+          "steps": [
+            { "action": "When the tester adds a new tag and reuses an existing tag in the goal's Description section" },
+            { "action": "Then both labels should show on the goal and survive a reload in the same browser" },
+            { "action": "When the tester applies the existing tag in the Goals filter" },
+            { "action": "Then only goals with that tag should appear" },
+            { "action": "And a task with a goal and tag should show an outlined flag for the goal and a filled tag chip" }
+          ]
+        },
+        {
+          "id": "goals-start-with-ai",
+          "title": "Create goal tasks from a saved description with ChatGPT",
+          "tags": ["@e2e", "@web", "@goals", "@chatgpt"],
+          "preconditions": ["Given a sample goal with a saved description and a connected ChatGPT account with edit access"],
+          "steps": [
+            { "action": "When the tester chooses Start with AI, copies the request and sends it with Offtasks selected" },
+            { "action": "Then ChatGPT should read the saved goal description and ask before creating the proposed tasks" },
+            { "action": "When the tester approves the proposed tasks" },
+            { "action": "Then the new tasks should appear under that goal with an AI sparkle" }
           ]
         },
         {

@@ -5,9 +5,11 @@ export const OFFTASKS_STORAGE_KEYS = {
 } as const;
 
 const taskTagsPrefix = "offtasks-task-tags:";
+const chatGPTRequestsPrefix = "offtasks-chatgpt-requests:";
 export const taskTagStorageKey = (owner: string) => `${taskTagsPrefix}${owner}`;
+export const chatGPTRequestStorageKey = (owner: string) => `${chatGPTRequestsPrefix}${owner}`;
 
-/** Clear planner preferences and the deleted account's tags from this browser. */
+/** Clear planner preferences and the deleted account's tags and requests from this browser. */
 export const clearLocalOfftasksState = (owner: string) => {
   if (typeof window === "undefined") {
     return;
@@ -19,6 +21,7 @@ export const clearLocalOfftasksState = (owner: string) => {
     const key = window.localStorage.key(index);
     if (!key?.startsWith("offtasks-")) continue;
     if (key.startsWith(taskTagsPrefix) && key !== taskTagStorageKey(owner)) continue;
+    if (key.startsWith(chatGPTRequestsPrefix) && key !== chatGPTRequestStorageKey(owner)) continue;
     keysToRemove.push(key);
   }
 

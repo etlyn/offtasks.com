@@ -55,6 +55,13 @@ test("assistant-created tasks default to Later, are owner-bound and retry safely
   assert.equal(scheduled.task.date, "2026-11-24");
   assert.equal(scheduled.task.goal_id, own.id);
   assert.equal(scheduled.task.label, "My goal");
+  const start = await f.mutate("update_task", {
+    task_id: scheduled.task.id,
+    expected_revision: scheduled.task.revision,
+    patch: { work_stage: "in_progress" },
+    request_key: "offtasks-web-test-start",
+  }, A);
+  assert.equal(start.task.work_stage, "in_progress");
   await assert.rejects(
     () =>
       call({
@@ -76,6 +83,12 @@ test("assistant-created tasks default to Later, are owner-bound and retry safely
   await f.owner(A);
   const ownTasks = await f.read("list_tasks", {});
   assert.equal(ownTasks.tasks.length, 2);
+  const receipt = (await f.db.query("select operation,target,request_key from public.offtask_integration_audit where target=$1 order by operation", [scheduled.task.id])).rows;
+  assert.deepEqual(receipt, [
+    { operation: "create_task", target: scheduled.task.id, request_key: "create-task-date" },
+    { operation: "update_task", target: scheduled.task.id, request_key: "offtasks-web-test-start" },
+  ]);
   await f.owner(B);
   assert.equal((await f.read("list_tasks", {})).tasks.length, 0);
+  assert.deepEqual((await f.db.query("select target from public.offtask_integration_audit where target=$1", [scheduled.task.id])).rows, []);
 });

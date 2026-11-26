@@ -3,17 +3,19 @@ import { Check, ChevronDown, Plus, Search, Tag } from "lucide-react";
 import { errorText } from "./notices";
 import { tagKey, tagName, tagNameLimit, type TaskTag } from "./tags";
 
-export function TagFilter({ tags, value, onChange }: {
+export function TagFilter({ tags, value, onChange, label = "Filter by tag", allLabel = "All tasks" }: {
   tags: TaskTag[];
   value: string;
   onChange: (id: string) => void;
+  label?: string;
+  allLabel?: string;
 }) {
   if (!tags.length) return null;
   return (
     <label className="tag-filter" data-active={!!value || undefined}>
       <Tag size={14} strokeWidth={1.8} aria-hidden="true" />
-      <select aria-label="Filter by tag" value={value} onChange={(event) => onChange(event.target.value)}>
-        <option value="">All tasks</option>
+      <select aria-label={label} value={value} onChange={(event) => onChange(event.target.value)}>
+        <option value="">{allLabel}</option>
         {tags.map((tag) => <option key={tag.id} value={tag.id}>{tag.name}</option>)}
       </select>
       <ChevronDown size={13} strokeWidth={1.8} aria-hidden="true" />
@@ -21,7 +23,16 @@ export function TagFilter({ tags, value, onChange }: {
   );
 }
 
-export function TagPicker({ id, open, disabled, tags, selected, onToggle, onCreate }: {
+export function TagLabels({ tags }: { tags: TaskTag[] }) {
+  return tags.map((tag) => (
+    <span className="task-label" key={tag.id}>
+      <Tag size={11} strokeWidth={1.8} aria-hidden="true" />
+      {tag.name}
+    </span>
+  ));
+}
+
+export function TagPicker({ id, open, disabled, tags, selected, onToggle, onCreate, label = "Task tags" }: {
   id: string;
   open: boolean;
   disabled: boolean;
@@ -29,6 +40,7 @@ export function TagPicker({ id, open, disabled, tags, selected, onToggle, onCrea
   selected: string[];
   onToggle: (id: string) => void;
   onCreate: (name: string) => string;
+  label?: string;
 }) {
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
@@ -59,7 +71,7 @@ export function TagPicker({ id, open, disabled, tags, selected, onToggle, onCrea
   return (
     <div className="composer-tag-expand" id={id} data-open={open || undefined} aria-hidden={!open}>
       <div className="composer-tag-clip">
-        <div className="tag-picker" role="group" aria-label="Task tags">
+        <div className="tag-picker" role="group" aria-label={label}>
           <label className="tag-search">
             <Search size={15} strokeWidth={1.8} aria-hidden="true" />
             <input

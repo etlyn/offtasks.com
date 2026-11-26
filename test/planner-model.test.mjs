@@ -13,6 +13,7 @@ const bundle = await build({
       export * as dates from "./src/planner/dates.ts";
       export * from "./src/planner/search.ts";
       export * from "./src/planner/tags.ts";
+      export * from "./src/planner/chatgptHandoff.ts";
       export { defaultGoalAppearance, surpriseGoalAppearance, goalColors, goalEmoji, goalInitials } from "./src/planner/goalAppearance.ts";
     `,
     resolveDir: fileURLToPath(new URL("..", import.meta.url)),
@@ -71,6 +72,32 @@ test("invalid stored tag entries and deleted IDs cannot reappear in the planner"
   assert.deepEqual(state.assignments, { t: ["a"] });
   assert.deepEqual(planner.taskTagIds(state, "__proto__"), []);
   assert.deepEqual(planner.readTagState("{broken"), { tags: [], assignments: {} });
+});
+
+test("goal tag assignments use a separate target from a task with the same identifier", () => {
+  const state = planner.saveTag(planner.readTagState(null), "home", "Home");
+  const tagged = planner.applyTagChanges(state, planner.goalTagKey("same"), ["home"], []);
+  assert.deepEqual(planner.taskTagIds(tagged, planner.goalTagKey("same")), ["home"]);
+  assert.equal(planner.filterByTag([task({ id: "same" })], tagged, "home").length, 0);
+});
+
+test("ChatGPT loading requires the prepared task's matching start receipt and a current in-progress stage", () => {
+  const request = { kind: "task", id: "33333333-3333-4333-8333-000000000001", key: "offtasks-web-test-receipt", openedAt: 1 };
+  const start = { operation: "update_task", target: request.id, request_key: `${request.key}-start` };
+  assert.deepEqual(planner.readChatGPTRequests(JSON.stringify([request])), [request]);
+  assert.match(planner.chatGPTPrompt(request), /offtasks-web-test-receipt-start/);
+  assert.match(planner.chatGPTPrompt({ ...request, kind: "goal" }), /saved goal description.*outcome/);
+  assert.equal(planner.matchesReceipt(request, start), true);
+  assert.equal(planner.matchesReceipt(request, { ...start, target: "another-task" }), false);
+  assert.equal(planner.matchesReceipt(request, { ...start, operation: "create_task" }), false);
+  const running = task({ work_stage: "in_progress" });
+  const keys = new Set([start.request_key]);
+  assert.equal(planner.chatGPTPhase(running, request, new Set()), "waiting");
+  assert.equal(planner.chatGPTPhase(task({ work_stage: "ready" }), request, keys), "waiting");
+  assert.equal(planner.chatGPTPhase(running, request, keys), "working");
+  assert.equal(planner.chatGPTPhase(task({ work_stage: "awaiting_review" }), request, keys), "review");
+  assert.equal(planner.chatGPTPhase(task({ work_stage: "blocked" }), request, keys), "blocked");
+  assert.equal(planner.chatGPTPhase({ ...running, isComplete: true }, request, keys), null);
 });
 
 test("Board and Calendar use the same dates, including legacy task groups", () => {

@@ -49,7 +49,7 @@ function ComposerBody({ request, onClose }: { request: ComposerRequest; onClose:
   const [content, setContent] = useState(task?.content ?? "");
   const [date, setDate] = useState<string | null>(task ? task.date : (request.date ?? null));
   const [priority, setPriority] = useState(task?.priority ?? 0);
-  const [initialTags] = useState(() => task ? planner.tagging.forTask(task.id).map((tag) => tag.id) : []);
+  const [initialTags] = useState(() => task ? planner.tagging.forTarget(task.id).map((tag) => tag.id) : []);
   const [tagIds, setTagIds] = useState(() => !task && request.tagId ? [request.tagId] : initialTags);
   const [step, setStep] = useState<"write" | "date" | "priority" | "tags">("write");
   const [saving, setSaving] = useState(false);
@@ -57,6 +57,7 @@ function ComposerBody({ request, onClose }: { request: ComposerRequest; onClose:
   const field = useRef<HTMLTextAreaElement>(null);
   const tagPickerId = useId();
   const trimmed = content.trim();
+  const handoffPhase = task ? planner.chatGPT.phase(task) : null;
   const selectedTags = planner.tagging.tags.filter((tag) => tagIds.includes(tag.id));
   const toggleTag = (id: string) => setTagIds((current) =>
     current.includes(id) ? current.filter((tag) => tag !== id) : [...current, id],
@@ -258,7 +259,9 @@ function ComposerBody({ request, onClose }: { request: ComposerRequest; onClose:
         </div>
       ) : null}
 
-      {task && goal && !isNoteTaskId(task.id) ? <TaskWorkDetails taskId={task.id} /> : null}
+      {task && goal && !isNoteTaskId(task.id) ? (
+        <TaskWorkDetails taskId={task.id} startOpen={handoffPhase === "review" || handoffPhase === "blocked"} />
+      ) : null}
 
       <Confirm
         open={confirming}
